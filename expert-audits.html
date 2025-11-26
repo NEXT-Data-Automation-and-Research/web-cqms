@@ -572,6 +572,31 @@
     
     <!-- Compact Filter Grid -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(5.2734rem, 1fr)); gap: 0.375rem; align-items: end; width: 100%;">
+        <!-- Performance Report Filters (matching employee-performance.html) -->
+        <div>
+            <label for="filterChannel" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Channel (Perf)</label>
+            <select id="filterChannel" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
+                <option value="">All Channels</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="filterStatus" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Status (Perf)</label>
+            <select id="filterStatus" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="filterAgent" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Agent (Perf)</label>
+            <select id="filterAgent" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
+                <option value="">All Agents</option>
+            </select>
+        </div>
+        
         <!-- Scorecard Selector -->
         <div>
             <label for="scorecardSelector" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Scorecard</label>
@@ -1005,6 +1030,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let filteredAudits = [];
     let currentScorecard = null;
     let allScorecards = [];
+    let allAssignments = []; // Store all audit assignments for filtering
     
     // User info and filtering state
     let currentUserEmail = '';
@@ -1028,6 +1054,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentWeekYear = null;
     let useWeekFilter = false; // Default to month view instead of week view
     let dateFilter = { start: null, end: null };
+    
+    // Filter state matching employee-performance.html
+    let currentFilters = { channel: '', status: '', agent: '' };
     
     // Cache configuration
     const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes cache duration
@@ -1149,6 +1178,27 @@ document.addEventListener('DOMContentLoaded', function() {
         loadAudits();
     };
     
+    // Load audit assignments for filtering (matching employee-performance.html)
+    async function loadAuditAssignments() {
+        try {
+            const { data: assignments, error: assignError } = await window.supabaseClient
+                .from('audit_assignments')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (assignError) {
+                console.warn('Error loading audit assignments:', assignError);
+                allAssignments = [];
+                return;
+            }
+            
+            allAssignments = assignments || [];
+        } catch (error) {
+            console.error('Error loading audit assignments:', error);
+            allAssignments = [];
+        }
+    }
+    
     // Load available scorecards
     async function loadScorecards() {
         try {
@@ -1197,7 +1247,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectedId === 'all') {
             // Show all scorecards
             currentScorecard = null;
-            await loadAudits();
+            await loadAudits(true); // Force refresh to get all audits
             return;
         }
         
@@ -1219,7 +1269,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (error) throw error;
             
             currentScorecard = data;
-            await loadAudits();
+            // Force refresh when scorecard changes to ensure we get the right data
+            await loadAudits(true);
         } catch (error) {
             console.error('Error loading scorecard:', error);
         }
@@ -1323,6 +1374,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize scorecards (which will trigger loadAudits)
         try {
+            // Load audit assignments first (matching employee-performance.html)
+            await loadAuditAssignments();
+            populateFilters();
+            
             await loadScorecards();
         } catch (error) {
             console.error('Error during initialization:', error);
@@ -1343,8 +1398,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Check cache first (unless force refresh)
-            if (!forceRefresh) {
+            // Check cache first (unless force refresh or a specific scorecard is selected)
+            // When a specific scorecard is selected, always load fresh data to ensure accuracy
+            if (!forceRefresh && !currentScorecard) {
                 const cachedAudits = getCachedAudits();
                 if (cachedAudits && Array.isArray(cachedAudits) && cachedAudits.length >= 0) {
                     console.log('Loading audits from cache...');
@@ -1754,9 +1810,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update statistics with comprehensive CX metrics
     async function updateStatistics(auditsForStats = null) {
-        // Use provided audits or filteredAudits (before KPI filter)
-        // This ensures statistics always show totals based on all filters EXCEPT KPI filter
-        const statsAudits = auditsForStats || filteredAudits;
+        // Use provided audits or getFilteredAuditsBySubmissionDate() for base counts (matching employee-performance.html)
+        // This ensures statistics show totals based on the same filtering logic as employee-performance.html
+        // If auditsForStats is provided (before KPI filter), use that; otherwise use the base filtered audits
+        const statsAudits = auditsForStats || getFilteredAuditsBySubmissionDate();
         
         const total = statsAudits.length;
         const passing = statsAudits.filter(a => normalizePassingStatus(a.passingStatus) === 'Passed').length;
@@ -2830,7 +2887,134 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
-    // Filter audits
+    // ============================================================================
+    // Helper Functions from employee-performance.html for exact filtering match
+    // ============================================================================
+    
+    // Helper function to get current period dates based on week/date filter
+    function getCurrentPeriodDates() {
+        let currentPeriodStart, currentPeriodEnd;
+        
+        if (dateFilter.start || dateFilter.end) {
+            currentPeriodStart = dateFilter.start ? getDhakaStartOfDay(parseDhakaDate(dateFilter.start)) : new Date(0);
+            currentPeriodEnd = dateFilter.end ? getDhakaEndOfDay(parseDhakaDate(dateFilter.end)) : getDhakaNow();
+        } else if (useWeekFilter && currentWeek !== null) {
+            const weekDates = getDhakaWeekDates(currentWeek, currentWeekYear);
+            currentPeriodStart = weekDates.start;
+            currentPeriodEnd = weekDates.end;
+        } else {
+            const today = getDhakaNow();
+            const weekDates = getDhakaWeekDates(getDhakaWeekNumber(today), today.getFullYear());
+            currentPeriodStart = weekDates.start;
+            currentPeriodEnd = weekDates.end;
+        }
+        
+        return { start: currentPeriodStart, end: currentPeriodEnd };
+    }
+    
+    // Helper function to get filtered audits based on submission date (EXACT match with employee-performance.html)
+    function getFilteredAuditsBySubmissionDate() {
+        // Return empty array if no audits loaded yet
+        if (!allAudits || allAudits.length === 0) {
+            return [];
+        }
+        
+        const { start: periodStart, end: periodEnd } = getCurrentPeriodDates();
+        
+        // Validate dates
+        if (!periodStart || !periodEnd || isNaN(periodStart.getTime()) || isNaN(periodEnd.getTime())) {
+            console.warn('Invalid period dates, returning all audits');
+            return allAudits;
+        }
+        
+        // Get employee emails to include - only filter by agent if filter is explicitly set
+        let employeeEmailsToInclude = null; // null means no filter (include all)
+        if (currentFilters.agent) {
+            employeeEmailsToInclude = new Set();
+            employeeEmailsToInclude.add(currentFilters.agent.toLowerCase().trim());
+        }
+        
+        // Filter audits by submission date and other filters
+        const agentAuditIds = {};
+        const filteredAudits = [];
+        
+        allAudits.forEach(audit => {
+            // Get employee email - handle both raw and processed audit structures
+            const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
+            
+            // Filter by employee only if filter is set
+            if (employeeEmailsToInclude && !employeeEmailsToInclude.has(agentEmail)) return;
+            
+            // Filter by submission date - use submitted_at or submittedAt
+            const submittedDate = audit.submitted_at || audit.submittedAt;
+            if (!submittedDate) return;
+            
+            const submitted = toDhakaTime(submittedDate);
+            if (isNaN(submitted.getTime())) return; // Invalid date
+            
+            if (submitted < periodStart || submitted > periodEnd) return;
+            
+            // Filter by channel if set - handle both raw and processed audit structures
+            const auditChannel = audit.channel || audit.channelName;
+            if (currentFilters.channel && auditChannel !== currentFilters.channel) return;
+            
+            // Track unique audits per agent (for deduplication)
+            if (!agentAuditIds[agentEmail]) {
+                agentAuditIds[agentEmail] = new Set();
+            }
+            
+            const auditKey = `${audit.id}_${audit._scorecard_id || audit.scorecard_id || 'unknown'}`;
+            if (!agentAuditIds[agentEmail].has(auditKey)) {
+                agentAuditIds[agentEmail].add(auditKey);
+                filteredAudits.push(audit);
+            }
+        });
+        
+        return filteredAudits;
+    }
+    
+    // Format agent name from email (matching employee-performance.html)
+    function formatAgentName(email) {
+        if (!email || email === 'Unknown') return 'Unknown';
+        return email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    
+    // Populate filter dropdowns (matching employee-performance.html)
+    function populateFilters() {
+        // Populate channels
+        const channels = [...new Set(allAssignments.map(a => a.channel).filter(Boolean))].sort();
+        const channelSelect = document.getElementById('filterChannel');
+        if (channelSelect) {
+            // Clear existing options except "All Channels"
+            channelSelect.innerHTML = '<option value="">All Channels</option>';
+            channels.forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel;
+                option.textContent = channel;
+                channelSelect.appendChild(option);
+            });
+        }
+        
+        // Populate agents
+        const agents = [...new Set(allAssignments.map(a => a.employee_email).filter(Boolean))].sort();
+        const agentSelect = document.getElementById('filterAgent');
+        if (agentSelect) {
+            // Clear existing options except "All Agents"
+            agentSelect.innerHTML = '<option value="">All Agents</option>';
+            agents.forEach(agent => {
+                const option = document.createElement('option');
+                option.value = agent;
+                option.textContent = formatAgentName(agent);
+                agentSelect.appendChild(option);
+            });
+        }
+    }
+    
+    // ============================================================================
+    // End Helper Functions
+    // ============================================================================
+    
+    // Filter audits - using getFilteredAuditsBySubmissionDate() as base (matching employee-performance.html)
     async function filterAudits() {
         // Reset to first page when filters change
         currentPage = 1;
@@ -2839,42 +3023,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const statusValue = statusFilter?.value || '';
         const quarterValue = quarterFilter?.value || '';
         
-        // Apply week or date filter first
-        let dateFilteredAudits = [...allAudits];
+        // Use getFilteredAuditsBySubmissionDate() as base - this matches employee-performance.html exactly
+        // This handles: date/week filter, agent filter, channel filter, and deduplication
+        let dateFilteredAudits = getFilteredAuditsBySubmissionDate();
         
-        if (dateFilter.start || dateFilter.end) {
-            useWeekFilter = false;
-            dateFilteredAudits = dateFilteredAudits.filter(a => {
-                const submittedDate = a.submittedAt || a.submitted_at;
-                if (!submittedDate) return false;
-                
-                const submitted = toDhakaTime(submittedDate);
-                if (isNaN(submitted.getTime())) return false; // Invalid date
-                
-                if (dateFilter.start) {
-                    const startDate = getDhakaStartOfDay(parseDhakaDate(dateFilter.start));
-                    if (submitted < startDate) return false;
-                }
-                if (dateFilter.end) {
-                    const endDate = getDhakaEndOfDay(parseDhakaDate(dateFilter.end));
-                    if (submitted > endDate) return false;
-                }
-                return true;
-            });
-        } else if (useWeekFilter && currentWeek !== null) {
-            const weekDates = getWeekDates(currentWeek, currentWeekYear);
-            dateFilteredAudits = dateFilteredAudits.filter(a => {
-                const submittedDate = a.submittedAt || a.submitted_at;
-                if (!submittedDate) return false;
-                
-                const submitted = toDhakaTime(submittedDate);
-                if (isNaN(submitted.getTime())) return false; // Invalid date
-                
-                return submitted >= weekDates.start && submitted <= weekDates.end;
-            });
-        }
+        // Now apply additional filters specific to expert-audits.html UI
+        // Get scorecard selector value directly to ensure we have the latest value
+        const scorecardSelectEl = document.getElementById('scorecardSelector');
+        const selectedScorecardId = scorecardSelectEl?.value || '';
         
         filteredAudits = dateFilteredAudits.filter(audit => {
+            // Scorecard filter - check if a specific scorecard is selected
+            const matchesScorecard = !selectedScorecardId || 
+                selectedScorecardId === 'all' || 
+                selectedScorecardId === '' ||
+                audit._scorecard_id === selectedScorecardId ||
+                String(audit._scorecard_id) === String(selectedScorecardId);
+            
+            if (!matchesScorecard) return false;
+            
             // General search
             const matchesSearch = !searchTerm || 
                 (audit.employeeName && audit.employeeName.toLowerCase().includes(searchTerm)) ||
@@ -2884,7 +3051,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Specific filters
             const normalizedAuditStatus = normalizePassingStatus(audit.passingStatus);
             const matchesStatus = !statusValue || normalizedAuditStatus === statusValue;
-            const matchesQuarter = !quarterValue || audit.quarter === quarterValue;
+            // Handle quarter comparison - can be "Q1", "Q2", etc. or just "1", "2", etc.
+            const matchesQuarter = !quarterValue || 
+                String(audit.quarter || '').toUpperCase() === String(quarterValue).toUpperCase() ||
+                (String(audit.quarter || '').replace(/^Q/i, '') === String(quarterValue).replace(/^Q/i, ''));
             
             // Get all other filter values
             const auditorFilter = (document.getElementById('auditorNameFilter')?.value || '').toLowerCase();
@@ -2908,7 +3078,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchesEmployeeType = !employeeTypeFilter || audit.employeeType === employeeTypeFilter;
             const matchesCountry = !countryFilter || audit.countryOfEmployee === countryFilter;
             const matchesInteractionId = !interactionIdFilter || (audit.interactionId && audit.interactionId.toLowerCase().includes(interactionIdFilter));
-            const matchesWeek = !weekFilter || audit.week === weekFilter;
+            const matchesWeek = !weekFilter || String(audit.week) === String(weekFilter);
             const matchesValidation = !validationFilter || audit.validationStatus === validationFilter;
             const matchesAcknowledgement = !acknowledgementFilter || (() => {
                 const status = audit.acknowledgementStatus || audit.acknowledgement_status || '';
@@ -3077,6 +3247,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check if any filters are applied
     function hasActiveFilters() {
+        // Check performance report filters (matching employee-performance.html)
+        if (currentFilters.channel || currentFilters.status || currentFilters.agent) return true;
+        
         // Check search input
         if (searchInput && searchInput.value.trim() !== '') return true;
         
@@ -3089,6 +3262,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check all other filter inputs
         const filterInputs = document.querySelectorAll('input[id$="Filter"], select[id$="Filter"]');
         for (const input of filterInputs) {
+            // Skip the performance report filters as we already checked them
+            if (input.id === 'filterChannel' || input.id === 'filterStatus' || input.id === 'filterAgent') continue;
             if (input.value && input.value.trim() !== '') return true;
         }
         
@@ -3116,6 +3291,17 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('input[id$="Filter"], select[id$="Filter"], #searchInput').forEach(input => {
                 input.value = '';
             });
+        
+        // Clear performance report filters (matching employee-performance.html)
+        currentFilters.channel = '';
+        currentFilters.status = '';
+        currentFilters.agent = '';
+        const filterChannelEl = document.getElementById('filterChannel');
+        const filterStatusEl = document.getElementById('filterStatus');
+        const filterAgentEl = document.getElementById('filterAgent');
+        if (filterChannelEl) filterChannelEl.value = '';
+        if (filterStatusEl) filterStatusEl.value = '';
+        if (filterAgentEl) filterAgentEl.value = '';
         
         // Clear KPI filter
         activeKpiFilter = null;
@@ -3179,10 +3365,53 @@ document.addEventListener('DOMContentLoaded', function() {
         clearFilters.addEventListener('click', clearAllFilters);
     }
     
+    // Add event listeners for performance report filters (matching employee-performance.html)
+    const filterChannelEl = document.getElementById('filterChannel');
+    const filterStatusEl = document.getElementById('filterStatus');
+    const filterAgentEl = document.getElementById('filterAgent');
+    
+    if (filterChannelEl) {
+        filterChannelEl.addEventListener('change', () => {
+            currentFilters.channel = filterChannelEl.value;
+            // Sync with channelFilter for backward compatibility
+            const channelFilterEl = document.getElementById('channelFilter');
+            if (channelFilterEl) channelFilterEl.value = filterChannelEl.value;
+            updateClearAllButtonVisibility();
+            filterAudits();
+        });
+    }
+    
+    if (filterStatusEl) {
+        filterStatusEl.addEventListener('change', () => {
+            currentFilters.status = filterStatusEl.value;
+            updateClearAllButtonVisibility();
+            filterAudits();
+        });
+    }
+    
+    if (filterAgentEl) {
+        filterAgentEl.addEventListener('change', () => {
+            currentFilters.agent = filterAgentEl.value;
+            updateClearAllButtonVisibility();
+            filterAudits();
+        });
+    }
+    
+    // Sync channelFilter with filterChannel (backward compatibility)
+    const channelFilterEl = document.getElementById('channelFilter');
+    if (channelFilterEl) {
+        channelFilterEl.addEventListener('change', () => {
+            currentFilters.channel = channelFilterEl.value;
+            if (filterChannelEl) filterChannelEl.value = channelFilterEl.value;
+            updateClearAllButtonVisibility();
+            filterAudits();
+        });
+    }
+    
     // Add event listeners for all additional filter inputs
     const additionalFilters = [
         'auditorNameFilter', 'employeeNameFilter', 'auditTypeFilter', 
-        'channelFilter', 'employeeTypeFilter', 'countryFilter', 
+        'employeeTypeFilter', 'countryFilter', 
         'interactionIdFilter', 'weekFilter', 'minScoreFilter', 
         'maxScoreFilter', 'minErrorsFilter', 'maxErrorsFilter', 
         'dateFromFilter', 'dateToFilter', 'validationStatusFilter', 

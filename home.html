@@ -1491,8 +1491,7 @@ async function fetchAndCacheFilters() {
       // For agents, load all completed audits to get channels
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name')
-        .eq('is_active', true);
+        .select('table_name');
       
       if (!scError && scorecards) {
         for (const scorecard of scorecards) {
@@ -1514,8 +1513,7 @@ async function fetchAndCacheFilters() {
       // For auditors, load all assignments from audit tables
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name')
-        .eq('is_active', true);
+        .select('table_name');
       
       if (!scError && scorecards) {
         const assignmentPromises = scorecards.map(async (scorecard) => {
@@ -1969,8 +1967,7 @@ async function loadAllUsers() {
   try {
     const { data, error } = await window.supabaseClient
       .from('users')
-      .select('email, name, role, channel, quality_mentor')
-      .eq('is_active', true);
+      .select('email, name, role, channel, quality_mentor');
     
     if (error) throw error;
     allUsers = data || [];
@@ -2004,8 +2001,7 @@ async function fetchAndCacheRecentUpdates(period) {
       // 1. Load completed audits from scorecard tables
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('id, name, table_name')
-        .eq('is_active', true);
+        .select('id, name, table_name');
       
       if (!scError && scorecards) {
         const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
@@ -2234,8 +2230,7 @@ async function fetchAndCacheRecentUpdates(period) {
       // For auditors: Show all assignment status changes (pending, in_progress, completed) from audit tables
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('id, name, table_name')
-        .eq('is_active', true);
+        .select('id, name, table_name');
       
       if (!scError && scorecards) {
         const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
@@ -2301,8 +2296,7 @@ async function fetchAndCacheRecentUpdates(period) {
       // For auditors: Show only unprocessed reversals (same as reversal.html)
       const { data: reversalScorecards, error: reversalScError } = await window.supabaseClient
         .from('scorecards')
-        .select('id, name, table_name')
-        .eq('is_active', true);
+        .select('id, name, table_name');
       
       if (!reversalScError && reversalScorecards) {
         const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
@@ -2586,8 +2580,7 @@ async function loadCompletedAuditsForEmployee() {
   // Load all scorecards to query audit tables
   const { data: scorecards, error: scError } = await window.supabaseClient
     .from('scorecards')
-    .select('id, name, table_name, scoring_type')
-    .eq('is_active', true);
+    .select('id, name, table_name, scoring_type');
   
   if (scError) throw scError;
   
@@ -3133,8 +3126,7 @@ async function fetchAndCacheStats(period) {
     try {
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name')
-        .eq('is_active', true);
+        .select('table_name');
       
       if (!scError && scorecards) {
         const auditFilterField = isAgent ? 'employee_email' : 'auditor_email';
@@ -3216,8 +3208,7 @@ async function fetchAndCacheStats(period) {
       // Get all scorecards to query audit tables
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name')
-        .eq('is_active', true);
+        .select('table_name');
       
       if (!scError && scorecards) {
         const auditFilterField = isAgent ? 'employee_email' : 'auditor_email';
@@ -3401,8 +3392,7 @@ async function fetchAndCacheStats(period) {
       try {
         const { data: scorecards, error: scError } = await window.supabaseClient
           .from('scorecards')
-          .select('id, name, table_name, scoring_type')
-          .eq('is_active', true);
+          .select('id, name, table_name, scoring_type');
         
         if (!scError && scorecards) {
           const auditFilterField = 'employee_email';
@@ -3485,8 +3475,7 @@ async function fetchAndCacheStats(period) {
       try {
         const { data: scorecards, error: scError } = await window.supabaseClient
           .from('scorecards')
-          .select('id, name, table_name, scoring_type')
-          .eq('is_active', true);
+          .select('id, name, table_name, scoring_type');
         
         if (!scError && scorecards) {
           const auditFilterField = 'auditor_email';
@@ -3582,8 +3571,7 @@ async function fetchAndCacheStats(period) {
       try {
         const { data: scorecards, error: scError } = await window.supabaseClient
           .from('scorecards')
-          .select('table_name')
-          .eq('is_active', true);
+          .select('table_name');
         
         if (!scError && scorecards) {
           const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
@@ -3646,8 +3634,7 @@ async function fetchAndCacheStats(period) {
     try {
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name')
-        .eq('is_active', true);
+        .select('table_name');
       
       if (!scError && scorecards) {
         const reversalFilterField = isAgent ? 'employee_email' : 'auditor_email';
@@ -4117,8 +4104,7 @@ async function fetchAndCacheNotifications() {
     
     const { data: scorecards, error: scError } = await window.supabaseClient
       .from('scorecards')
-      .select('table_name')
-      .eq('is_active', true);
+      .select('table_name');
     
     let assignments = [];
     if (!scError && scorecards) {
@@ -4161,8 +4147,7 @@ async function fetchAndCacheNotifications() {
     // Get reversals (audits with reversal requests)
     const { data: reversalScorecards, error: reversalScError } = await window.supabaseClient
       .from('scorecards')
-      .select('table_name')
-      .eq('is_active', true);
+      .select('table_name');
 
     let reversals = [];
     if (!reversalScError && reversalScorecards) {
