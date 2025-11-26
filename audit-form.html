@@ -854,7 +854,8 @@
                     <div id="errorParametersContainer" style="padding: 0 0.6469rem 0.6469rem 0.6469rem; box-shadow: 0 -0.0606rem 0.1213rem rgba(0, 0, 0, 0.05);">
                         <!-- Error parameters will be dynamically loaded based on selected scorecard -->
                         <div style="padding: 1.2937rem; text-align: center; color: #000000; font-size: 0.5659rem;">
-                            <p>Please select a scorecard above to load error parameters.</p>
+                            <p style="margin: 0 0 0.3234rem 0; font-weight: 500;">All scorecards are available. Please select a scorecard above to load error parameters.</p>
+                            <p style="margin: 0; color: #6b7280; font-size: 0.4852rem;">💡 Tip: Select an employee first to filter scorecards by channel, or choose any scorecard from the list.</p>
                         </div>
                     </div>
                 </div>
@@ -949,8 +950,13 @@ let currentParameters = [];
 let allAvailableScorecards = [];
 
 // Load available scorecards
-async function loadScorecards(channelFilter = null, preselectedScorecardId = null) {
+async function loadScorecards(channelFilter = null, preselectedScorecardId = null, skipAutoSelect = false) {
     const scorecardSelect = document.getElementById('scorecardSelect');
+    
+    if (!scorecardSelect) {
+        console.error('Scorecard select element not found');
+        return;
+    }
     
     try {
         let query = window.supabaseClient
@@ -1015,7 +1021,8 @@ async function loadScorecards(channelFilter = null, preselectedScorecardId = nul
             });
             
             // Auto-select scorecard: use preselected ID if provided, otherwise use first available
-            if (filteredScorecards.length > 0) {
+            // Only auto-select if skipAutoSelect is false
+            if (filteredScorecards.length > 0 && !skipAutoSelect) {
                 if (preselectedScorecardId) {
                     // Check if the preselected scorecard exists in the filtered list
                     const preselectedExists = filteredScorecards.some(sc => sc.id === preselectedScorecardId);
@@ -10490,21 +10497,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 500);
             } else {
-                // If no channel selected, ensure first scorecard is auto-selected after a delay
-                setTimeout(async () => {
-                    // Don't auto-select if we're loading an assignment scorecard
-                    if (!window.isLoadingAssignmentScorecard) {
-                        const scorecardSelect = document.getElementById('scorecardSelect');
-                        if (scorecardSelect && (!scorecardSelect.value || scorecardSelect.value === '')) {
-                            await loadScorecards();
+                // Check if employee is selected before auto-selecting scorecard
+                const employeeSelect = document.getElementById('employeeName');
+                const hasEmployee = employeeSelect && employeeSelect.value && employeeSelect.value !== '';
+                
+                if (!hasEmployee) {
+                    // If no channel selected and no employee, don't auto-select scorecard
+                    // Scorecards will be loaded without auto-selection via the page load initialization
+                } else {
+                    // If no channel selected but employee is selected, ensure first scorecard is auto-selected after a delay
+                    setTimeout(async () => {
+                        // Don't auto-select if we're loading an assignment scorecard
+                        if (!window.isLoadingAssignmentScorecard) {
+                            const scorecardSelect = document.getElementById('scorecardSelect');
+                            if (scorecardSelect && (!scorecardSelect.value || scorecardSelect.value === '')) {
+                                await loadScorecards();
+                            }
                         }
-                    }
-                }, 800);
+                    }, 800);
+                }
             }
         }
         
         // Handle employee selection change
-        employeeSelect.addEventListener('change', function() {
+        employeeSelect.addEventListener('change', async function() {
             const selectedOption = this.options[this.selectedIndex];
             
             if (selectedOption && selectedOption.value) {
@@ -10566,8 +10582,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const channelSelect = document.getElementById('channel');
                 if (channelSelect) {
                     channelSelect.value = '';
-                    // Trigger change event to reload scorecards without channel filter
-                    channelSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    // Reload all scorecards without auto-selecting when employee is cleared
+                    await loadScorecards(null, null, true);
                 }
             }
         });
