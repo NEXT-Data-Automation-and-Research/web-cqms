@@ -3362,33 +3362,79 @@ function displayConversationMessages(conversation) {
         if (nonImageAttachments.length > 0) {
             attachmentsHTML = '<div style="margin-top: 0.3234rem; display: flex; flex-direction: column; gap: 0.1617rem;">';
             nonImageAttachments.forEach(att => {
-                attachmentsHTML += `
-                    <a 
-                        href="${escapeHtml(att.url)}" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style="
-                            display: flex;
-                            align-items: center;
-                            gap: 0.2426rem;
-                            padding: 0.2426rem 0.3234rem;
-                            background: ${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'};
-                            border-radius: 0.2426rem;
-                            text-decoration: none;
-                            color: ${isUser ? '#374151' : 'white'};
-                            font-size: 0.4447rem;
-                            transition: background 0.2s ease;
-                        "
-                        onmouseover="this.style.background='${isUser ? '#e5e7eb' : 'rgba(255,255,255,0.15)'}'"
-                        onmouseout="this.style.background='${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'}'"
-                    >
-                        <svg style="width: 0.4852rem; height: 0.4852rem; flex-shrink: 0;" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
-                        </svg>
-                        <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name || 'Attachment')}</span>
-                        ${att.filesize ? `<span style="color: ${isUser ? '#9ca3af' : 'rgba(255,255,255,0.7)'}; font-size: 0.3639rem;">${(att.filesize / 1024).toFixed(1)} KB</span>` : ''}
-                    </a>
-                `;
+                // Check if attachment is a video file
+                const isVideo = att.content_type?.startsWith('video/') || 
+                               /\.(mp4|webm|ogg|mov|avi|mkv)$/i.test(att.name || '');
+                
+                if (isVideo) {
+                    // Render video player for video files
+                    attachmentsHTML += `
+                        <div style="margin-top: 0.3234rem; margin-bottom: 0.3234rem;">
+                            <div style="
+                                display: flex;
+                                align-items: center;
+                                gap: 0.2426rem;
+                                padding: 0.2426rem 0.3234rem;
+                                background: ${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'};
+                                border-radius: 0.2426rem;
+                                margin-bottom: 0.3234rem;
+                                color: ${isUser ? '#374151' : 'white'};
+                                font-size: 0.4447rem;
+                            ">
+                                <svg style="width: 0.4852rem; height: 0.4852rem; flex-shrink: 0;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                                </svg>
+                                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;">${escapeHtml(att.name || 'Video')}</span>
+                                ${att.filesize ? `<span style="color: ${isUser ? '#9ca3af' : 'rgba(255,255,255,0.7)'}; font-size: 0.3639rem;">${(att.filesize / 1024).toFixed(1)} KB</span>` : ''}
+                            </div>
+                            <video 
+                                controls 
+                                style="
+                                    max-width: 100%;
+                                    width: 100%;
+                                    max-height: 25rem;
+                                    border-radius: 0.3234rem;
+                                    background: #000;
+                                    box-shadow: 0 0.1213rem 0.2426rem rgba(0,0,0,0.1);
+                                "
+                                preload="metadata"
+                            >
+                                <source src="${escapeHtml(att.url)}" type="${att.content_type || 'video/mp4'}">
+                                Your browser does not support the video tag.
+                                <a href="${escapeHtml(att.url)}" download style="color: white;">Download Video</a>
+                            </video>
+                        </div>
+                    `;
+                } else {
+                    // Render download link for non-video attachments
+                    attachmentsHTML += `
+                        <a 
+                            href="${escapeHtml(att.url)}" 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style="
+                                display: flex;
+                                align-items: center;
+                                gap: 0.2426rem;
+                                padding: 0.2426rem 0.3234rem;
+                                background: ${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'};
+                                border-radius: 0.2426rem;
+                                text-decoration: none;
+                                color: ${isUser ? '#374151' : 'white'};
+                                font-size: 0.4447rem;
+                                transition: background 0.2s ease;
+                            "
+                            onmouseover="this.style.background='${isUser ? '#e5e7eb' : 'rgba(255,255,255,0.15)'}'"
+                            onmouseout="this.style.background='${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'}'"
+                        >
+                            <svg style="width: 0.4852rem; height: 0.4852rem; flex-shrink: 0;" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name || 'Attachment')}</span>
+                            ${att.filesize ? `<span style="color: ${isUser ? '#9ca3af' : 'rgba(255,255,255,0.7)'}; font-size: 0.3639rem;">${(att.filesize / 1024).toFixed(1)} KB</span>` : ''}
+                        </a>
+                    `;
+                }
             });
             attachmentsHTML += '</div>';
         }
