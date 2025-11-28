@@ -464,59 +464,46 @@
     background-color: #ef4444 !important;
   }
 
-  /* Calendar Modal Dark Mode */
-  [data-theme="dark"] #calendarModal {
-    background-color: var(--background-white);
-    border-color: var(--border-light);
-  }
-
-  [data-theme="dark"] #calendarModal .border-gray-200 {
+  /* Calendar and Grid Modals Dark Mode */
+  [data-theme="dark"] #calendarModal,
+  [data-theme="dark"] #gridModal {
+    background-color: var(--background-white) !important;
     border-color: var(--border-light) !important;
   }
 
-  [data-theme="dark"] #calendarModal .text-gray-900 {
+  [data-theme="dark"] #calendarModal .border-gray-200,
+  [data-theme="dark"] #gridModal .border-gray-200 {
+    border-color: var(--border-light) !important;
+  }
+
+  [data-theme="dark"] #calendarModal .text-gray-900,
+  [data-theme="dark"] #gridModal .text-gray-900 {
     color: var(--text-color) !important;
   }
 
-  [data-theme="dark"] #calendarModal .text-gray-600 {
+  [data-theme="dark"] #calendarModal .text-gray-500,
+  [data-theme="dark"] #gridModal .text-gray-500 {
+    color: var(--text-muted) !important;
+  }
+
+  [data-theme="dark"] #calendarModal .text-gray-600,
+  [data-theme="dark"] #gridModal .text-gray-600 {
     color: var(--text-secondary) !important;
   }
 
-  [data-theme="dark"] #calendarModal .text-gray-500 {
-    color: var(--text-muted) !important;
+  [data-theme="dark"] #calendarModal .text-gray-700,
+  [data-theme="dark"] #gridModal .text-gray-700 {
+    color: var(--text-secondary) !important;
   }
 
-  [data-theme="dark"] #calendarModal .hover\:bg-gray-50:hover {
+  [data-theme="dark"] #calendarModal .hover\:bg-gray-50:hover,
+  [data-theme="dark"] #gridModal .hover\:bg-gray-50:hover {
     background-color: var(--gray-100) !important;
   }
 
-  [data-theme="dark"] #calendarModal .divide-gray-200 > * {
+  [data-theme="dark"] #calendarModal .divide-gray-200 > *,
+  [data-theme="dark"] #gridModal .divide-gray-200 > * {
     border-color: var(--border-light) !important;
-  }
-
-  [data-theme="dark"] #calendarModal .bg-primary\/10 {
-    background-color: rgba(26, 115, 62, 0.15) !important;
-  }
-
-  [data-theme="dark"] #calendarModal .text-primary {
-    color: var(--primary-color) !important;
-  }
-
-  [data-theme="dark"] #calendarModal .bg-gray-50 {
-    background-color: var(--gray-100) !important;
-  }
-
-  [data-theme="dark"] #calendarModal .text-gray-700 {
-    color: var(--text-color) !important;
-  }
-
-  [data-theme="dark"] #calendarModal .text-gray-300 {
-    color: var(--text-muted) !important;
-  }
-
-  /* Calendar Badge Dark Mode */
-  [data-theme="dark"] #calendarBadge {
-    background-color: #ef4444 !important;
   }
 </style>
 </head>
@@ -583,44 +570,119 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
-            <span id="calendarBadge" class="hidden absolute -top-1 -right-1 bg-error rounded-full text-white text-[10px] font-bold flex items-center justify-center shadow-sm min-w-[18px] h-[18px] px-1"></span>
           </button>
           
-          <!-- Calendar Modal - Appears on hover -->
-          <div id="calendarModal" class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-xl w-80 max-h-[calc(100vh-5rem)] flex flex-col opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50" onmouseleave="hideCalendarModal()">
+          <!-- Calendar Events Modal - Appears on hover -->
+          <div id="calendarModal" class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-xl w-80 max-h-[calc(100vh-5rem)] flex flex-col opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50" onmouseleave="hideCalendar()">
             <!-- Modal Header -->
             <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 class="text-sm font-semibold text-gray-900">Upcoming Schedules</h3>
-              <button onclick="hideCalendarModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+              <h3 class="text-sm font-semibold text-gray-900">Upcoming Events</h3>
+              <button onclick="hideCalendar()" class="text-gray-400 hover:text-gray-600 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
               </button>
             </div>
             
-            <!-- Schedules List -->
-            <div id="schedulesList" class="flex-1 overflow-y-auto divide-y divide-gray-200">
+            <!-- Events List -->
+            <div id="eventsList" class="flex-1 overflow-y-auto divide-y divide-gray-200">
               <div class="px-4 py-8 text-center text-gray-500 text-xs">
-                <div class="animate-pulse">Loading schedules...</div>
+                <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <p class="font-medium text-gray-700 mb-1">No events at this moment</p>
+                <p class="text-gray-500">Events will appear here when scheduled</p>
               </div>
             </div>
             
-            <!-- Footer with Create Event Button -->
-            <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
-              <button onclick="window.location.href='event-management.html'" class="w-full px-3 py-2 bg-primary text-white text-xs font-semibold rounded hover:bg-primary-dark transition-colors flex items-center justify-center gap-2">
+            <!-- Modal Footer -->
+            <div class="px-4 py-3 border-t border-gray-200">
+              <button onclick="window.location.href='event-management.html'" class="w-full px-3 py-2 text-xs font-medium text-primary hover:bg-primary/10 rounded transition-colors flex items-center justify-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                Create Event
+                Manage Events
               </button>
             </div>
           </div>
         </div>
-        <button class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-          </svg>
-        </button>
+        <div id="gridBtn" class="relative group">
+          <button class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors relative">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+            </svg>
+          </button>
+          
+          <!-- Grid Quick Actions Modal - Appears on hover -->
+          <div id="gridModal" class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-xl w-64 max-h-[calc(100vh-5rem)] flex flex-col opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50" onmouseleave="hideGrid()">
+            <!-- Modal Header -->
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-gray-900">Quick Actions</h3>
+              <button onclick="hideGrid()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Quick Actions List -->
+            <div id="quickActionsList" class="flex-1 overflow-y-auto divide-y divide-gray-200">
+              <div id="quickActionCreateAudit" class="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location.href='create-audit.html'">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-xs font-semibold text-gray-900">Create Audit</p>
+                    <p class="text-[10px] text-gray-500">Start a new audit</p>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location.href='audit-reports.html'">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded bg-success/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-xs font-semibold text-gray-900">View Reports</p>
+                    <p class="text-[10px] text-gray-500">Browse audit reports</p>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location.href='event-management.html'">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded bg-warning/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-xs font-semibold text-gray-900">Events</p>
+                    <p class="text-[10px] text-gray-500">Manage events</p>
+                  </div>
+                </div>
+              </div>
+              <div id="quickActionSettings" class="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location.href='settings.html'">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-xs font-semibold text-gray-900">Settings</p>
+                    <p class="text-[10px] text-gray-500">System settings</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="relative" id="userProfileContainer">
           <div id="userAvatar" class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-medium cursor-pointer hover:bg-primary-dark transition-colors" onclick="window.location.href='profile.html'">
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -906,7 +968,7 @@
       </div>
 
       <!-- Average Quality Score Card -->
-      <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow group flex-1 min-w-0">
+      <div id="avgQualityScoreCard" class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow group flex-1 min-w-0">
         <div class="flex items-center justify-between mb-2">
           <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center group-hover:bg-success/20 transition-colors">
             <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -974,22 +1036,20 @@
         </div>
       </div>
 
-      <!-- In Progress Card -->
-      <div id="inProgressCard" class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow group flex-1 min-w-0">
+      <!-- Requires Acknowledgment Card (Agents Only) -->
+      <div id="requiresAcknowledgmentCard" class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow group flex-1 min-w-0" style="display: none;">
         <div class="flex items-center justify-between mb-2">
           <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
             <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
         </div>
-        <div class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">In Progress</div>
-        <div class="text-3xl font-bold text-gray-900 mb-1" id="statsInProgressCount">
+        <div class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Requires Acknowledgment</div>
+        <div class="text-3xl font-bold text-gray-900 mb-1" id="statsRequiresAcknowledgmentCount">
           <div class="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
         </div>
-        <div class="text-xs font-medium text-gray-600 mt-1" id="statsDaysRemaining">
-          <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-        </div>
+        <div class="text-xs font-medium text-gray-600 mt-1">reports pending</div>
       </div>
 
       <!-- Reversal Card -->
@@ -1021,20 +1081,22 @@
         </div>
       </div>
 
-      <!-- Requires Acknowledgment Card (Agents Only) -->
-      <div id="requiresAcknowledgmentCard" class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow group flex-1 min-w-0" style="display: none;">
+      <!-- In Progress Card -->
+      <div id="inProgressCard" class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow group flex-1 min-w-0">
         <div class="flex items-center justify-between mb-2">
           <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
             <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
         </div>
-        <div class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Requires Acknowledgment</div>
-        <div class="text-3xl font-bold text-gray-900 mb-1" id="statsRequiresAcknowledgmentCount">
+        <div class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">In Progress</div>
+        <div class="text-3xl font-bold text-gray-900 mb-1" id="statsInProgressCount">
           <div class="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
         </div>
-        <div class="text-xs font-medium text-gray-600 mt-1">reports pending</div>
+        <div class="text-xs font-medium text-gray-600 mt-1" id="statsDaysRemaining">
+          <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+        </div>
       </div>
 
       <!-- Avg Duration Card -->
@@ -1095,7 +1157,7 @@
               <span id="pendingCount" class="bg-primary text-white px-2 py-0.5 rounded text-xs font-semibold">0</span>
             </h2>
             <div class="flex items-center gap-2">
-              <button id="viewAllBtn" onclick="window.location.href='expert-audits.html'" class="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded hover:bg-primary-dark transition-colors" style="display: none;">
+              <button id="viewAllBtn" onclick="window.location.href='audit-reports.html'" class="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded hover:bg-primary-dark transition-colors" style="display: none;">
                 View All
               </button>
               <button id="sortBtn" onclick="toggleSortMenu()" class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
@@ -1579,7 +1641,8 @@ async function fetchAndCacheFilters() {
       // For agents, load all completed audits to get channels
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name');
+        .select('table_name')
+        .eq('is_active', true);
       
       if (!scError && scorecards) {
         for (const scorecard of scorecards) {
@@ -1601,7 +1664,8 @@ async function fetchAndCacheFilters() {
       // For auditors, load all assignments from audit tables
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name');
+        .select('table_name')
+        .eq('is_active', true);
       
       if (!scError && scorecards) {
         const assignmentPromises = scorecards.map(async (scorecard) => {
@@ -1766,6 +1830,11 @@ async function initializeDashboard() {
       if (updatesTitle) updatesTitle.textContent = 'Updates to my audits';
       const createAuditBtn = document.getElementById('createAuditBtn');
       if (createAuditBtn) createAuditBtn.style.display = 'none';
+      // Hide Create Audit and Settings from Quick Actions for employees
+      const quickActionCreateAudit = document.getElementById('quickActionCreateAudit');
+      if (quickActionCreateAudit) quickActionCreateAudit.style.display = 'none';
+      const quickActionSettings = document.getElementById('quickActionSettings');
+      if (quickActionSettings) quickActionSettings.style.display = 'none';
       const inProgressCard = document.getElementById('inProgressCard');
       if (inProgressCard) inProgressCard.style.display = 'none';
       const avgDurationCard = document.getElementById('avgDurationCard');
@@ -1774,6 +1843,9 @@ async function initializeDashboard() {
       if (auditsConductedCard) auditsConductedCard.style.display = 'none';
       const remainingCard = document.getElementById('remainingCard');
       if (remainingCard) remainingCard.style.display = 'none';
+      // Hide average quality score card for agents
+      const avgQualityScoreCard = document.getElementById('avgQualityScoreCard');
+      if (avgQualityScoreCard) avgQualityScoreCard.style.display = 'none';
       // Show pass rate card for agents
       const passRateCard = document.getElementById('passRateCard');
       if (passRateCard) passRateCard.style.display = 'block';
@@ -1790,6 +1862,9 @@ async function initializeDashboard() {
       // Ensure avgDuration card is visible for auditors
       const avgDurationCard = document.getElementById('avgDurationCard');
       if (avgDurationCard) avgDurationCard.style.display = 'block';
+      // Ensure average quality score card is visible for auditors
+      const avgQualityScoreCard = document.getElementById('avgQualityScoreCard');
+      if (avgQualityScoreCard) avgQualityScoreCard.style.display = 'block';
       const auditsConductedCard = document.getElementById('auditsConductedCard');
       if (auditsConductedCard) auditsConductedCard.style.display = 'block';
       const remainingCard = document.getElementById('remainingCard');
@@ -1835,8 +1910,7 @@ async function initializeDashboard() {
       loadRecentUpdates(),
       updateYourStats(),
       loadAssignedAudits(),
-      loadNotifications(),
-      loadUpcomingSchedules()
+      loadNotifications()
     ]);
 
     // Populate filter options after loading data (non-blocking)
@@ -2045,18 +2119,37 @@ async function populatePremiumDashboard() {
 // Removed toggleUserProfile() - Avatar now navigates directly to profile.html
 // Removed populateUserProfile() - No longer needed
 
-// Logout function
-function logout() {
-  localStorage.removeItem('userInfo');
-  localStorage.removeItem('sessionToken');
-  window.location.href = 'login.html';
+// Logout function - uses AuthChecker for proper logout
+async function logout() {
+  try {
+    // Use AuthChecker for proper logout (handles both OAuth and email/password)
+    if (window.AuthChecker) {
+      const authChecker = new window.AuthChecker()
+      await authChecker.logout()
+    } else {
+      // Fallback if AuthChecker not available
+      console.warn('AuthChecker not available, using fallback logout')
+      localStorage.removeItem('userInfo')
+      localStorage.removeItem('sessionToken')
+      localStorage.removeItem('lastLoginUpdate')
+      window.location.href = 'login.html'
+    }
+  } catch (error) {
+    console.error('Error during logout:', error)
+    // Force cleanup and redirect on error
+    localStorage.removeItem('userInfo')
+    localStorage.removeItem('sessionToken')
+    localStorage.removeItem('lastLoginUpdate')
+    window.location.href = 'login.html'
+  }
 }
 
 async function loadAllUsers() {
   try {
     const { data, error } = await window.supabaseClient
       .from('users')
-      .select('email, name, role, channel, quality_mentor');
+      .select('email, name, role, channel, quality_mentor')
+      .eq('is_active', true);
     
     if (error) throw error;
     allUsers = data || [];
@@ -2090,7 +2183,8 @@ async function fetchAndCacheRecentUpdates(period) {
       // 1. Load completed audits from scorecard tables
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('id, name, table_name');
+        .select('id, name, table_name')
+        .eq('is_active', true);
       
       if (!scError && scorecards) {
         const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
@@ -2114,15 +2208,13 @@ async function fetchAndCacheRecentUpdates(period) {
               });
               
               return filteredAudits.map(audit => {
-                const auditorEmail = (audit.auditor_email || '').toLowerCase().trim();
-                const auditorUser = allUsers.find(u => (u.email || '').toLowerCase().trim() === auditorEmail);
-                const auditorName = auditorUser?.name || audit.auditor_name || audit.auditor_email?.split('@')[0] || 'Unknown';
+                // Don't fetch auditor info for agents - they shouldn't see it
                 
                 return {
                   id: `audit-${audit.id}`,
                   type: 'audit_completed',
-                  displayName: auditorName,
-                  displayEmail: audit.auditor_email,
+                  displayName: null, // Don't show auditor name for agents
+                  displayEmail: null, // Don't show auditor email for agents
                   timestamp: audit.submitted_at,
                   status: 'completed',
                   interactionId: audit.interaction_id,
@@ -2213,9 +2305,7 @@ async function fetchAndCacheRecentUpdates(period) {
               
               const updates = [];
               filteredReversals.forEach(reversal => {
-                const auditorEmail = (reversal.auditor_email || '').toLowerCase().trim();
-                const auditorUser = allUsers.find(u => (u.email || '').toLowerCase().trim() === auditorEmail);
-                const auditorName = auditorUser?.name || reversal.auditor_email?.split('@')[0] || 'Unknown';
+                // Don't fetch auditor info for agents - they shouldn't see it
                 const interactionId = reversal.interaction_id || 'N/A';
                 
                 // Determine reversal status - check if it's been responded to first, then check acknowledgement
@@ -2257,8 +2347,8 @@ async function fetchAndCacheRecentUpdates(period) {
                   updates.push({
                     id: `reversal-request-${reversal.id}`,
                     type: 'reversal_requested',
-                    displayName: auditorName,
-                    displayEmail: reversal.auditor_email,
+                    displayName: null, // Don't show auditor name for agents
+                    displayEmail: null, // Don't show auditor email for agents
                     timestamp: reversal.reversal_requested_at,
                     status: 'reversal_requested',
                     interactionId: interactionId,
@@ -2290,8 +2380,8 @@ async function fetchAndCacheRecentUpdates(period) {
                     updates.push({
                       id: `reversal-status-${reversal.id}`,
                       type: 'reversal_status_update',
-                      displayName: auditorName,
-                      displayEmail: reversal.auditor_email,
+                      displayName: null, // Don't show auditor name for agents
+                      displayEmail: null, // Don't show auditor email for agents
                     timestamp: statusTimestamp,
                       status: status,
                       statusText: statusText,
@@ -2319,7 +2409,8 @@ async function fetchAndCacheRecentUpdates(period) {
       // For auditors: Show all assignment status changes (pending, in_progress, completed) from audit tables
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('id, name, table_name');
+        .select('id, name, table_name')
+        .eq('is_active', true);
       
       if (!scError && scorecards) {
         const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
@@ -2385,7 +2476,8 @@ async function fetchAndCacheRecentUpdates(period) {
       // For auditors: Show only unprocessed reversals (same as reversal.html)
       const { data: reversalScorecards, error: reversalScError } = await window.supabaseClient
         .from('scorecards')
-        .select('id, name, table_name');
+        .select('id, name, table_name')
+        .eq('is_active', true);
       
       if (!reversalScError && reversalScorecards) {
         const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
@@ -2591,8 +2683,8 @@ function renderRecentUpdatesFromData(allUpdates) {
         textColor = 'text-success';
       }
 
-      // For employees viewing audit_completed updates, use generic icon instead of auditor initials
-      const useGenericIcon = isAgent && update.type === 'audit_completed';
+      // For employees viewing any updates, use generic icon instead of auditor initials/names
+      const useGenericIcon = isAgent && (update.type === 'audit_completed' || update.type === 'reversal_requested' || update.type === 'reversal_status_update');
       const iconContent = useGenericIcon 
         ? `<svg class="w-4 h-4 ${textColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -2617,7 +2709,9 @@ function renderRecentUpdatesFromData(allUpdates) {
               <p class="text-xs text-gray-900 leading-snug">
                 ${isAgent && (update.type === 'reversal_requested' || update.type === 'reversal_status_update' || update.type === 'audit_completed')
                   ? statusText
-                  : `<span class="font-medium">${escapeHtml(update.displayName)}</span> ${statusText}`
+                  : update.displayName 
+                    ? `<span class="font-medium">${escapeHtml(update.displayName)}</span> ${statusText}`
+                    : statusText
                 }
               </p>
               <p class="text-[10px] text-gray-500 mt-0.5">${timestamp}</p>
@@ -2669,7 +2763,8 @@ async function loadCompletedAuditsForEmployee() {
   // Load all scorecards to query audit tables
   const { data: scorecards, error: scError } = await window.supabaseClient
     .from('scorecards')
-    .select('id, name, table_name, scoring_type');
+    .select('id, name, table_name, scoring_type')
+    .eq('is_active', true);
   
   if (scError) throw scError;
   
@@ -2961,14 +3056,12 @@ function renderAssignedAudits() {
         }
       }
       
-      // For agents, show auditor info; for auditors, show employee info
+      // For agents, don't show auditor info; for auditors, show employee info
       let displayUser, displayName, displayEmail;
       if (isAgent) {
-        // For employees, show who audited them (the auditor)
-        const auditorEmail = (audit.auditor_email || '').toLowerCase().trim();
-        displayUser = allUsers.find(u => (u.email || '').toLowerCase().trim() === auditorEmail);
-        displayName = displayUser?.name || audit.auditor_name || audit.auditor_email?.split('@')[0] || 'Unknown';
-        displayEmail = audit.auditor_email || '';
+        // For employees, don't show auditor info - use generic icon instead
+        displayName = null; // Don't show auditor name
+        displayEmail = null; // Don't show auditor email
       } else {
         // For auditors, show who they audited (the employee)
         const employeeEmail = (audit.employee_email || '').toLowerCase().trim();
@@ -2978,7 +3071,8 @@ function renderAssignedAudits() {
       }
       
       const scorecardName = audit._scorecard_name || 'Unknown Scorecard';
-      const initials = getInitials(displayName);
+      // For agents, use generic icon instead of initials; for auditors, use employee initials
+      const initials = isAgent ? null : getInitials(displayName);
       
       // Get passing status
       const passingStatus = audit.passing_status || audit.passingStatus || 'Unknown';
@@ -3011,9 +3105,19 @@ function renderAssignedAudits() {
         <div class="px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-0" onclick="viewAuditDetails('${audit.id}', '${audit._scorecard_id || ''}', '${audit._scorecard_table || ''}')">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 flex-1 min-w-0">
-              <div class="w-8 h-8 rounded bg-primary text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                ${initials}
-              </div>
+              ${isAgent ? `
+                <!-- For agents: Use generic icon instead of auditor avatar -->
+                <div class="w-8 h-8 rounded bg-success/10 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+              ` : `
+                <!-- For auditors: Show employee avatar -->
+                <div class="w-8 h-8 rounded bg-primary text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                  ${initials}
+                </div>
+              `}
               <div class="flex-1 min-w-0">
                 ${isAgent ? `
                   <!-- For employees: 2 rows, info compact -->
@@ -3215,7 +3319,8 @@ async function fetchAndCacheStats(period) {
     try {
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name');
+        .select('table_name')
+        .eq('is_active', true);
       
       if (!scError && scorecards) {
         const auditFilterField = isAgent ? 'employee_email' : 'auditor_email';
@@ -3297,7 +3402,8 @@ async function fetchAndCacheStats(period) {
       // Get all scorecards to query audit tables
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name');
+        .select('table_name')
+        .eq('is_active', true);
       
       if (!scError && scorecards) {
         const auditFilterField = isAgent ? 'employee_email' : 'auditor_email';
@@ -3481,7 +3587,8 @@ async function fetchAndCacheStats(period) {
       try {
         const { data: scorecards, error: scError } = await window.supabaseClient
           .from('scorecards')
-          .select('id, name, table_name, scoring_type');
+          .select('id, name, table_name, scoring_type')
+          .eq('is_active', true);
         
         if (!scError && scorecards) {
           const auditFilterField = 'employee_email';
@@ -3564,7 +3671,8 @@ async function fetchAndCacheStats(period) {
       try {
         const { data: scorecards, error: scError } = await window.supabaseClient
           .from('scorecards')
-          .select('id, name, table_name, scoring_type');
+          .select('id, name, table_name, scoring_type')
+          .eq('is_active', true);
         
         if (!scError && scorecards) {
           const auditFilterField = 'auditor_email';
@@ -3660,7 +3768,8 @@ async function fetchAndCacheStats(period) {
       try {
         const { data: scorecards, error: scError } = await window.supabaseClient
           .from('scorecards')
-          .select('table_name');
+          .select('table_name')
+          .eq('is_active', true);
         
         if (!scError && scorecards) {
           const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
@@ -3723,7 +3832,8 @@ async function fetchAndCacheStats(period) {
     try {
       const { data: scorecards, error: scError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name');
+        .select('table_name')
+        .eq('is_active', true);
       
       if (!scError && scorecards) {
         const reversalFilterField = isAgent ? 'employee_email' : 'auditor_email';
@@ -4171,285 +4281,6 @@ function getReversalStatusChip(audit) {
   </span>`;
 }
 
-// Upcoming Schedules
-let upcomingSchedules = [];
-
-async function loadUpcomingSchedules() {
-  try {
-    if (!currentUserEmail) return;
-
-    // Always fetch fresh data
-    await fetchAndCacheSchedules();
-  } catch (error) {
-    console.error('Error loading upcoming schedules:', error);
-  }
-}
-
-async function fetchAndCacheSchedules() {
-  try {
-    if (!currentUserEmail || !window.supabaseClient) return;
-
-    // Get all events and filter client-side for user participation
-    const { data: allEvents, error } = await window.supabaseClient
-      .from('events')
-      .select('*')
-      .gte('date', new Date().toISOString().split('T')[0]) // Only future dates
-      .order('date', { ascending: true })
-      .order('start_time', { ascending: true })
-      .limit(100);
-
-    if (error) {
-      // If table doesn't exist, schedules will remain empty
-      if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
-        console.warn('Events table does not exist.');
-        upcomingSchedules = [];
-        renderSchedules();
-        updateCalendarBadge();
-        return;
-      }
-      console.error('Error loading schedules:', error);
-      upcomingSchedules = [];
-      renderSchedules();
-      updateCalendarBadge();
-      return;
-    }
-
-    // Filter events where user is a participant
-    const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
-    upcomingSchedules = (allEvents || []).filter(event => {
-      if (!event.participants) return false;
-      
-      let participantEmails = [];
-      if (Array.isArray(event.participants)) {
-        participantEmails = event.participants;
-      } else if (typeof event.participants === 'string') {
-        try {
-          const parsed = JSON.parse(event.participants);
-          participantEmails = Array.isArray(parsed) ? parsed : [event.participants];
-        } catch {
-          participantEmails = event.participants.split(',').map(e => e.trim()).filter(e => e);
-        }
-      }
-      
-      // Check if current user is in participants
-      return participantEmails.some(email => 
-        email && email.toLowerCase().trim() === normalizedCurrentEmail
-      );
-    });
-
-    // Sort by date and time (upcoming first)
-    upcomingSchedules.sort((a, b) => {
-      const dateA = new Date(`${a.date}T${a.start_time || '00:00'}`);
-      const dateB = new Date(`${b.date}T${b.start_time || '00:00'}`);
-      return dateA - dateB;
-    });
-
-    // Limit to next 10 upcoming schedules
-    upcomingSchedules = upcomingSchedules.slice(0, 10);
-
-    // Update UI with fresh data
-    console.log('Updating UI with fresh schedules');
-    renderSchedules();
-    updateCalendarBadge();
-  } catch (error) {
-    console.error('Error fetching schedules:', error);
-    upcomingSchedules = [];
-    renderSchedules();
-    updateCalendarBadge();
-  }
-}
-
-function renderSchedules() {
-  const list = document.getElementById('schedulesList');
-  if (!list) return;
-
-  if (upcomingSchedules.length === 0) {
-    list.innerHTML = `
-      <div class="px-4 py-8 text-center text-gray-500 text-xs">
-        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <p class="font-medium text-gray-700 mb-1">No upcoming schedules</p>
-        <p class="text-gray-500">You're all caught up!</p>
-      </div>
-    `;
-    return;
-  }
-
-  const typeColors = {
-    session: 'bg-blue-100 text-blue-800',
-    meeting: 'bg-purple-100 text-purple-800',
-    feedback: 'bg-green-100 text-green-800',
-    training: 'bg-orange-100 text-orange-800'
-  };
-
-  const typeLabels = {
-    session: 'Session',
-    meeting: 'Meeting',
-    feedback: 'Feedback Session',
-    training: 'Training'
-  };
-
-  list.innerHTML = upcomingSchedules.map(schedule => {
-    const scheduleDate = new Date(`${schedule.date}T${schedule.start_time || '00:00'}`);
-    const now = new Date();
-    const isToday = scheduleDate.toDateString() === now.toDateString();
-    const isTomorrow = scheduleDate.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
-    
-    let dateText = '';
-    if (isToday) {
-      dateText = 'Today';
-    } else if (isTomorrow) {
-      dateText = 'Tomorrow';
-    } else {
-      dateText = formatScheduleDate(schedule.date);
-    }
-
-    const timeText = schedule.start_time && schedule.end_time 
-      ? `${schedule.start_time} - ${schedule.end_time}`
-      : schedule.start_time || 'All day';
-
-    return `
-      <div class="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer" onclick="handleScheduleClick('${schedule.id}')">
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-1">
-              <p class="text-xs font-semibold text-gray-900 truncate">${escapeHtml(schedule.title)}</p>
-              <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold ${typeColors[schedule.type] || 'bg-gray-100 text-gray-800'} flex-shrink-0">
-                ${typeLabels[schedule.type] || schedule.type}
-              </span>
-            </div>
-            <p class="text-xs text-gray-600 mb-1">${escapeHtml(schedule.description || '')}</p>
-            <div class="flex items-center gap-3 text-[10px] text-gray-500 flex-wrap">
-              <span class="flex items-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                ${dateText}
-              </span>
-              <span class="flex items-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                ${timeText}
-              </span>
-            </div>
-            ${schedule.meet_link ? `
-              <a href="${escapeHtml(schedule.meet_link)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-[10px] font-semibold rounded hover:bg-blue-700 transition-colors">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                </svg>
-                Join Meet
-              </a>
-            ` : ''}
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function formatScheduleDate(dateString) {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  if (date.toDateString() === today.toDateString()) {
-    return 'Today';
-  } else if (date.toDateString() === tomorrow.toDateString()) {
-    return 'Tomorrow';
-  } else {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
-}
-
-function updateCalendarBadge() {
-  const badge = document.getElementById('calendarBadge');
-  if (!badge) return;
-
-  // Count schedules in next 7 days
-  const sevenDaysFromNow = new Date();
-  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-  
-  const upcomingCount = upcomingSchedules.filter(schedule => {
-    const scheduleDate = new Date(`${schedule.date}T${schedule.start_time || '00:00'}`);
-    return scheduleDate <= sevenDaysFromNow;
-  }).length;
-
-  if (upcomingCount > 0) {
-    badge.classList.remove('hidden');
-    badge.textContent = upcomingCount > 9 ? '9+' : upcomingCount;
-  } else {
-    badge.classList.add('hidden');
-    badge.textContent = '';
-  }
-}
-
-function showCalendarModal() {
-  const modal = document.getElementById('calendarModal');
-  if (!modal) return;
-  
-  // Load schedules when showing
-  loadUpcomingSchedules();
-  modal.classList.remove('opacity-0', 'invisible');
-  modal.classList.add('opacity-100', 'visible');
-}
-
-function hideCalendarModal() {
-  const modal = document.getElementById('calendarModal');
-  if (!modal) return;
-  
-  modal.classList.remove('opacity-100', 'visible');
-  modal.classList.add('opacity-0', 'invisible');
-}
-
-function handleScheduleClick(scheduleId) {
-  // Navigate to event management page or show event details
-  window.location.href = `event-management.html`;
-}
-
-// Show schedules on hover
-document.addEventListener('DOMContentLoaded', function() {
-  const calendarBtn = document.getElementById('calendarBtn');
-  const calendarModal = document.getElementById('calendarModal');
-  
-  if (calendarBtn && calendarModal) {
-    let hoverTimeout;
-    
-    calendarBtn.addEventListener('mouseenter', function() {
-      clearTimeout(hoverTimeout);
-      showCalendarModal();
-    });
-    
-    calendarBtn.addEventListener('mouseleave', function(e) {
-      // Check if mouse is moving to modal
-      const relatedTarget = e.relatedTarget;
-      if (calendarModal.contains(relatedTarget)) {
-        return; // Don't hide if moving to modal
-      }
-      
-      hoverTimeout = setTimeout(() => {
-        hideCalendarModal();
-      }, 200); // Small delay to allow moving to modal
-    });
-    
-    calendarModal.addEventListener('mouseenter', function() {
-      clearTimeout(hoverTimeout);
-    });
-    
-    calendarModal.addEventListener('mouseleave', function() {
-      hideCalendarModal();
-    });
-  }
-});
-
 // Notifications
 async function loadNotifications() {
   try {
@@ -4472,7 +4303,8 @@ async function fetchAndCacheNotifications() {
     
     const { data: scorecards, error: scError } = await window.supabaseClient
       .from('scorecards')
-      .select('table_name');
+      .select('table_name')
+      .eq('is_active', true);
     
     let assignments = [];
     if (!scError && scorecards) {
@@ -4515,7 +4347,8 @@ async function fetchAndCacheNotifications() {
     // Get reversals (audits with reversal requests)
     const { data: reversalScorecards, error: reversalScError } = await window.supabaseClient
       .from('scorecards')
-      .select('table_name');
+      .select('table_name')
+      .eq('is_active', true);
 
     let reversals = [];
     if (!reversalScError && reversalScorecards) {
@@ -4886,7 +4719,105 @@ document.addEventListener('DOMContentLoaded', function() {
       hideNotifications();
     });
   }
+  
+  // Calendar hover functionality
+  const calendarBtn = document.getElementById('calendarBtn');
+  const calendarModal = document.getElementById('calendarModal');
+  
+  if (calendarBtn && calendarModal) {
+    let calendarHoverTimeout;
+    
+    calendarBtn.addEventListener('mouseenter', function() {
+      clearTimeout(calendarHoverTimeout);
+      showCalendar();
+    });
+    
+    calendarBtn.addEventListener('mouseleave', function(e) {
+      const relatedTarget = e.relatedTarget;
+      if (calendarModal.contains(relatedTarget)) {
+        return;
+      }
+      
+      calendarHoverTimeout = setTimeout(() => {
+        hideCalendar();
+      }, 200);
+    });
+    
+    calendarModal.addEventListener('mouseenter', function() {
+      clearTimeout(calendarHoverTimeout);
+    });
+    
+    calendarModal.addEventListener('mouseleave', function() {
+      hideCalendar();
+    });
+  }
+  
+  // Grid hover functionality
+  const gridBtn = document.getElementById('gridBtn');
+  const gridModal = document.getElementById('gridModal');
+  
+  if (gridBtn && gridModal) {
+    let gridHoverTimeout;
+    
+    gridBtn.addEventListener('mouseenter', function() {
+      clearTimeout(gridHoverTimeout);
+      showGrid();
+    });
+    
+    gridBtn.addEventListener('mouseleave', function(e) {
+      const relatedTarget = e.relatedTarget;
+      if (gridModal.contains(relatedTarget)) {
+        return;
+      }
+      
+      gridHoverTimeout = setTimeout(() => {
+        hideGrid();
+      }, 200);
+    });
+    
+    gridModal.addEventListener('mouseenter', function() {
+      clearTimeout(gridHoverTimeout);
+    });
+    
+    gridModal.addEventListener('mouseleave', function() {
+      hideGrid();
+    });
+  }
 });
+
+// Calendar modal functions
+function showCalendar() {
+  const modal = document.getElementById('calendarModal');
+  if (!modal) return;
+  
+  modal.classList.remove('opacity-0', 'invisible');
+  modal.classList.add('opacity-100', 'visible');
+}
+
+function hideCalendar() {
+  const modal = document.getElementById('calendarModal');
+  if (!modal) return;
+  
+  modal.classList.remove('opacity-100', 'visible');
+  modal.classList.add('opacity-0', 'invisible');
+}
+
+// Grid modal functions
+function showGrid() {
+  const modal = document.getElementById('gridModal');
+  if (!modal) return;
+  
+  modal.classList.remove('opacity-0', 'invisible');
+  modal.classList.add('opacity-100', 'visible');
+}
+
+function hideGrid() {
+  const modal = document.getElementById('gridModal');
+  if (!modal) return;
+  
+  modal.classList.remove('opacity-100', 'visible');
+  modal.classList.add('opacity-0', 'invisible');
+}
 
 function handleNotificationClick(notificationId) {
   const notification = notifications.find(n => n.id === notificationId);

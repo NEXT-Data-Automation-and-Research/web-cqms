@@ -13,7 +13,7 @@ class SidebarLoader {
       employeeReversals: null,
       acknowledgments: null
     }
-    // Cache duration: 5 minutes (same as expert-audits.html)
+    // Cache duration: 5 minutes (same as audit-reports.html)
     this.CACHE_DURATION_MS = 5 * 60 * 1000
     // Update interval: 5 minutes
     this.UPDATE_INTERVAL_MS = 5 * 60 * 1000
@@ -208,7 +208,7 @@ class SidebarLoader {
         </li>
 
         <li role="none">
-            <a href="expert-audits.html" class="menu-item" role="menuitem" tabindex="0" aria-label="Audit Reports">
+            <a href="audit-reports.html" class="menu-item" role="menuitem" tabindex="0" aria-label="Audit Reports">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
@@ -727,7 +727,7 @@ class SidebarLoader {
       "Create New Audit": "create-audit.html",
       "Auditor's Dashboard": "auditor-dashboard.html",
       "Audit Distribution": "audit-distribution.html",
-      "Audit Reports": "expert-audits.html",
+      "Audit Reports": "audit-reports.html",
       Performance: "employee-performance.html",
       "Coaching & Remediation": "coaching-remediation.html",
       Reversal: "reversal.html",
@@ -761,7 +761,7 @@ class SidebarLoader {
       "create-audit.html": "Create New Audit",
       "auditor-dashboard.html": "Auditor's Dashboard",
       "audit-distribution.html": "Audit Distribution",
-      "expert-audits.html": "Audit Reports",
+      "audit-reports.html": "Audit Reports",
       "scorecards.html": "Scorecards",
       "employee-performance.html": "Performance",
       "coaching-remediation.html": "Coaching & Remediation",

@@ -917,7 +917,7 @@ let allScorecardParameters = {}; // Map of scorecard_id -> parameters
 let allScorecards = []; // Store all scorecards for mapping scorecard_id to table_name
 let dateFilter = { start: null, end: null };
 let currentFilters = { channel: '', status: '', agent: '' };
-// User info for filtering (matching expert-audits.html)
+// User info for filtering (matching audit-reports.html)
 let isAgent = false;
 let currentUserEmail = '';
 
@@ -1205,7 +1205,7 @@ async function loadScorecardParameters() {
 
         if (scError || !scorecards) return;
 
-        // Store scorecards for mapping scorecard_id to table_name (matching expert-audits.html)
+        // Store scorecards for mapping scorecard_id to table_name (matching audit-reports.html)
         allScorecards = scorecards || [];
         setCachedData(CACHE_KEYS.SCORECARDS, allScorecards);
         allScorecardParameters = {};
@@ -1255,7 +1255,7 @@ async function loadAuditsData() {
         
         let tablesToQuery = [];
         
-        // Step 1: Get all table names from the database that look like audit tables (matching expert-audits.html)
+        // Step 1: Get all table names from the database that look like audit tables (matching audit-reports.html)
         try {
             const { data: allTables, error: tablesError } = await window.supabaseClient.rpc('get_audit_tables');
             
@@ -1330,7 +1330,7 @@ async function loadAuditsData() {
         // Step 2: Filter out ai_analysis_results table (additional safety check)
         tablesToQuery = tablesToQuery.filter(t => t.table_name !== 'ai_analysis_results');
         
-        // Step 3: Load from all discovered tables (matching expert-audits.html)
+        // Step 3: Load from all discovered tables (matching audit-reports.html)
         for (const tableInfo of tablesToQuery) {
             try {
                 let query = window.supabaseClient
@@ -1338,7 +1338,7 @@ async function loadAuditsData() {
                     .select('*')
                     .order('submitted_at', { ascending: false });
                 
-                // If employee and not showing all audits, filter by employee_email (matching expert-audits.html)
+                // If employee and not showing all audits, filter by employee_email (matching audit-reports.html)
                 // Note: employee-performance.html doesn't have showAllAudits, so we always filter for employees
                 if (isAgent && currentUserEmail) {
                     query = query.eq('employee_email', currentUserEmail);
@@ -1356,7 +1356,7 @@ async function loadAuditsData() {
                 }
                 
                 if (data && data.length > 0) {
-                    // Filter out incomplete audits (pending/in_progress) - matching expert-audits.html
+                    // Filter out incomplete audits (pending/in_progress) - matching audit-reports.html
                     let filteredData = data;
                     filteredData = filteredData.filter(audit => {
                         const auditStatus = audit.audit_status;
@@ -1372,7 +1372,7 @@ async function loadAuditsData() {
                         return true;
                     });
                     
-                    // Add scorecard info to each audit (matching expert-audits.html property names)
+                    // Add scorecard info to each audit (matching audit-reports.html property names)
                     const auditsWithScorecard = filteredData.map(audit => ({
                         ...audit,
                         _scorecard_id: tableInfo.scorecard_id,
@@ -1391,7 +1391,7 @@ async function loadAuditsData() {
             }
         }
         
-        // Sort by submitted_at descending (matching expert-audits.html)
+        // Sort by submitted_at descending (matching audit-reports.html)
         combinedAudits.sort((a, b) => {
             const dateA = toDhakaTime(a.submitted_at);
             const dateB = toDhakaTime(b.submitted_at);
@@ -1437,7 +1437,7 @@ function getCurrentPeriodDates() {
 function getFilteredAuditsBySubmissionDate() {
     const { start: periodStart, end: periodEnd } = getCurrentPeriodDates();
     
-    // Get employee emails to include (matching expert-audits.html)
+    // Get employee emails to include (matching audit-reports.html)
     let employeeEmailsToInclude = new Set();
     if (currentFilters.agent) {
         // Normalize email for comparison
@@ -1455,22 +1455,22 @@ function getFilteredAuditsBySubmissionDate() {
     const filteredAudits = [];
     
     allAudits.forEach(audit => {
-        // Get employee email - handle both raw and processed audit structures (matching expert-audits.html)
+        // Get employee email - handle both raw and processed audit structures (matching audit-reports.html)
         const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
         
         // Filter by employee
         if (!employeeEmailsToInclude.has(agentEmail)) return;
         
-        // Filter by submission date - use submitted_at or submittedAt (matching expert-audits.html)
+        // Filter by submission date - use submitted_at or submittedAt (matching audit-reports.html)
         const submittedDate = audit.submitted_at || audit.submittedAt;
         if (!submittedDate) return;
         
         const submitted = new Date(submittedDate);
-        if (isNaN(submitted.getTime())) return; // Invalid date (matching expert-audits.html)
+        if (isNaN(submitted.getTime())) return; // Invalid date (matching audit-reports.html)
         
         if (submitted < periodStart || submitted > periodEnd) return;
         
-        // Filter by channel if set - handle both raw and processed audit structures (matching expert-audits.html)
+        // Filter by channel if set - handle both raw and processed audit structures (matching audit-reports.html)
         const auditChannel = audit.channel || audit.channelName;
         if (currentFilters.channel && auditChannel !== currentFilters.channel) return;
         
@@ -1479,7 +1479,7 @@ function getFilteredAuditsBySubmissionDate() {
             agentAuditIds[agentEmail] = new Set();
         }
         
-        // Use _scorecard_id with fallback to scorecard_id (matching expert-audits.html)
+        // Use _scorecard_id with fallback to scorecard_id (matching audit-reports.html)
         const auditKey = `${audit.id}_${audit._scorecard_id || audit.scorecard_id || 'unknown'}`;
         if (!agentAuditIds[agentEmail].has(auditKey)) {
             agentAuditIds[agentEmail].add(auditKey);
@@ -1658,7 +1658,7 @@ function updateKPIs() {
         previousPeriodEnd = prevWeekDates.end;
     }
     
-    // Get employee emails to include for previous period (matching expert-audits.html)
+    // Get employee emails to include for previous period (matching audit-reports.html)
     let employeeEmailsForPrev = new Set();
     if (currentFilters.agent) {
         // Normalize email for comparison
@@ -1676,16 +1676,16 @@ function updateKPIs() {
     const previousFilteredAudits = [];
     
     allAudits.forEach(audit => {
-        // Get employee email - handle both raw and processed audit structures (matching expert-audits.html)
+        // Get employee email - handle both raw and processed audit structures (matching audit-reports.html)
         const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
         if (!employeeEmailsForPrev.has(agentEmail)) return;
         
-        // Filter by submission date - use submitted_at or submittedAt (matching expert-audits.html)
+        // Filter by submission date - use submitted_at or submittedAt (matching audit-reports.html)
         const submittedDate = audit.submitted_at || audit.submittedAt;
         if (!submittedDate) return;
         
         const submitted = new Date(submittedDate);
-        if (isNaN(submitted.getTime())) return; // Invalid date (matching expert-audits.html)
+        if (isNaN(submitted.getTime())) return; // Invalid date (matching audit-reports.html)
         
         if (submitted < previousPeriodStart || submitted > previousPeriodEnd) return;
         
@@ -1695,7 +1695,7 @@ function updateKPIs() {
             previousAgentAuditIds[agentEmail] = new Set();
         }
         
-        // Use _scorecard_id with fallback to scorecard_id (matching expert-audits.html)
+        // Use _scorecard_id with fallback to scorecard_id (matching audit-reports.html)
         const auditKey = `${audit.id}_${audit._scorecard_id || audit.scorecard_id || 'unknown'}`;
         if (!previousAgentAuditIds[agentEmail].has(auditKey)) {
             previousAgentAuditIds[agentEmail].add(auditKey);
@@ -1715,13 +1715,13 @@ function updateKPIs() {
         : (completedAudits > 0 ? 100 : 0);
 
     // Error count trend - use filtered audits by submission date
-    // Handle both totalErrorsCount and total_errors_count (matching expert-audits.html)
+    // Handle both totalErrorsCount and total_errors_count (matching audit-reports.html)
     const currentPeriodErrorCount = filteredAudits.reduce((total, audit) => {
         return total + (parseInt(audit.totalErrorsCount || audit.total_errors_count) || 0);
     }, 0);
 
     // Calculate total errors for previous period
-    // Handle both totalErrorsCount and total_errors_count (matching expert-audits.html)
+    // Handle both totalErrorsCount and total_errors_count (matching audit-reports.html)
     const previousPeriodErrorCount = previousFilteredAudits.reduce((total, audit) => {
         return total + (parseInt(audit.totalErrorsCount || audit.total_errors_count) || 0);
     }, 0);
@@ -1732,7 +1732,7 @@ function updateKPIs() {
         : (currentPeriodErrorCount > 0 ? 100 : 0);
     // Note: Negative change (fewer errors) is positive, positive change (more errors) is negative
 
-    // Average quality score - use filtered audits by submission date (matching expert-audits.html)
+    // Average quality score - use filtered audits by submission date (matching audit-reports.html)
     // Handle both average_score (snake_case) and averageScore (camelCase) property names
     const auditsWithScores = filteredAudits.filter(a => {
         const score = a.averageScore || a.average_score;
@@ -1742,7 +1742,7 @@ function updateKPIs() {
         ? Math.round(auditsWithScores.reduce((sum, a) => sum + (parseFloat(a.averageScore || a.average_score) || 0), 0) / auditsWithScores.length)
         : 0;
 
-    // Previous period average score (matching expert-audits.html)
+    // Previous period average score (matching audit-reports.html)
     const previousPeriodAuditScores = previousFilteredAudits.filter(a => {
         const score = a.averageScore || a.average_score;
         return score != null && score !== '';
@@ -1914,7 +1914,7 @@ function findAuditForAssignment(assignment) {
     if (assignment.audit_id && assignment.scorecard_id) {
         const scorecard = allScorecards.find(s => s.id === assignment.scorecard_id);
         if (scorecard) {
-            // Find audit in the correct scorecard table by audit_id (matching expert-audits.html)
+            // Find audit in the correct scorecard table by audit_id (matching audit-reports.html)
             audit = allAudits.find(a => 
                 a.id === assignment.audit_id &&
                 (a._scorecard_id || a.scorecard_id) === assignment.scorecard_id
@@ -1925,7 +1925,7 @@ function findAuditForAssignment(assignment) {
     // Fall back to email matching if audit_id is not available (for backward compatibility)
     // But be more selective: only match if scorecard_id matches and dates are reasonable
     if (!audit) {
-        // First, try to find audits that match email AND scorecard_id (matching expert-audits.html)
+        // First, try to find audits that match email AND scorecard_id (matching audit-reports.html)
         let candidateAudits = allAudits.filter(a => 
             a.employee_email === assignment.employee_email &&
             a.auditor_email === assignment.auditor_email &&
@@ -1975,7 +1975,7 @@ function updateAgentPerformance() {
     
     // Process all filtered audits
     filteredAudits.forEach(audit => {
-        // Get employee email - handle both raw and processed audit structures (matching expert-audits.html)
+        // Get employee email - handle both raw and processed audit structures (matching audit-reports.html)
         const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
         
         // Initialize agent map if needed
@@ -1990,7 +1990,7 @@ function updateAgentPerformance() {
             agentAuditIds[agentEmail] = new Set(); // Track unique audit IDs
         }
         
-        // Use Set to ensure we never count the same audit twice (matching expert-audits.html)
+        // Use Set to ensure we never count the same audit twice (matching audit-reports.html)
         const auditKey = `${audit.id}_${audit._scorecard_id || audit.scorecard_id || 'unknown'}`;
         if (!agentAuditIds[agentEmail].has(auditKey)) {
             agentAuditIds[agentEmail].add(auditKey);
@@ -1999,7 +1999,7 @@ function updateAgentPerformance() {
             agentMap[agentEmail].total++;
             agentMap[agentEmail].completed++; // All submitted audits are completed
             
-            // Handle both averageScore and average_score (matching expert-audits.html)
+            // Handle both averageScore and average_score (matching audit-reports.html)
             const score = audit.averageScore || audit.average_score;
             if (score != null && score !== '') {
                 agentMap[agentEmail].scores.push(parseFloat(score) || 0);
@@ -2015,7 +2015,7 @@ function updateAgentPerformance() {
             ? Math.round(agent.scores.reduce((a, b) => a + b, 0) / agent.scores.length)
             : 0;
         
-        // Calculate total error count (matching expert-audits.html)
+        // Calculate total error count (matching audit-reports.html)
         const totalErrorCount = agent.audits.reduce((sum, audit) => {
             return sum + (parseInt(audit.totalErrorsCount || audit.total_errors_count) || 0);
         }, 0);
@@ -2102,7 +2102,7 @@ function getTopErrorParameter(audits) {
     const errorCounts = {};
     
     audits.forEach(audit => {
-        // Use _scorecard_id with fallback to scorecard_id (matching expert-audits.html)
+        // Use _scorecard_id with fallback to scorecard_id (matching audit-reports.html)
         const scorecardId = audit._scorecard_id || audit.scorecard_id;
         if (!scorecardId) return;
         
@@ -2263,7 +2263,7 @@ function updateChannelChart() {
         }
         channelMap[channel].total++;
         channelMap[channel].completed++;
-        // Handle both averageScore and average_score (matching expert-audits.html)
+        // Handle both averageScore and average_score (matching audit-reports.html)
         const score = audit.averageScore || audit.average_score;
         if (score != null && score !== '') {
             channelMap[channel].scores.push(parseFloat(score) || 0);
@@ -2355,7 +2355,7 @@ function updateAnalyticsChart() {
     const today = new Date();
 
     // Get employee emails to include
-    // Get employee emails to include (matching expert-audits.html)
+    // Get employee emails to include (matching audit-reports.html)
     let employeeEmailsToInclude = new Set();
     if (currentFilters.agent) {
         // Normalize email for comparison
@@ -2380,7 +2380,7 @@ function updateAnalyticsChart() {
             const dayEnd = new Date(date);
             dayEnd.setHours(23, 59, 59, 999);
             
-            // Count audits submitted on this day (matching expert-audits.html)
+            // Count audits submitted on this day (matching audit-reports.html)
             const dayAudits = allAudits.filter(audit => {
                 const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
                 if (!employeeEmailsToInclude.has(agentEmail)) return false;
@@ -2404,7 +2404,7 @@ function updateAnalyticsChart() {
             
             labels.push(`Week ${4 - i}`);
             
-            // Count audits submitted in this week (matching expert-audits.html)
+            // Count audits submitted in this week (matching audit-reports.html)
             const weekAudits = allAudits.filter(audit => {
                 const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
                 if (!employeeEmailsToInclude.has(agentEmail)) return false;
@@ -2427,7 +2427,7 @@ function updateAnalyticsChart() {
             
             labels.push(formatDhakaDate(monthStart, { month: 'short' }));
             
-            // Count audits submitted in this month (matching expert-audits.html)
+            // Count audits submitted in this month (matching audit-reports.html)
             const monthAudits = allAudits.filter(audit => {
                 const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
                 if (!employeeEmailsToInclude.has(agentEmail)) return false;
@@ -2495,7 +2495,7 @@ function updateRecentAudits() {
             id: audit.id,
             channel: audit.channel || 'Unknown',
             date: new Date(audit.submitted_at),
-            // Handle both averageScore and average_score (matching expert-audits.html)
+            // Handle both averageScore and average_score (matching audit-reports.html)
             score: (audit.averageScore || audit.average_score) ? parseFloat(audit.averageScore || audit.average_score) || 0 : 0
         }))
         .sort((a, b) => b.date - a.date)
@@ -2550,7 +2550,7 @@ function exportToCSV() {
                 agentAuditIds[agentEmail] = new Set();
             }
             
-            // Use Set to ensure we never count the same audit twice (matching expert-audits.html)
+            // Use Set to ensure we never count the same audit twice (matching audit-reports.html)
             const auditKey = `${audit.id}_${audit._scorecard_id || audit.scorecard_id || 'unknown'}`;
             if (!agentAuditIds[agentEmail].has(auditKey)) {
                 agentAuditIds[agentEmail].add(auditKey);
@@ -2559,7 +2559,7 @@ function exportToCSV() {
                 agentMap[agentEmail].total++;
                 agentMap[agentEmail].completed++; // All submitted audits are completed
                 
-                // Handle both averageScore and average_score (matching expert-audits.html)
+                // Handle both averageScore and average_score (matching audit-reports.html)
                 const score = audit.averageScore || audit.average_score;
                 if (score != null && score !== '') {
                     agentMap[agentEmail].scores.push(parseFloat(score) || 0);
@@ -2577,7 +2577,7 @@ function exportToCSV() {
             
             // Calculate total error count
             const totalErrorCount = agent.audits.reduce((sum, audit) => {
-                // Handle both totalErrorsCount and total_errors_count (matching expert-audits.html)
+                // Handle both totalErrorsCount and total_errors_count (matching audit-reports.html)
                 return sum + (parseInt(audit.totalErrorsCount || audit.total_errors_count) || 0);
             }, 0);
             
@@ -2881,7 +2881,7 @@ function updateErrorCategories() {
     const errorNameCounts = {}; // Track individual error names
     
     relevantAudits.forEach(audit => {
-        // Use _scorecard_id with fallback to scorecard_id (matching expert-audits.html)
+        // Use _scorecard_id with fallback to scorecard_id (matching audit-reports.html)
         const scorecardId = audit._scorecard_id || audit.scorecard_id;
         if (!scorecardId) return;
         
