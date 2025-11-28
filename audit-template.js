@@ -188,10 +188,6 @@ window.generateAuditHeader = function(options = {}) {
                 <p style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(audit.totalErrorsCount || '0')}</p>
             </div>
             <div style="background: rgba(255,255,255,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
-                <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Type</p>
-                <p style="font-size: 0.4852rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(audit.auditType || 'N/A')}">${escapeHtml(audit.auditType || 'N/A')}</p>
-            </div>
-            <div style="background: rgba(255,255,255,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
                 <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Date</p>
                 <p style="font-size: 0.4852rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${formatDate(audit.auditTimestamp, true)}</p>
             </div>
@@ -206,19 +202,35 @@ window.generateAuditHeader = function(options = {}) {
         </div>
     `;
 
+    // Calculate darker color for score text based on header gradient
+    // For green gradient (passing), use darker green; for red (not passing), use darker red
+    // Reuse passingStatus already declared above
+    const passingStatusLowerForScore = passingStatus.toLowerCase();
+    const isPassingForScore = passingStatusLowerForScore.includes('pass') && !passingStatusLowerForScore.includes('not');
+    const scoreTextColor = isPassingForScore 
+        ? 'rgba(10, 50, 30, 0.4)' // Darker green for passing
+        : 'rgba(100, 10, 10, 0.4)'; // Darker red for not passing
+    
+    const averageScore = audit.averageScore || '0';
+    
     return `
-        <div id="auditFormHeader" style="background: ${headerGradient}; padding: 0.6469rem 0.9704rem; color: white; box-shadow: 0 0.1213rem 0.1819rem rgba(0,0,0,0.1); margin-bottom: 0.5rem; flex-shrink: 0; transition: background 0.3s ease;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.4852rem;">
-                <div style="flex: 1;">
-                    <h2 style="font-size: 0.7278rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif;">${escapeHtml(title)}</h2>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.3234rem;">
-                    ${headerActions}
-                </div>
+        <div id="auditFormHeader" style="position: relative; background: ${headerGradient}; padding: 0.6469rem 0.9704rem; color: white; box-shadow: 0 0.1213rem 0.1819rem rgba(0,0,0,0.1); margin-bottom: 0.5rem; flex-shrink: 0; transition: background 0.3s ease; overflow: hidden;">
+            <div style="position: absolute; top: 0; right: 0; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.9704rem; pointer-events: none; z-index: 0;">
+                <span style="font-size: 10rem; font-weight: 900; font-family: 'Poppins', sans-serif; color: ${scoreTextColor}; line-height: 1; opacity: 0.6; user-select: none; display: flex; align-items: center; height: 100%;">${escapeHtml(averageScore)}<span style="font-weight: 400;">%</span></span>
             </div>
-            <div>
-                ${employeeInfoHtml}
-                ${metadataCardsHtml}
+            <div style="position: relative; z-index: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.4852rem;">
+                    <div style="flex: 1;">
+                        <h2 style="font-size: 0.7278rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif;">${escapeHtml(title)}</h2>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.3234rem;">
+                        ${headerActions}
+                    </div>
+                </div>
+                <div>
+                    ${employeeInfoHtml}
+                    ${metadataCardsHtml}
+                </div>
             </div>
         </div>
     `;
@@ -407,6 +419,7 @@ window.generateAuditFormHTML = function(options = {}) {
         interactionIdHtml = '',
         errorDetailsHtml = '',
         recommendationsHtml = '',
+        ratingHtml = '',
         actionButtonsHtml = ''
     } = options;
 
@@ -444,6 +457,7 @@ window.generateAuditFormHTML = function(options = {}) {
                 <div id="rightColumn" style="flex: 1; min-width: 9.0967rem; padding-left: 0.3234rem; display: flex; flex-direction: column; min-height: 0; overflow-y: auto;">
                     ${errorDetailsHtml}
                     ${recommendationsHtml}
+                    ${ratingHtml}
                 </div>
             </div>
             
@@ -464,4 +478,3 @@ if (typeof module !== 'undefined' && module.exports) {
         generateAuditFormHTML: window.generateAuditFormHTML
     };
 }
-

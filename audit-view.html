@@ -745,6 +745,75 @@
 #footerBar[style*="rgb(6, 95, 70)"] .footer-star {
     color: rgba(255, 255, 255, 0.3);
 }
+
+#footerBar[style*="065f46"] .footer-star:hover,
+#footerBar[style*="rgb(6, 95, 70)"] .footer-star:hover,
+#footerBar[style*="065f46"] .footer-star.active,
+#footerBar[style*="rgb(6, 95, 70)"] .footer-star.active {
+    color: #fbbf24;
+}
+
+.feedback-option input[type="checkbox"] {
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .feedback-option {
+    background: var(--background-white) !important;
+    border-color: var(--border-light) !important;
+}
+
+[data-theme="dark"] .feedback-option span {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .feedback-option:hover {
+    background: var(--gray-100) !important;
+}
+
+.feedback-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.feedback-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Poppins', sans-serif;
+}
+
+.feedback-btn.skip {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.feedback-btn.skip:hover {
+    background: #e5e7eb;
+}
+
+[data-theme="dark"] .feedback-btn.skip {
+    background: #374151;
+    color: #f3f4f6;
+}
+
+[data-theme="dark"] .feedback-btn.skip:hover {
+    background: #4b5563;
+}
+
+.feedback-btn.submit {
+    background: #1A733E;
+    color: white;
+}
+
+.feedback-btn.submit:hover {
+    background: #15592f;
+}
 </style>
 
 <script>
@@ -838,7 +907,7 @@ function shouldShowEditButton() {
     return hasPendingReversalRequest() && isCurrentUserQualityAnalyst();
 }
 
-// Check if reversal button should be shown (hide after 48 hours from audit submission)
+// Check if reversal button should be shown (hide after 150 hours from audit submission)
 function checkIfReversalButtonShouldShow(auditSubmissionTime) {
     if (!auditSubmissionTime) {
         return true; // If no timestamp, show button (fallback)
@@ -849,11 +918,11 @@ function checkIfReversalButtonShouldShow(auditSubmissionTime) {
     const diffMs = now - submissionDate;
     const diffHours = diffMs / (1000 * 60 * 60);
     
-    // Hide after 48 hours
-    return diffHours < 48;
+    // Hide after 150 hours
+    return diffHours < 150;
 }
 
-// Get time remaining until 48 hours expires (in seconds)
+// Get time remaining until 150 hours expires (in seconds)
 function getTimeRemainingUntil48Hours(auditSubmissionTime) {
     if (!auditSubmissionTime) {
         return null;
@@ -861,7 +930,7 @@ function getTimeRemainingUntil48Hours(auditSubmissionTime) {
     
     const submissionDate = new Date(auditSubmissionTime);
     const now = new Date();
-    const expirationTime = new Date(submissionDate.getTime() + (48 * 60 * 60 * 1000)); // 48 hours
+    const expirationTime = new Date(submissionDate.getTime() + (150 * 60 * 60 * 1000)); // 150 hours
     const remainingMs = expirationTime - now;
     
     if (remainingMs <= 0) {
@@ -1086,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 event.preventDefault(); // Prevent default escape behavior
                 const canNavigate = await handleCloseAuditView();
                 if (canNavigate) {
-                    window.location.href = 'expert-audits.html';
+                    window.location.href = 'audit-reports.html';
                 }
             }
         });
@@ -1692,22 +1761,22 @@ function generateErrorDetails(audit, errorFields) {
             </div>
             
             <div style="background: var(--background-white); border-radius: 0.4852rem; box-shadow: 0 0.0405rem 0.1213rem 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
-                <div style="background-color: var(--background-white); padding: 0.4852rem 0.6469rem; border-bottom: 0.0405rem solid var(--border-light);">
-                    <div style="display: grid; grid-template-columns: ${showCommentsColumn ? '2fr 1fr 1fr 1fr 2fr 2.5fr' : '2fr 1fr 1fr 1fr 2fr'}; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
-                        <div style="min-width: 0;">Error Type</div>
-                        <div style="text-align: center; min-width: 0;">Points</div>
-                        <div style="text-align: center; min-width: 0;">Severity</div>
-                        <div style="text-align: center; min-width: 0;">${statusColumnHeader}</div>
-                        <div style="min-width: 0;">Feedback</div>
-                        ${showCommentsColumn ? 
-                            `<div style="min-width: 0;">${escapeHtml(commentColumnHeader)}</div>` : 
-                            ''
-                        }
+                    <div style="background-color: var(--background-white); padding: 0.4852rem 0.6469rem; border-bottom: 0.0405rem solid var(--border-light);">
+                        <div style="display: grid; grid-template-columns: ${showCommentsColumn ? '2fr 1fr 1fr 1fr 2fr 2.5fr' : '2fr 1fr 1fr 1fr 2fr'}; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
+                            <div style="min-width: 0;">Error Type</div>
+                            <div style="text-align: center; min-width: 0;">Points</div>
+                            <div style="text-align: center; min-width: 0;">Severity</div>
+                            <div style="text-align: center; min-width: 0;">${statusColumnHeader}</div>
+                            <div style="min-width: 0;">Feedback</div>
+                            ${showCommentsColumn ? 
+                                `<div style="min-width: 0;">${escapeHtml(commentColumnHeader)}</div>` : 
+                                ''
+                            }
+                        </div>
                     </div>
-                </div>
-                <div style="padding: 0 0.6469rem 0.6469rem 0.6469rem; box-shadow: 0 -0.0606rem 0.1213rem rgba(0, 0, 0, 0.05);">
-                    ${errorRows}
-                </div>
+                    <div style="padding: 0 0.6469rem 0.6469rem 0.6469rem; box-shadow: 0 -0.0606rem 0.1213rem rgba(0, 0, 0, 0.05);">
+                        ${errorRows}
+                    </div>
                 </div>
             </div>
             
@@ -1820,13 +1889,16 @@ function renderAudit(audit, auditScorecard, errorFields) {
         ? `<div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;"><h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0 0 0.4852rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;"><svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>Recommendations / Next Steps</h3><div style="background: white; padding: 0.5659rem; border-radius: 0.2425rem; border: 0.0304rem solid #e5e7eb; white-space: pre-wrap; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: 'Poppins', sans-serif;">${audit.recommendations}</div></div>`
         : '';
 
+    // Set ratingHtml to empty string so it doesn't appear in the right column
+    const ratingHtml = '';
+
     // Check if current user is the audited employee (for showing acknowledge button)
     const showAcknowledgeButton = isCurrentUserAuditedEmployee();
     
     // Check if edit button should be shown (only for Quality Analysts when reversal is pending)
     const showEditButton = shouldShowEditButton();
     
-    // Check if reversal button should be shown (hide after 48 hours from audit submission)
+    // Check if reversal button should be shown (hide after 150 hours from audit submission)
     const auditSubmissionTime = audit.submittedAt || audit.auditTimestamp || audit.submitted_at || audit.audit_timestamp;
     const showReversalButton = checkIfReversalButtonShouldShow(auditSubmissionTime);
     
@@ -1854,7 +1926,7 @@ function renderAudit(audit, auditScorecard, errorFields) {
         // Check if reversal is pending (disables acknowledge button and reversal button)
         const isReversalPending = reversalStatus === 'Pending';
         
-        // Generate reversal button HTML (always show if within 48 hours, regardless of acknowledgement status)
+        // Generate reversal button HTML (always show if within 150 hours, regardless of acknowledgement status)
         // But disable if reversal is already pending
         let reversalButtonHtml = '';
         if (showReversalButton) {
@@ -1888,7 +1960,7 @@ function renderAudit(audit, auditScorecard, errorFields) {
                 </div>
             `;
         } else {
-            // If acknowledged, only show reversal button (if within 48 hours)
+            // If acknowledged, only show reversal button (if within 150 hours)
             if (reversalButtonHtml) {
                 employeeButtonsHtml = reversalButtonHtml;
             }
@@ -1922,7 +1994,38 @@ function renderAudit(audit, auditScorecard, errorFields) {
         footerTextColor = 'white';
     }
     
-    // Generate timer HTML for footer (if reversal button is visible and within 48 hours)
+    // Generate interactive feedback rating HTML for footer
+    // Always show stars (outlined if no rating, filled if rating exists)
+    // Only show if errors were detected (agents rate how helpful the feedback was)
+    let footerRatingHtml = '';
+    const totalErrorsCount = audit.totalErrorsCount || audit.total_errors_count || 0;
+    const existingRating = audit.audit_rating || 0;
+    const hasRating = existingRating > 0;
+    
+    if (ENABLE_RATING_SYSTEM && totalErrorsCount > 0) {
+        // Use white text for green footer, dark text for gray footer
+        const ratingTextColor = footerTextColor;
+        const ratingIconColor = acknowledgementStatusLower === 'acknowledged' ? 'white' : '#1A733E';
+        const starColor = hasRating 
+            ? (existingRating >= 4 ? '#fbbf24' : existingRating >= 3 ? '#f59e0b' : '#ef4444')
+            : (acknowledgementStatusLower === 'acknowledged' ? 'rgba(255,255,255,0.5)' : '#9ca3af');
+        
+        footerRatingHtml = `
+            <div id="footerRatingContainer" style="display: flex; align-items: center; gap: 0.5rem; margin-right: 0.75rem;">
+                <span style="font-size: 0.6875rem; font-weight: 500; color: ${ratingTextColor}; font-family: 'Poppins', sans-serif; white-space: nowrap;">How helpful was the feedback?</span>
+                <div id="footerRatingStars" class="footer-star-rating" style="display: flex; align-items: center; gap: 0.25rem;" data-rating="${existingRating}">
+                    ${Array.from({ length: 5 }, (_, i) => {
+                        const starId = `footerStar${i + 1}`;
+                        const isActive = i < existingRating;
+                        return `<span id="${starId}" class="footer-star" data-rating="${i + 1}" style="color: ${isActive ? (existingRating >= 4 ? '#fbbf24' : existingRating >= 3 ? '#f59e0b' : '#ef4444') : '#d1d5db'}; transition: all 0.2s ease; user-select: none; cursor: pointer;">★</span>`;
+                    }).join('')}
+                </div>
+                ${hasRating ? `<span style="font-size: 0.6875rem; font-weight: 600; color: ${ratingTextColor}; font-family: 'Poppins', sans-serif;">${existingRating}/5</span>` : ''}
+            </div>
+        `;
+    }
+    
+    // Generate timer HTML for footer (if reversal button is visible and within 150 hours)
     // Don't show timer if reversal is already pending
     let timerHtml = '';
     if (showAcknowledgeButton && showReversalButton && auditSubmissionTime && reversalStatus !== 'Pending') {
@@ -1983,37 +2086,6 @@ function renderAudit(audit, auditScorecard, errorFields) {
         `;
     }
     
-    // Generate interactive feedback rating HTML for footer
-    // Always show stars (outlined if no rating, filled if rating exists)
-    // Only show if errors were detected (agents rate how helpful the feedback was)
-    let footerRatingHtml = '';
-    const totalErrorsCount = audit.totalErrorsCount || audit.total_errors_count || 0;
-    const existingRating = audit.audit_rating || 0;
-    const hasRating = existingRating > 0;
-    
-    if (ENABLE_RATING_SYSTEM && totalErrorsCount > 0) {
-        // Use white text for green footer, dark text for gray footer
-        const ratingTextColor = footerTextColor;
-        const ratingIconColor = acknowledgementStatusLower === 'acknowledged' ? 'white' : '#1A733E';
-        const starColor = hasRating 
-            ? (existingRating >= 4 ? '#fbbf24' : existingRating >= 3 ? '#f59e0b' : '#ef4444')
-            : (acknowledgementStatusLower === 'acknowledged' ? 'rgba(255,255,255,0.5)' : '#9ca3af');
-        
-        footerRatingHtml = `
-            <div id="footerRatingContainer" style="display: flex; align-items: center; gap: 0.5rem; margin-right: 0.75rem;">
-                <span style="font-size: 0.6875rem; font-weight: 500; color: ${ratingTextColor}; font-family: 'Poppins', sans-serif; white-space: nowrap;">How helpful was the feedback?</span>
-                <div id="footerRatingStars" class="footer-star-rating" style="display: flex; align-items: center; gap: 0.25rem;" data-rating="${existingRating}">
-                    ${Array.from({ length: 5 }, (_, i) => {
-                        const starId = `footerStar${i + 1}`;
-                        const isActive = i < existingRating;
-                        return `<span id="${starId}" class="footer-star" data-rating="${i + 1}" style="color: ${isActive ? (existingRating >= 4 ? '#fbbf24' : existingRating >= 3 ? '#f59e0b' : '#ef4444') : '#d1d5db'}; transition: all 0.2s ease; user-select: none; cursor: pointer;">★</span>`;
-                    }).join('')}
-                </div>
-                ${hasRating ? `<span style="font-size: 0.6875rem; font-weight: 600; color: ${ratingTextColor}; font-family: 'Poppins', sans-serif;">${existingRating}/5</span>` : ''}
-            </div>
-        `;
-    }
-    
     const actionButtonsHtml = `
         <div id="footerBar" class="no-print" style="display: flex; justify-content: space-between; align-items: center; gap: 0.4852rem; padding: 0.6469rem 0.9704rem; border-top: 0.0405rem solid ${acknowledgementStatus === 'Acknowledged' ? 'rgba(255,255,255,0.2)' : '#e5e7eb'}; background-color: ${footerBackgroundColor}; color: ${footerTextColor};">
             <div style="display: flex; align-items: center; gap: 0.4852rem; flex: 1;">
@@ -2034,9 +2106,6 @@ function renderAudit(audit, auditScorecard, errorFields) {
     const headerActionsHtml = `
         <button onclick="handleCloseButtonClick()" style="background: rgba(255,255,255,0.2); border: 0.0606rem solid white; border-radius: 0.2425rem; width: 1.2937rem; height: 1.2937rem; font-size: 0.8086rem; cursor: pointer; color: white; font-weight: bold; transition: all 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'" title="Close (Esc)">×</button>
     `;
-
-    // Set ratingHtml to empty string so it doesn't appear in the right column
-    const ratingHtml = '';
 
     // Use shared template to generate HTML
     const html = window.generateAuditFormHTML({
@@ -2085,11 +2154,6 @@ function renderAudit(audit, auditScorecard, errorFields) {
             reversalFormContainer.style.display = 'none';
         }
     }
-    
-    // Setup footer rating star hover effects (only if rating system is enabled)
-    if (ENABLE_RATING_SYSTEM) {
-        setupFooterRatingHover();
-    }
 
     // Handle reversal status UI updates
     handleReversalStatusUI(audit);
@@ -2102,6 +2166,11 @@ function renderAudit(audit, auditScorecard, errorFields) {
     // Start timer countdown if reversal button is visible and reversal is not pending
     if (showAcknowledgeButton && showReversalButton && auditSubmissionTime && reversalStatus !== 'Pending') {
         startReversalTimer(auditSubmissionTime);
+    }
+    
+    // Setup footer rating star hover effects (only if rating system is enabled)
+    if (ENABLE_RATING_SYSTEM) {
+        setupFooterRatingHover();
     }
 
     // Make splitter draggable
@@ -3362,79 +3431,33 @@ function displayConversationMessages(conversation) {
         if (nonImageAttachments.length > 0) {
             attachmentsHTML = '<div style="margin-top: 0.3234rem; display: flex; flex-direction: column; gap: 0.1617rem;">';
             nonImageAttachments.forEach(att => {
-                // Check if attachment is a video file
-                const isVideo = att.content_type?.startsWith('video/') || 
-                               /\.(mp4|webm|ogg|mov|avi|mkv)$/i.test(att.name || '');
-                
-                if (isVideo) {
-                    // Render video player for video files
-                    attachmentsHTML += `
-                        <div style="margin-top: 0.3234rem; margin-bottom: 0.3234rem;">
-                            <div style="
-                                display: flex;
-                                align-items: center;
-                                gap: 0.2426rem;
-                                padding: 0.2426rem 0.3234rem;
-                                background: ${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'};
-                                border-radius: 0.2426rem;
-                                margin-bottom: 0.3234rem;
-                                color: ${isUser ? '#374151' : 'white'};
-                                font-size: 0.4447rem;
-                            ">
-                                <svg style="width: 0.4852rem; height: 0.4852rem; flex-shrink: 0;" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                                </svg>
-                                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;">${escapeHtml(att.name || 'Video')}</span>
-                                ${att.filesize ? `<span style="color: ${isUser ? '#9ca3af' : 'rgba(255,255,255,0.7)'}; font-size: 0.3639rem;">${(att.filesize / 1024).toFixed(1)} KB</span>` : ''}
-                            </div>
-                            <video 
-                                controls 
-                                style="
-                                    max-width: 100%;
-                                    width: 100%;
-                                    max-height: 25rem;
-                                    border-radius: 0.3234rem;
-                                    background: #000;
-                                    box-shadow: 0 0.1213rem 0.2426rem rgba(0,0,0,0.1);
-                                "
-                                preload="metadata"
-                            >
-                                <source src="${escapeHtml(att.url)}" type="${att.content_type || 'video/mp4'}">
-                                Your browser does not support the video tag.
-                                <a href="${escapeHtml(att.url)}" download style="color: white;">Download Video</a>
-                            </video>
-                        </div>
-                    `;
-                } else {
-                    // Render download link for non-video attachments
-                    attachmentsHTML += `
-                        <a 
-                            href="${escapeHtml(att.url)}" 
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style="
-                                display: flex;
-                                align-items: center;
-                                gap: 0.2426rem;
-                                padding: 0.2426rem 0.3234rem;
-                                background: ${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'};
-                                border-radius: 0.2426rem;
-                                text-decoration: none;
-                                color: ${isUser ? '#374151' : 'white'};
-                                font-size: 0.4447rem;
-                                transition: background 0.2s ease;
-                            "
-                            onmouseover="this.style.background='${isUser ? '#e5e7eb' : 'rgba(255,255,255,0.15)'}'"
-                            onmouseout="this.style.background='${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'}'"
-                        >
-                            <svg style="width: 0.4852rem; height: 0.4852rem; flex-shrink: 0;" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name || 'Attachment')}</span>
-                            ${att.filesize ? `<span style="color: ${isUser ? '#9ca3af' : 'rgba(255,255,255,0.7)'}; font-size: 0.3639rem;">${(att.filesize / 1024).toFixed(1)} KB</span>` : ''}
-                        </a>
-                    `;
-                }
+                attachmentsHTML += `
+                    <a 
+                        href="${escapeHtml(att.url)}" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 0.2426rem;
+                            padding: 0.2426rem 0.3234rem;
+                            background: ${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'};
+                            border-radius: 0.2426rem;
+                            text-decoration: none;
+                            color: ${isUser ? '#374151' : 'white'};
+                            font-size: 0.4447rem;
+                            transition: background 0.2s ease;
+                        "
+                        onmouseover="this.style.background='${isUser ? '#e5e7eb' : 'rgba(255,255,255,0.15)'}'"
+                        onmouseout="this.style.background='${isUser ? '#f3f4f6' : 'rgba(255,255,255,0.1)'}'"
+                    >
+                        <svg style="width: 0.4852rem; height: 0.4852rem; flex-shrink: 0;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name || 'Attachment')}</span>
+                        ${att.filesize ? `<span style="color: ${isUser ? '#9ca3af' : 'rgba(255,255,255,0.7)'}; font-size: 0.3639rem;">${(att.filesize / 1024).toFixed(1)} KB</span>` : ''}
+                    </a>
+                `;
             });
             attachmentsHTML += '</div>';
         }
@@ -4821,7 +4844,7 @@ function clearAllParameters() {
 async function handleCloseButtonClick() {
     const canNavigate = await handleCloseAuditView();
     if (canNavigate) {
-        window.location.href = 'expert-audits.html';
+        window.location.href = 'audit-reports.html';
     }
 }
 
@@ -5303,125 +5326,6 @@ window.saveParameterCommentFromModal = saveParameterCommentFromModal;
 window.toggleCommentsColumn = toggleCommentsColumn;
 window.saveParameterComment = saveParameterComment;
 
-// Acknowledge audit
-async function acknowledgeAudit() {
-    // Verify that current user is the audited employee
-    if (!isCurrentUserAuditedEmployee()) {
-        alert('Error: You can only acknowledge audits assigned to you.');
-        return;
-    }
-    
-    // Wait for confirmation dialog to be available
-    if (!window.confirmationDialog) {
-        // Wait a bit for it to initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
-        if (!window.confirmationDialog) {
-            alert('Error: Confirmation dialog not available. Please refresh the page.');
-            return;
-        }
-    }
-    
-    // Step 1: Initial acknowledgment confirmation
-    const confirmResult = await window.confirmationDialog.show({
-        title: 'Acknowledge Audit',
-        message: 'By acknowledging this audit, you confirm that you have reviewed the results and do not wish to submit a reversal request. Continue?',
-        confirmText: 'Acknowledge',
-        cancelText: 'Cancel'
-    });
-    
-    if (!confirmResult) return;
-    
-    // Step 2: Calculate total errors to determine if rating system should be shown
-    let totalErrorsCount = 0;
-    if (currentAudit && currentErrorFields && currentErrorFields.length > 0) {
-        currentErrorFields.forEach(field => {
-            const count = currentAudit[field.key] ? parseInt(currentAudit[field.key]) : 0;
-            // Only count error parameters (not achievements/bonuses) in total
-            if (field.parameter_type === 'error' || !field.parameter_type) {
-                totalErrorsCount += count;
-            }
-        });
-    }
-    
-    // Step 3: Show rating dialog (Uber-style) with integrated feedback
-    // Only show rating dialog if errors were detected and rating system is enabled
-    let rating = null;
-    let feedback = null;
-    
-    if (ENABLE_RATING_SYSTEM && totalErrorsCount > 0) {
-        const ratingResult = await showRatingDialog();
-        
-        if (ratingResult.rating === null) return; // User cancelled rating
-        
-        rating = ratingResult.rating;
-        feedback = ratingResult.feedback;
-    }
-    
-    // Step 4: Save acknowledgment and rating to database
-    if (!currentAudit || !currentTableName) {
-        alert('Error: Audit data not available');
-        return;
-    }
-    
-    try {
-        // Record acknowledgment and rating in the database
-        const acknowledgementTime = new Date().toISOString();
-        const updateData = {
-            acknowledgement_status: 'Acknowledged',
-            acknowledgement_status_updated_at: acknowledgementTime
-        };
-        
-        // Only include rating fields if rating was collected (errors were detected)
-        if (rating !== null) {
-            updateData.audit_rating = rating;
-            updateData.audit_rating_feedback = feedback || null;
-            updateData.audit_rated_at = acknowledgementTime;
-        }
-        
-        const { data, error } = await window.supabaseClient
-            .from(currentTableName)
-            .update(updateData)
-            .eq('id', currentAudit.id)
-            .select();
-        
-        if (error) throw error;
-        
-        // Show success message
-        if (window.confirmationDialog) {
-            const successMessage = rating !== null 
-                ? `✓ Audit acknowledged and feedback rated ${rating} star${rating !== 1 ? 's' : ''}. Thank you for your input!`
-                : '✓ Audit acknowledged. Thank you for your confirmation.';
-            await window.confirmationDialog.show({
-                title: 'Success',
-                message: successMessage,
-                confirmText: 'OK',
-                type: 'success'
-            });
-        } else {
-            const successMessage = rating !== null 
-                ? `✓ Audit acknowledged and feedback rated ${rating} star${rating !== 1 ? 's' : ''}. Thank you for your input!`
-                : '✓ Audit acknowledged. Thank you for your confirmation.';
-            alert(successMessage);
-        }
-        
-        // Reload audit data to reflect changes
-        loadAuditFromURL();
-        
-    } catch (error) {
-        console.error('Error acknowledging audit:', error);
-        if (window.confirmationDialog) {
-            await window.confirmationDialog.show({
-                title: 'Error',
-                message: 'Failed to record acknowledgment and rating. Please try again.',
-                confirmText: 'OK',
-                type: 'error'
-            });
-        } else {
-            alert('Failed to record acknowledgment and rating. Please try again.');
-        }
-    }
-}
-
 // Show Uber-style rating dialog with integrated feedback
 async function showRatingDialog(initialRating = 0) {
     return new Promise((resolve) => {
@@ -5825,6 +5729,125 @@ async function showRatingDialog(initialRating = 0) {
             document.addEventListener('keydown', escHandler);
         }, 50); // Small delay to ensure DOM is ready
     });
+}
+
+// Acknowledge audit
+async function acknowledgeAudit() {
+    // Verify that current user is the audited employee
+    if (!isCurrentUserAuditedEmployee()) {
+        alert('Error: You can only acknowledge audits assigned to you.');
+        return;
+    }
+    
+    // Wait for confirmation dialog to be available
+    if (!window.confirmationDialog) {
+        // Wait a bit for it to initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+        if (!window.confirmationDialog) {
+            alert('Error: Confirmation dialog not available. Please refresh the page.');
+            return;
+        }
+    }
+    
+    // Step 1: Initial acknowledgment confirmation
+    const confirmResult = await window.confirmationDialog.show({
+        title: 'Acknowledge Audit',
+        message: 'By acknowledging this audit, you confirm that you have reviewed the results and do not wish to submit a reversal request. Continue?',
+        confirmText: 'Acknowledge',
+        cancelText: 'Cancel'
+    });
+    
+    if (!confirmResult) return;
+    
+    // Step 2: Calculate total errors to determine if rating system should be shown
+    let totalErrorsCount = 0;
+    if (currentAudit && currentErrorFields && currentErrorFields.length > 0) {
+        currentErrorFields.forEach(field => {
+            const count = currentAudit[field.key] ? parseInt(currentAudit[field.key]) : 0;
+            // Only count error parameters (not achievements/bonuses) in total
+            if (field.parameter_type === 'error' || !field.parameter_type) {
+                totalErrorsCount += count;
+            }
+        });
+    }
+    
+    // Step 3: Show rating dialog (Uber-style) with integrated feedback
+    // Only show rating dialog if errors were detected and rating system is enabled
+    let rating = null;
+    let feedback = null;
+    
+    if (ENABLE_RATING_SYSTEM && totalErrorsCount > 0) {
+        const ratingResult = await showRatingDialog();
+        
+        if (ratingResult.rating === null) return; // User cancelled rating
+        
+        rating = ratingResult.rating;
+        feedback = ratingResult.feedback;
+    }
+    
+    // Step 4: Save acknowledgment and rating to database
+    if (!currentAudit || !currentTableName) {
+        alert('Error: Audit data not available');
+        return;
+    }
+    
+    try {
+        // Record acknowledgment and rating in the database
+        const acknowledgementTime = new Date().toISOString();
+        const updateData = {
+            acknowledgement_status: 'Acknowledged',
+            acknowledgement_status_updated_at: acknowledgementTime
+        };
+        
+        // Only include rating fields if rating was collected (errors were detected)
+        if (rating !== null) {
+            updateData.audit_rating = rating;
+            updateData.audit_rating_feedback = feedback || null;
+            updateData.audit_rated_at = acknowledgementTime;
+        }
+        
+        const { data, error } = await window.supabaseClient
+            .from(currentTableName)
+            .update(updateData)
+            .eq('id', currentAudit.id)
+            .select();
+        
+        if (error) throw error;
+        
+        // Show success message
+        if (window.confirmationDialog) {
+            const successMessage = rating !== null 
+                ? `✓ Audit acknowledged and feedback rated ${rating} star${rating !== 1 ? 's' : ''}. Thank you for your input!`
+                : '✓ Audit acknowledged. Thank you for your confirmation.';
+            await window.confirmationDialog.show({
+                title: 'Success',
+                message: successMessage,
+                confirmText: 'OK',
+                type: 'success'
+            });
+        } else {
+            const successMessage = rating !== null 
+                ? `✓ Audit acknowledged and feedback rated ${rating} star${rating !== 1 ? 's' : ''}. Thank you for your input!`
+                : '✓ Audit acknowledged. Thank you for your confirmation.';
+            alert(successMessage);
+        }
+        
+        // Reload audit data to reflect changes
+        loadAuditFromURL();
+        
+    } catch (error) {
+        console.error('Error acknowledging audit:', error);
+        if (window.confirmationDialog) {
+            await window.confirmationDialog.show({
+                title: 'Error',
+                message: 'Failed to record acknowledgment and rating. Please try again.',
+                confirmText: 'OK',
+                type: 'error'
+            });
+        } else {
+            alert('Failed to record acknowledgment and rating. Please try again.');
+        }
+    }
 }
 
 // Setup footer rating star hover and click effects
