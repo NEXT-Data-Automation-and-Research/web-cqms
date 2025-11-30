@@ -1092,7 +1092,7 @@
                 <span id="pullConversationsEmployeeName" style="color: #374151; font-weight: 500;"></span>
                 <span id="pullConversationsAdminAliasChip" style="display: none;"></span>
             </h3>
-                <div style="display: flex; align-items: center; gap: 0.3234rem;">
+                <div style="display: flex; align-items: center; gap: 0.3234rem; position: relative;">
                     <button id="dateRangeBtnYesterday" data-is-active="true" onclick="selectDateRange('yesterday')" style="padding: 0.2425rem 0.4043rem; background: #1A733E; color: white; border: none; border-radius: 0.1617rem; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;" onmouseover="if(this.dataset.isActive === 'true') this.style.backgroundColor='#15582E'; else this.style.backgroundColor='#e5e7eb'" onmouseout="if(this.dataset.isActive === 'true') this.style.backgroundColor='#1A733E'; else this.style.backgroundColor='#f3f4f6'" title="Yesterday (Default)">
                         Yesterday
                     </button>
@@ -1101,7 +1101,48 @@
                     </button>
                     <button id="dateRangeBtnThisWeek" data-is-active="false" onclick="selectDateRange('thisweek')" style="padding: 0.2425rem 0.4043rem; background: #f3f4f6; color: #374151; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;" onmouseover="if(this.dataset.isActive === 'true') this.style.backgroundColor='#15582E'; else this.style.backgroundColor='#e5e7eb'" onmouseout="if(this.dataset.isActive === 'true') this.style.backgroundColor='#1A733E'; else this.style.backgroundColor='#f3f4f6'" title="This Week">
                         This week
-            </button>
+                    </button>
+                    <button id="dateRangeBtnCustom" data-is-active="false" onclick="toggleCustomDateRangePicker()" style="padding: 0.2425rem 0.4043rem; background: #f3f4f6; color: #374151; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 0.1617rem;" onmouseover="if(this.dataset.isActive === 'true') this.style.backgroundColor='#15582E'; else this.style.backgroundColor='#e5e7eb'" onmouseout="if(this.dataset.isActive === 'true') this.style.backgroundColor='#1A733E'; else this.style.backgroundColor='#f3f4f6'" title="Custom Date Range">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Custom</span>
+                    </button>
+                    <!-- Custom Date Range Picker Dropdown -->
+                    <div id="customDateRangePicker" style="display: none; position: absolute; top: calc(100% + 0.3234rem); left: 0; background: white; border: 0.0405rem solid #d1d5db; border-radius: 0.3234rem; padding: 0.6469rem; box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1); z-index: 1000; min-width: 18rem; animation: modalSlideIn 0.2s ease-out;">
+                        <div style="display: flex; flex-direction: column; gap: 0.4852rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.2425rem;">
+                                <label style="font-size: 0.4852rem; font-weight: 600; color: #374151;">Custom Date Range</label>
+                                <button onclick="closeCustomDateRangePicker()" style="background: transparent; border: none; color: #6b7280; cursor: pointer; padding: 0.1617rem; display: flex; align-items: center; justify-content: center; border-radius: 0.1617rem; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#f3f4f6'; this.style.color='#374151';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#6b7280';" title="Close">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div style="display: flex; flex-direction: row; gap: 0.4852rem; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label for="customStartDate" style="display: block; font-size: 0.4447rem; font-weight: 500; color: #6b7280; margin-bottom: 0.1617rem;">From</label>
+                                    <input type="date" id="customStartDate" style="width: 100%; padding: 0.3234rem 0.4852rem; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; color: #374151; background: white; cursor: pointer; transition: border-color 0.2s; box-sizing: border-box;" onfocus="this.style.borderColor='#1A733E'; this.style.outline='none';" onblur="this.style.borderColor='#d1d5db';">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label for="customEndDate" style="display: block; font-size: 0.4447rem; font-weight: 500; color: #6b7280; margin-bottom: 0.1617rem;">To</label>
+                                    <input type="date" id="customEndDate" style="width: 100%; padding: 0.3234rem 0.4852rem; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; color: #374151; background: white; cursor: pointer; transition: border-color 0.2s; box-sizing: border-box;" onfocus="this.style.borderColor='#1A733E'; this.style.outline='none';" onblur="this.style.borderColor='#d1d5db';">
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.3234rem; margin-top: 0.2425rem;">
+                                <button onclick="closeCustomDateRangePicker()" style="flex: 1; padding: 0.3234rem 0.4852rem; background: #f3f4f6; color: #374151; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#e5e7eb';" onmouseout="this.style.backgroundColor='#f3f4f6';">
+                                    Cancel
+                                </button>
+                                <button onclick="applyCustomDateRange()" style="flex: 1; padding: 0.3234rem 0.4852rem; background: #1A733E; color: white; border: none; border-radius: 0.1617rem; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#15582E';" onmouseout="this.style.backgroundColor='#1A733E';">
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                     <button onclick="openPullConversationsFilterDialog()" style="display: flex; align-items: center; gap: 0.2425rem; padding: 0.2425rem 0.4852rem; background: #1A733E; color: white; border: none; border-radius: 0.1617rem; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#15582E'" onmouseout="this.style.backgroundColor='#1A733E'" title="Advanced Filters">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1265,48 +1306,6 @@
                 <table style="width: 100%; border-collapse: collapse; min-width: fit-content; font-size: 0.6069rem;">
                     <thead style="position: sticky; top: 0; z-index: 10; background: var(--background-white); overflow: visible;">
                         <tr style="background: var(--background-white); border-bottom: 0.0625rem solid var(--border-light);">
-                            <th colspan="12" style="padding: 0.3234rem 0.4852rem; text-align: right; font-weight: normal; border-bottom: 0.0625rem solid var(--border-light);">
-                                <div class="column-tooltip-container" style="display: flex; align-items: center; gap: 0.2425rem; position: relative; justify-content: flex-end;">
-                                    <span style="font-size: 0.4852rem; color: #6b7280; font-weight: 500;">Audit Recommendation Logic</span>
-                                    <div class="info-icon" style="display: flex; align-items: center; justify-content: center; cursor: help; transition: opacity 0.2s; width: 0.8086rem; height: 0.8086rem; border-radius: 50%; background: #e5e7eb; color: #6b7280;" onmouseover="this.style.background='#d1d5db'; this.style.color='#374151';" onmouseout="this.style.background='#e5e7eb'; this.style.color='#6b7280';">
-                                        <svg xmlns="http://www.w3.org/2000/svg" style="width: 0.5659rem; height: 0.5659rem;" viewBox="0 -960 960 960" fill="currentColor">
-                                            <path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="column-tooltip" style="position: fixed; width: 24rem; background: #1f2937; color: white; font-size: 0.75rem; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); z-index: 9999; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; pointer-events: none; text-align: left; font-weight: normal; text-transform: none; letter-spacing: normal; white-space: normal; word-wrap: break-word; max-width: 24rem;">
-                                        <div style="font-weight: 600; margin-bottom: 0.75rem; font-size: 0.875rem; color: #ffffff;">Audit Recommendation & Priority Logic</div>
-                                        <div style="color: #d1d5db; line-height: 1.6;">
-                                            <div style="margin-bottom: 0.75rem;">
-                                                <div style="font-weight: 600; margin-bottom: 0.375rem; color: #fbbf24; font-size: 0.8125rem;">📊 Sorting Priority (Highest to Lowest):</div>
-                                                <ol style="margin: 0; padding-left: 1.25rem; color: #e5e7eb;">
-                                                    <li style="margin-bottom: 0.25rem;"><strong style="color: #fbbf24;">Error Count</strong> - When AI audit is completed, conversations with highest error count are prioritized first</li>
-                                                    <li style="margin-bottom: 0.25rem;"><strong>Lowest Rating</strong> - Conversations with lower CSAT ratings (1-5 scale) are prioritized</li>
-                                                    <li style="margin-bottom: 0.25rem;"><strong>Lowest CX Score</strong> - Conversations with lower CX Score ratings are prioritized</li>
-                                                    <li><strong>Longest Length</strong> - Longer conversations (more messages) are prioritized</li>
-                                                </ol>
-                                            </div>
-                                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #374151;">
-                                                <div style="font-weight: 600; margin-bottom: 0.375rem; color: #fbbf24; font-size: 0.8125rem;">🎯 Top Recommendations:</div>
-                                                <ul style="margin: 0; padding-left: 1.25rem; color: #e5e7eb;">
-                                                    <li style="margin-bottom: 0.25rem;">The top <strong>3 available conversations</strong> (not already audited) are highlighted in <span style="color: #fbbf24; font-weight: 600;">yellow</span></li>
-                                                    <li style="margin-bottom: 0.25rem;">Already audited conversations are automatically excluded from recommendations</li>
-                                                    <li>If some of the top 3 are already audited, the next available conversations are recommended instead</li>
-                                                </ul>
-                                            </div>
-                                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #374151;">
-                                                <div style="font-weight: 600; margin-bottom: 0.375rem; color: #fbbf24; font-size: 0.8125rem;">💡 Visual Indicators:</div>
-                                                <ul style="margin: 0; padding-left: 1.25rem; color: #e5e7eb;">
-                                                    <li style="margin-bottom: 0.25rem;"><span style="color: #fef3c7; font-weight: 600;">Yellow highlight</span> = Recommended for audit</li>
-                                                    <li style="margin-bottom: 0.25rem;"><span style="color: #f3f4f6; font-weight: 600;">Gray background</span> = Already audited (excluded)</li>
-                                                    <li><span style="color: #f0fdf4; font-weight: 600;">Green border</span> = AI audit completed</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </th>
-                        </tr>
-                        <tr style="background: var(--background-white); border-bottom: 0.0625rem solid var(--border-light);">
                             <th style="padding: 0.25rem 0.375rem; text-align: center; font-weight: 600; color: #374151; font-size: 0.6069rem; white-space: nowrap; width: 3rem;">
                                 <input type="checkbox" id="selectAllPullConversations" style="cursor: pointer;" title="Select all conversations">
                             </th>
@@ -1432,26 +1431,6 @@
                             </th>
                             <th style="padding: 0.25rem 0.375rem; text-align: center; font-weight: 600; color: #374151; font-size: 0.6069rem; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.025em; overflow: visible;">
                                 <div class="column-tooltip-container" style="display: flex; align-items: center; justify-content: center; gap: 0.125rem; position: relative;">
-                                    <span>AI Status</span>
-                                    <div class="info-icon" style="display: flex; align-items: center; justify-content: center; cursor: help; transition: opacity 0.2s;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" style="width: 0.5rem; height: 0.5rem; color: #4b5563;" viewBox="0 -960 960 960" fill="currentColor">
-                                            <path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="column-tooltip" style="position: fixed; width: 20rem; background: #1f2937; color: white; font-size: 0.75rem; padding: 0.75rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); z-index: 9999; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; pointer-events: none; text-align: left; font-weight: normal; text-transform: none; letter-spacing: normal; white-space: normal; word-wrap: break-word; max-width: 20rem;">
-                                        <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.8125rem;">AI Audit Status</div>
-                                        <div style="color: #d1d5db; line-height: 1.5;">
-                                            <p style="margin: 0 0 0.5rem 0;">Status of AI audit processing for this conversation. Click to view results or start manual audit.</p>
-                                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #374151;">
-                                                <div style="font-weight: 500; margin-bottom: 0.25rem;">Statuses:</div>
-                                                <p style="margin: 0; color: #9ca3af;"><span style="color: #3B82F6;">🔄 Processing</span> (In progress), <span style="color: #10B981;">✅ Completed</span> (Results available), <span style="color: #EF4444;">❌ Failed</span> (Error occurred)</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th style="padding: 0.25rem 0.375rem; text-align: center; font-weight: 600; color: #374151; font-size: 0.6069rem; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.025em; overflow: visible;">
-                                <div class="column-tooltip-container" style="display: flex; align-items: center; justify-content: center; gap: 0.125rem; position: relative;">
                                     <span>Errors Detected</span>
                                     <div class="info-icon" style="display: flex; align-items: center; justify-content: center; cursor: help; transition: opacity 0.2s;">
                                         <svg xmlns="http://www.w3.org/2000/svg" style="width: 0.5rem; height: 0.5rem; color: #4b5563;" viewBox="0 -960 960 960" fill="currentColor">
@@ -1501,6 +1480,26 @@
                                             <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #374151;">
                                                 <div style="font-weight: 500; margin-bottom: 0.25rem;">Example:</div>
                                                 <p style="margin: 0; color: #9ca3af;">"Nov 4" (hover to see full date: Nov 4, 2025, 10:30 AM)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th style="padding: 0.25rem 0.375rem; text-align: center; font-weight: 600; color: #374151; font-size: 0.6069rem; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.025em; overflow: visible;">
+                                <div class="column-tooltip-container" style="display: flex; align-items: center; justify-content: center; gap: 0.125rem; position: relative;">
+                                    <span>AI Status</span>
+                                    <div class="info-icon" style="display: flex; align-items: center; justify-content: center; cursor: help; transition: opacity 0.2s;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" style="width: 0.5rem; height: 0.5rem; color: #4b5563;" viewBox="0 -960 960 960" fill="currentColor">
+                                            <path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="column-tooltip" style="position: fixed; width: 20rem; background: #1f2937; color: white; font-size: 0.75rem; padding: 0.75rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); z-index: 9999; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; pointer-events: none; text-align: left; font-weight: normal; text-transform: none; letter-spacing: normal; white-space: normal; word-wrap: break-word; max-width: 20rem;">
+                                        <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.8125rem;">AI Audit Status</div>
+                                        <div style="color: #d1d5db; line-height: 1.5;">
+                                            <p style="margin: 0 0 0.5rem 0;">Status of AI audit processing for this conversation. Click to view results or start manual audit.</p>
+                                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #374151;">
+                                                <div style="font-weight: 500; margin-bottom: 0.25rem;">Statuses:</div>
+                                                <p style="margin: 0; color: #9ca3af;"><span style="color: #3B82F6;">🔄 Processing</span> (In progress), <span style="color: #1A733E;">✅ Completed</span> (Results available), <span style="color: #EF4444;">❌ Failed</span> (Error occurred)</p>
                                             </div>
                                         </div>
                                     </div>
@@ -2874,7 +2873,7 @@ async function updateYourStats() {
                     try {
                         const { data, error } = await window.supabaseClient
                             .from(scorecard.table_name)
-                            .select('id, ' + reversalFilterField + ', reversal_requested_at, reversal_status, reversal_resolved_at')
+                            .select('id, ' + reversalFilterField + ', reversal_requested_at, reversal_approved, reversal_responded_at')
                             .not('reversal_requested_at', 'is', null);
                         
                         if (!error && data) {
@@ -2897,8 +2896,11 @@ async function updateYourStats() {
                             
                             // Count active and resolved reversals
                             filteredReversals.forEach(reversal => {
-                                const status = reversal.reversal_status || '';
-                                const isResolved = reversal.reversal_resolved_at !== null && reversal.reversal_resolved_at !== undefined;
+                                // Compute status from existing columns
+                                const status = reversal.reversal_responded_at === null ? 'Pending' :
+                                              reversal.reversal_approved === true ? 'Approved' :
+                                              reversal.reversal_approved === false ? 'Rejected' : 'Pending';
+                                const isResolved = reversal.reversal_responded_at !== null && reversal.reversal_responded_at !== undefined;
                                 
                                 if (isResolved || status.toLowerCase() === 'resolved' || status.toLowerCase() === 'approved' || status.toLowerCase() === 'rejected') {
                                     resolvedReversals++;
@@ -2941,7 +2943,7 @@ async function updateYourStats() {
                     try {
                         const { data: audits, error } = await window.supabaseClient
                             .from(scorecard.table_name)
-                            .select('average_score, averageScore, passing_status, passingStatus, submitted_at, ' + auditFilterField)
+                            .select('average_score, passing_status, submitted_at, ' + auditFilterField)
                             .not('submitted_at', 'is', null);
                         
                         if (!error && audits) {
@@ -4736,12 +4738,9 @@ function createIndividualAuditCardHTML(audit, isAgent, isNested) {
                     <span style="font-size: 0.6069rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 10rem;">${escapeHtml(audit.scorecards?.name || 'Unknown Scorecard')}</span>
                 </div>
                 
-                <!-- Middle: Crucial Info (Status Chip, Employee, Date) -->
+                <!-- Middle: Crucial Info (Status Chip, Date) -->
                 <div style="display: flex; align-items: center; gap: 0.4852rem; flex: 1; min-width: 0; overflow: hidden;">
                     ${statusBadge}
-                    <span style="font-size: 0.5252rem; color: #6b7280; white-space: nowrap; margin: 0 0.1617rem;">•</span>
-                    <span style="font-size: 0.5252rem; color: #374151; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 7rem;">${escapeHtml(employeeName)}</span>
-                    ${adminAlias ? `<span style="font-size: 0.4447rem; color: #1A733E; font-weight: 500; background: #f0fdf4; padding: 0.0404rem 0.1213rem; border-radius: 0.0808rem; border: 0.0202rem solid #86efac; white-space: nowrap; margin: 0 0.1617rem;" title="Intercom Admin Alias">${escapeHtml(adminAlias)}</span>` : ''}
                     <span style="font-size: 0.5252rem; color: #6b7280; white-space: nowrap; margin: 0 0.1617rem;">•</span>
                     <span style="font-size: 0.5252rem; color: #6b7280; white-space: nowrap;">${dateFormatted}</span>
                 </div>
@@ -5622,6 +5621,7 @@ async function selectDateRange(range) {
     const yesterdayBtn = document.getElementById('dateRangeBtnYesterday');
     const last3DaysBtn = document.getElementById('dateRangeBtnLast3Days');
     const thisWeekBtn = document.getElementById('dateRangeBtnThisWeek');
+    const customBtn = document.getElementById('dateRangeBtnCustom');
     
     const activeStyle = {
         background: '#1A733E',
@@ -5666,6 +5666,21 @@ async function selectDateRange(range) {
         }
     }
     
+    if (customBtn) {
+        if (range === 'custom') {
+            Object.assign(customBtn.style, activeStyle);
+            customBtn.dataset.isActive = 'true';
+        } else {
+            Object.assign(customBtn.style, inactiveStyle);
+            customBtn.dataset.isActive = 'false';
+        }
+    }
+    
+    // Close custom date range picker if a preset is selected
+    if (range !== 'custom') {
+        closeCustomDateRangePicker();
+    }
+    
     // Fetch conversations with new date range
     if (pullConversationsAdminId) {
         const dateRange = getDateRangeForSelection(range);
@@ -5702,6 +5717,24 @@ function getDateRangeForSelection(range) {
             startDate = monday.toISOString().split('T')[0];
             endDate = today.toISOString().split('T')[0];
             break;
+        case 'custom':
+            // Get custom dates from input fields
+            const customStartInput = document.getElementById('customStartDate');
+            const customEndInput = document.getElementById('customEndDate');
+            if (customStartInput && customStartInput.value) {
+                startDate = customStartInput.value;
+            }
+            if (customEndInput && customEndInput.value) {
+                endDate = customEndInput.value;
+            }
+            // If custom dates are not set, default to yesterday
+            if (!startDate || !endDate) {
+                const defaultYesterday = new Date(today);
+                defaultYesterday.setDate(today.getDate() - 1);
+                startDate = startDate || defaultYesterday.toISOString().split('T')[0];
+                endDate = endDate || defaultYesterday.toISOString().split('T')[0];
+            }
+            break;
         default:
             // Default to yesterday
             const defaultYesterday = new Date(today);
@@ -5711,6 +5744,99 @@ function getDateRangeForSelection(range) {
     }
     
     return { startDate, endDate };
+}
+
+// Toggle custom date range picker
+window.toggleCustomDateRangePicker = function() {
+    const picker = document.getElementById('customDateRangePicker');
+    const customBtn = document.getElementById('dateRangeBtnCustom');
+    if (!picker) return;
+    
+    if (picker.style.display === 'none' || !picker.style.display) {
+        // Show picker
+        picker.style.display = 'block';
+        // Set default dates if not already set
+        const startInput = document.getElementById('customStartDate');
+        const endInput = document.getElementById('customEndDate');
+        if (startInput && !startInput.value) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            startInput.value = yesterday.toISOString().split('T')[0];
+        }
+        if (endInput && !endInput.value) {
+            const today = new Date();
+            endInput.value = today.toISOString().split('T')[0];
+        }
+        // Set max date to today for both inputs
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (startInput) {
+            startInput.setAttribute('max', todayStr);
+            // Add event listener for start date change
+            startInput.onchange = function() {
+                if (endInput && this.value) {
+                    endInput.setAttribute('min', this.value);
+                    // If end date is before start date, update it
+                    if (endInput.value && new Date(endInput.value) < new Date(this.value)) {
+                        endInput.value = this.value;
+                    }
+                }
+            };
+        }
+        if (endInput) {
+            endInput.setAttribute('max', todayStr);
+            // Add event listener for end date change
+            endInput.onchange = function() {
+                if (startInput && this.value) {
+                    startInput.setAttribute('max', this.value);
+                    // If start date is after end date, update it
+                    if (startInput.value && new Date(startInput.value) > new Date(this.value)) {
+                        startInput.value = this.value;
+                    }
+                }
+            };
+        }
+    } else {
+        // Hide picker
+        closeCustomDateRangePicker();
+    }
+}
+
+// Close custom date range picker
+window.closeCustomDateRangePicker = function() {
+    const picker = document.getElementById('customDateRangePicker');
+    if (picker) {
+        picker.style.display = 'none';
+    }
+}
+
+// Apply custom date range
+window.applyCustomDateRange = async function() {
+    const startInput = document.getElementById('customStartDate');
+    const endInput = document.getElementById('customEndDate');
+    
+    if (!startInput || !endInput) {
+        showPullConversationsError('Date inputs not found.');
+        return;
+    }
+    
+    const startDate = startInput.value;
+    const endDate = endInput.value;
+    
+    if (!startDate || !endDate) {
+        showPullConversationsError('Please select both start and end dates.');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showPullConversationsError('Start date must be before or equal to end date.');
+        return;
+    }
+    
+    // Select custom range
+    await selectDateRange('custom');
+    
+    // Close the picker
+    closeCustomDateRangePicker();
 }
 
 // Update pull conversations header with employee name and alias
@@ -8050,9 +8176,9 @@ async function displayPullConversationsList(conversations) {
             row.style.animation = 'pulse 2s ease-in-out infinite';
             row.style.transition = 'all 0.3s ease-in-out';
         } else if (aiStatusType === 'completed') {
-            // AI Audit completed - green background
+            // AI Audit completed - green background with theme color
             row.style.backgroundColor = '#f0fdf4';
-            row.style.borderLeft = '0.25rem solid #10b981';
+            row.style.borderLeft = '0.25rem solid #1A733E';
             row.style.transition = 'all 0.3s ease-in-out';
         } else if (aiStatusType === 'failed') {
             // AI Audit failed - red background
@@ -8181,19 +8307,19 @@ async function displayPullConversationsList(conversations) {
             if (statusType === 'completed') {
                 // Completed badge - larger, clearer
                 const tooltipText = `AI Audit completed ${createdAtTime}${createdByEmail ? ` by ${createdByName}` : ''}${confidenceScore ? `. Confidence: ${confidenceScore}%` : ''}. Click to view results or start manual audit.`;
-                aiStatusBadge = `<span class="ai-status-badge" data-conversation-id="${conversationId}" data-status="completed" style="display: inline-flex; align-items: center; gap: 0.25rem; background: #10b981; color: white; padding: 0.12rem 0.375rem; border-radius: 0.2rem; font-size: 0.5rem; font-weight: 700; white-space: nowrap; margin-left: 0.25rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(16, 185, 129, 0.3);" onmouseover="this.style.background='#059669'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.4)';" onmouseout="this.style.background='#10b981'; this.style.transform='scale(1)'; this.style.boxShadow='0 1px 2px rgba(16, 185, 129, 0.3)';" title="${tooltipText}">
+                aiStatusBadge = `<span class="ai-status-badge" data-conversation-id="${conversationId}" data-status="completed" style="display: inline-flex; align-items: center; gap: 0.25rem; background: #1A733E; color: white; padding: 0.12rem 0.375rem; border-radius: 0.2rem; font-size: 0.5rem; font-weight: 700; white-space: nowrap; margin-left: 0.25rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(26, 115, 62, 0.3);" onmouseover="this.style.background='#15582E'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 4px rgba(26, 115, 62, 0.4)';" onmouseout="this.style.background='#1A733E'; this.style.transform='scale(1)'; this.style.boxShadow='0 1px 2px rgba(26, 115, 62, 0.3)';" title="${tooltipText}">
                     <span>✅</span>
                     <span>AI Audited</span>
                 </span>`;
                 
                 // Status column content
                 aiStatusColumn = `
-                    <div style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center;">
+                    <div class="ai-status-cell" style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center; position: relative;">
                         <div style="display: flex; align-items: center; gap: 0.25rem;">
-                            <span style="color: #10b981; font-weight: 700; font-size: 0.5rem;">Completed</span>
+                            <span style="background: #1A733E; color: white; padding: 0.12rem 0.375rem; border-radius: 0.2rem; font-weight: 700; font-size: 0.5rem; white-space: nowrap;">Completed</span>
                         </div>
-                        <span style="color: #6b7280; font-size: 0.4447rem;">${createdAtTime}</span>
-                        ${confidenceScore ? `<span style="color: #059669; font-size: 0.4rem; font-weight: 600;">${confidenceScore}% confidence</span>` : ''}
+                        <span class="ai-status-time" style="color: #6b7280; font-size: 0.4447rem;">${createdAtTime}</span>
+                        ${confidenceScore ? `<span style="color: #15582E; font-size: 0.4rem; font-weight: 600;">${confidenceScore}% confidence</span>` : ''}
                     </div>
                 `;
             } else if (statusType === 'in_progress') {
@@ -8207,14 +8333,14 @@ async function displayPullConversationsList(conversations) {
                 
                 // Status column content with spinner
                 aiStatusColumn = `
-                    <div style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center;">
+                    <div class="ai-status-cell" style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center; position: relative;">
                         <div style="display: flex; align-items: center; gap: 0.25rem;">
                             <svg class="spinner" style="width: 0.625rem; height: 0.625rem; color: #3b82f6; animation: spin 1s linear infinite;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
                             <span style="color: #3b82f6; font-weight: 700; font-size: 0.5rem;">Processing...</span>
                         </div>
-                        <span style="color: #6b7280; font-size: 0.4447rem;">Started ${createdAtTime}</span>
+                        <span class="ai-status-time" style="color: #6b7280; font-size: 0.4447rem;">Started ${createdAtTime}</span>
                     </div>
                 `;
             } else if (statusType === 'failed') {
@@ -8226,12 +8352,12 @@ async function displayPullConversationsList(conversations) {
                 
                 // Status column content
                 aiStatusColumn = `
-                    <div style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center;">
+                    <div class="ai-status-cell" style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center; position: relative;">
                         <div style="display: flex; align-items: center; gap: 0.25rem;">
                             <span style="color: #ef4444; font-size: 0.75rem;">❌</span>
                             <span style="color: #ef4444; font-weight: 700; font-size: 0.5rem;">Failed</span>
                         </div>
-                        <span style="color: #6b7280; font-size: 0.4447rem;">${createdAtTime}</span>
+                        <span class="ai-status-time" style="color: #6b7280; font-size: 0.4447rem;">${createdAtTime}</span>
                     </div>
                 `;
             }
@@ -8240,7 +8366,7 @@ async function displayPullConversationsList(conversations) {
         // Format AI error count
         let aiErrorCountHtml = '<span style="color: #9ca3af; font-size: 0.5252rem;">-</span>';
         if (aiErrorCount !== null && aiStatusType === 'completed') {
-            const errorColor = aiErrorCount === 0 ? '#10b981' : aiErrorCount <= 2 ? '#f59e0b' : '#ef4444';
+            const errorColor = aiErrorCount === 0 ? '#1A733E' : aiErrorCount <= 2 ? '#f59e0b' : '#ef4444';
             aiErrorCountHtml = `<span style="color: ${errorColor}; font-weight: 600; font-size: 0.6069rem;">${aiErrorCount}</span>`;
         }
         
@@ -8268,10 +8394,10 @@ async function displayPullConversationsList(conversations) {
             <td style="padding: 0.25rem 0.375rem; vertical-align: middle; text-align: center;">${ratingHtml}</td>
             <td style="padding: 0.25rem 0.375rem; vertical-align: middle; text-align: center;">${cxScoreHtml}</td>
             <td style="padding: 0.25rem 0.375rem; vertical-align: middle; text-align: center;">${lengthDisplay}</td>
-            <td style="padding: 0.25rem 0.375rem; vertical-align: middle; text-align: center;">${aiStatusColumn}</td>
             <td style="padding: 0.25rem 0.375rem; vertical-align: middle; text-align: center;">${aiErrorCountHtml}</td>
             <td style="padding: 0.25rem 0.375rem; vertical-align: middle; max-width: 8rem;">${tagsHtml}</td>
             <td style="padding: 0.25rem 0.375rem; vertical-align: middle; font-size: 0.5252rem; color: #6b7280; white-space: nowrap; text-align: center;" title="${createdDate}">${createdDateShort}</td>
+            <td style="padding: 0.25rem 0.375rem; vertical-align: middle; text-align: center;">${aiStatusColumn}</td>
             <td style="padding: 0.25rem 0.375rem; vertical-align: middle; text-align: center;">
                 <div style="display: flex; gap: 0.25rem; justify-content: center; align-items: center; flex-wrap: wrap;">
                     <button 
@@ -20010,6 +20136,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('click', function(e) {
             if (!dateDropdown.contains(e.target) && !dateBtn.contains(e.target)) {
                 dateDropdown.classList.remove('active');
+            }
+        });
+    }
+    
+    // Custom date range picker - close when clicking outside
+    const customDateRangePicker = document.getElementById('customDateRangePicker');
+    const customDateRangeBtn = document.getElementById('dateRangeBtnCustom');
+    if (customDateRangePicker && customDateRangeBtn) {
+        document.addEventListener('click', function(e) {
+            if (!customDateRangePicker.contains(e.target) && !customDateRangeBtn.contains(e.target)) {
+                if (customDateRangePicker.style.display === 'block') {
+                    closeCustomDateRangePicker();
+                }
             }
         });
     }
