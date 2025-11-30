@@ -134,28 +134,28 @@ window.generateAuditHeader = function(options = {}) {
             </div>
         `;
     } else {
-        // View mode: read-only text
+        // View mode: read-only text in boxes
         employeeInfoHtml = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(6.0644rem, 1fr)); gap: 0.3234rem; margin-bottom: 0.4852rem;">
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Employee</p>
-                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(audit.employeeName || 'N/A')}">${escapeHtml(audit.employeeName || 'N/A')}</p>
+            <div style="display: flex; gap: 0.3234rem; margin-bottom: 0.4852rem; flex-wrap: wrap;">
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Employee</p>
+                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;" title="${escapeHtml(audit.employeeName || 'N/A')}">${escapeHtml(audit.employeeName || 'N/A')}</p>
                 </div>
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Email</p>
-                    <p style="font-size: 0.4852rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(audit.employeeEmail || 'N/A')}">${escapeHtml(audit.employeeEmail || 'N/A')}</p>
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Email</p>
+                    <p style="font-size: 0.4852rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;" title="${escapeHtml(audit.employeeEmail || 'N/A')}">${escapeHtml(audit.employeeEmail || 'N/A')}</p>
                 </div>
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Type</p>
-                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white;">${escapeHtml(audit.employeeType || 'N/A')}</p>
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Type</p>
+                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white; line-height: 1.2;">${escapeHtml(audit.employeeType || 'N/A')}</p>
                 </div>
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Department</p>
-                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white;">${escapeHtml(audit.employeeDepartment || 'N/A')}</p>
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Department</p>
+                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white; line-height: 1.2;">${escapeHtml(audit.employeeDepartment || 'N/A')}</p>
                 </div>
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Country</p>
-                    <div style="display: flex; align-items: center; gap: 0.1617rem;">
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Country</p>
+                    <div style="display: flex; align-items: center; gap: 0.1617rem; line-height: 1.2;">
                         <span style="font-size: 0.7278rem; line-height: 1;" title="${escapeHtml(audit.countryOfEmployee || 'Unknown')}">${getCountryFlag(audit.countryOfEmployee)}</span>
                         <span style="font-size: 0.4852rem; font-weight: 600; font-family: 'Poppins', sans-serif; color: white;">${escapeHtml(audit.countryOfEmployee || 'N/A')}</span>
                     </div>
@@ -174,30 +174,30 @@ window.generateAuditHeader = function(options = {}) {
     }
 
     const metadataCardsHtml = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(4.2451rem, 1fr)); gap: 0.3234rem;">
-            <div style="background: rgba(255,255,255,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
-                <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Status</p>
-                <p id="headerStatusDisplay" style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${statusIcon}${escapeHtml(passingStatus || 'N/A')}</p>
-            </div>
-            <div style="background: rgba(255,255,255,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
-                <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Score</p>
-                <p id="headerScoreDisplay" style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(audit.averageScore || '0')}%</p>
-            </div>
-            <div style="background: rgba(255,255,255,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
-                <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Errors</p>
-                <p style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(audit.totalErrorsCount || '0')}</p>
-            </div>
-            <div style="background: rgba(255,255,255,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+        <div style="display: flex; gap: 0.3234rem; flex-wrap: wrap;">
+            <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
                 <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Date</p>
                 <p style="font-size: 0.4852rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${formatDate(audit.auditTimestamp, true)}</p>
             </div>
-            <div style="background: rgba(255,255,255,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+            <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
                 <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Qtr</p>
                 <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${audit.quarter ? (audit.quarter.toString().startsWith('Q') ? escapeHtml(audit.quarter) : 'Q' + escapeHtml(audit.quarter)) : 'N/A'}</p>
             </div>
-            <div style="background: rgba(255,255,255,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+            <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
                 <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Week</p>
                 <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(audit.week || 'N/A')}</p>
+            </div>
+            <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Errors</p>
+                <p style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(audit.totalErrorsCount || '0')}</p>
+            </div>
+            <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Status</p>
+                <p id="headerStatusDisplay" style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${statusIcon}${escapeHtml(passingStatus || 'N/A')}</p>
+            </div>
+            <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Score</p>
+                <p id="headerScoreDisplay" style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(audit.averageScore || '0')}%</p>
             </div>
         </div>
     `;

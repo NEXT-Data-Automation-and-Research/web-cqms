@@ -1442,6 +1442,64 @@ function editCurrentAudit() {
     window.location.href = `edit-audit.html?id=${currentAudit.id}&scorecard=${currentScorecardId}&table=${currentTableName}`;
 }
 
+// Helper function to convert URLs in text to clickable links
+function convertUrlsToLinks(text) {
+    if (!text) return '';
+    
+    // URL pattern: matches http://, https://, and www. URLs
+    const urlPattern = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gi;
+    
+    // Split text by URLs and process each part
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = urlPattern.exec(text)) !== null) {
+        // Add text before URL (escaped)
+        if (match.index > lastIndex) {
+            parts.push({
+                type: 'text',
+                content: escapeHtml(text.substring(lastIndex, match.index))
+            });
+        }
+        
+        // Add URL as link
+        let url = match[0];
+        // Add http:// if it's a www. URL
+        if (url.startsWith('www.')) {
+            url = 'https://' + url;
+        }
+        
+        parts.push({
+            type: 'link',
+            content: url
+        });
+        
+        lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text after last URL
+    if (lastIndex < text.length) {
+        parts.push({
+            type: 'text',
+            content: escapeHtml(text.substring(lastIndex))
+        });
+    }
+    
+    // If no URLs found, just escape and return the text
+    if (parts.length === 0) {
+        return escapeHtml(text);
+    }
+    
+    // Build HTML with links
+    return parts.map(part => {
+        if (part.type === 'link') {
+            return `<a href="${escapeHtml(part.content)}" target="_blank" rel="noopener noreferrer" style="color: #1A733E; text-decoration: underline;">${escapeHtml(part.content)}</a>`;
+        }
+        return part.content;
+    }).join('');
+}
+
 // Generate error details HTML
 function generateErrorDetails(audit, errorFields) {
     // Check if current user is the audited employee (for showing comment boxes)
@@ -1527,6 +1585,8 @@ function generateErrorDetails(audit, errorFields) {
     let criticalFailTotal = 0;
     let criticalTotal = 0;
     let significantTotal = 0;
+    let majorTotal = 0;
+    let minorTotal = 0;
     
     filteredErrorFields.forEach(field => {
         const count = audit[field.key] ? parseInt(audit[field.key]) : 0;
@@ -1537,6 +1597,10 @@ function generateErrorDetails(audit, errorFields) {
                 criticalTotal += count;
             } else if (field.severity === 'Significant') {
                 significantTotal += count;
+            } else if (field.severity === 'Major') {
+                majorTotal += count;
+            } else if (field.severity === 'Minor') {
+                minorTotal += count;
             }
         }
     });
@@ -1642,12 +1706,27 @@ function generateErrorDetails(audit, errorFields) {
         let severityBg = '#eff6ff';
         
         if (field.parameter_type === 'error') {
+            // All error severities use red shades - darker red for higher severity
+            // Text color is white for all to ensure good contrast against red backgrounds
             if (field.severity === 'Critical Fail') {
-                severityColor = '#ef4444';
-                severityBg = '#fee2e2';
+                severityColor = '#ffffff'; // White text
+                severityBg = '#7f1d1d'; // Darkest red background
             } else if (field.severity === 'Critical') {
-                severityColor = '#f59e0b';
-                severityBg = '#fef3c7';
+                severityColor = '#ffffff'; // White text
+                severityBg = '#991b1b'; // Dark red background
+            } else if (field.severity === 'Significant') {
+                severityColor = '#ffffff'; // White text
+                severityBg = '#b91c1c'; // Medium-dark red background
+            } else if (field.severity === 'Major') {
+                severityColor = '#ffffff'; // White text
+                severityBg = '#dc2626'; // Medium red background
+            } else if (field.severity === 'Minor') {
+                severityColor = '#ffffff'; // White text
+                severityBg = '#ef4444'; // Light-medium red background
+            } else {
+                // Default for any other error severity
+                severityColor = '#ffffff'; // White text
+                severityBg = '#b91c1c'; // Medium-dark red background
             }
         } else if (field.parameter_type === 'achievement' || field.parameter_type === 'bonus') {
             severityColor = '#10b981';
@@ -1704,21 +1783,32 @@ function generateErrorDetails(audit, errorFields) {
             }
         }
         
-        // Generate feedback HTML - display all feedbacks (plain, no containers)
+        // Generate feedback HTML - display all feedbacks in light colored container boxes
+        // URLs in feedback are converted to clickable links
+        // If count is 0, use light yellow (improvement area), otherwise use light red
         let feedbackHtml = '-';
         if (hasFeedback) {
-            // Plain display - multiple feedbacks separated by line breaks
+            // Determine container colors based on count
+            const isImprovementArea = count === 0;
+            const containerBg = isImprovementArea ? '#fefce8' : '#fef2f2'; // Light yellow if count is 0, light red otherwise
+            const containerBorder = isImprovementArea ? '#fde047' : '#fecaca'; // Yellow border if count is 0, red border otherwise
+            
+            // Display each feedback in a light colored container box
             feedbackHtml = feedbackArray.map((feedbackText, index) => {
-                const label = feedbackArray.length > 1 ? `<div style="font-size: 0.4043rem; color: #000000; font-weight: 600; margin-bottom: 0.1617rem; font-family: 'Poppins', sans-serif;">Feedback ${index + 1}:</div>` : '';
-                return `${label}<div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; white-space: pre-wrap; line-height: 1.6; margin-bottom: ${index < feedbackArray.length - 1 ? '0.6469rem' : '0'};">${escapeHtml(feedbackText)}</div>`;
+                const label = feedbackArray.length > 1 ? `<div style="font-size: 0.4043rem; color: #000000; font-weight: 600; margin-bottom: 0.3234rem; font-family: 'Poppins', sans-serif;">Feedback ${index + 1}:</div>` : '';
+                const feedbackWithLinks = convertUrlsToLinks(feedbackText);
+                return `<div style="background: ${containerBg}; border: 0.0304rem solid ${containerBorder}; border-radius: 0.3234rem; padding: 0.4852rem 0.6469rem; margin-bottom: ${index < feedbackArray.length - 1 ? '0.6469rem' : '0'};">
+                    ${label}<div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; white-space: pre-wrap; line-height: 1.6;">${feedbackWithLinks}</div>
+                </div>`;
             }).join('');
         }
         
         // Build grid columns - must match header columns for proper alignment
+        // Feedback column gets maximum width since it contains the most text content
         // For audited employees, always show comment column (persistent)
         const gridColumns = showCommentsColumn 
-            ? '2fr 1fr 1fr 1fr 2fr 2.5fr' 
-            : '2fr 1fr 1fr 1fr 2fr';
+            ? '1.5fr 0.8fr 0.8fr 0.8fr 4fr 2fr' 
+            : '1.5fr 0.8fr 0.8fr 0.8fr 4fr';
         
         return `
             <div style="display: grid; grid-template-columns: ${gridColumns}; gap: 0.6469rem; align-items: start; padding: 0.3234rem 0; border-bottom: 0.0405rem solid ${dividerColor}; opacity: ${dividerOpacity}; width: 100%; min-width: 0;">
@@ -1746,23 +1836,57 @@ function generateErrorDetails(audit, errorFields) {
         `;
     }).join('');
     
+    // Determine background color based on error count only (not feedback/comments)
+    // Use light colors instead of eye-catchy bright colors
+    const totalErrors = parseInt(audit.totalErrorsCount || '0');
+    const hasErrors = totalErrors > 0;
+    const bgColor = hasErrors ? '#fee2e2' : '#d1fae5'; // Light red if error count > 0, light green if count is 0
+    const borderColor = hasErrors ? '#fecaca' : '#a7f3d0'; // Light red border or light green border
+    const textColor = hasErrors ? '#991b1b' : '#065f46'; // Dark red text or dark green text for contrast
+    
     return `
+        <!-- Error Counts: Total Errors, Critical Fail, Critical, Significant, Major, Minor -->
+        <div style="background: ${bgColor}; border-radius: 0.3234rem; padding: 0.6469rem; margin-bottom: 0.6469rem; border: 0.0304rem solid ${borderColor};">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.6469rem;">
+                <div>
+                    <p style="font-size: 0.4447rem; color: ${textColor}; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Total Errors</p>
+                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${audit.totalErrorsCount || '0'}</div>
+                </div>
+                <div>
+                    <p style="font-size: 0.4447rem; color: ${textColor}; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Critical Fail</p>
+                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${criticalFailTotal}</div>
+                </div>
+                <div>
+                    <p style="font-size: 0.4447rem; color: ${textColor}; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Critical</p>
+                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${criticalTotal}</div>
+                </div>
+                <div>
+                    <p style="font-size: 0.4447rem; color: ${textColor}; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Significant Error</p>
+                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${significantTotal}</div>
+                </div>
+                <div>
+                    <p style="font-size: 0.4447rem; color: ${textColor}; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Major</p>
+                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${majorTotal}</div>
+                </div>
+                <div>
+                    <p style="font-size: 0.4447rem; color: ${textColor}; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Minor</p>
+                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${minorTotal}</div>
+                </div>
+            </div>
+        </div>
+
         <div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4852rem; flex-wrap: wrap; gap: 0.4852rem;">
+            <div style="margin-bottom: 0.4852rem;">
                 <h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;">
                     <svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
                     Error Details
                 </h3>
-                <div style="display: flex; gap: 0.2425rem;">
-                    <span style="background: #dc2626; color: #ffffff; padding: 0.1617rem 0.3234rem; border-radius: 0.2425rem; font-size: 0.4852rem; font-weight: 700; font-family: 'Poppins', sans-serif; white-space: nowrap;">Critical Fail: ${criticalFailTotal}</span>
-                    <span style="background: #f59e0b; color: #ffffff; padding: 0.1617rem 0.3234rem; border-radius: 0.2425rem; font-size: 0.4852rem; font-weight: 700; font-family: 'Poppins', sans-serif; white-space: nowrap;">Critical: ${criticalTotal}</span>
-                    <span style="background: #3b82f6; color: #ffffff; padding: 0.1617rem 0.3234rem; border-radius: 0.2425rem; font-size: 0.4852rem; font-weight: 700; font-family: 'Poppins', sans-serif; white-space: nowrap;">Significant: ${significantTotal}</span>
-                </div>
             </div>
             
+            ${filteredErrorFields.length > 0 ? `
             <div style="background: var(--background-white); border-radius: 0.4852rem; box-shadow: 0 0.0405rem 0.1213rem 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
                     <div style="background-color: var(--background-white); padding: 0.4852rem 0.6469rem; border-bottom: 0.0405rem solid var(--border-light);">
-                        <div style="display: grid; grid-template-columns: ${showCommentsColumn ? '2fr 1fr 1fr 1fr 2fr 2.5fr' : '2fr 1fr 1fr 1fr 2fr'}; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
+                        <div style="display: grid; grid-template-columns: ${showCommentsColumn ? '1.5fr 0.8fr 0.8fr 0.8fr 4fr 2fr' : '1.5fr 0.8fr 0.8fr 0.8fr 4fr'}; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
                             <div style="min-width: 0;">Error Type</div>
                             <div style="text-align: center; min-width: 0;">Points</div>
                             <div style="text-align: center; min-width: 0;">Severity</div>
@@ -1778,6 +1902,17 @@ function generateErrorDetails(audit, errorFields) {
                         ${errorRows}
                     </div>
                 </div>
+            ` : `
+            <div style="background: var(--background-white); border-radius: 0.4852rem; box-shadow: 0 0.0405rem 0.1213rem 0 rgba(0, 0, 0, 0.1); overflow: hidden; padding: 2rem; text-align: center;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.6469rem;">
+                    <svg style="width: 3rem; height: 3rem;" viewBox="0 0 24 24" fill="#1A733E">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <p style="font-size: 0.7278rem; font-weight: 600; color: #1A733E; margin: 0; font-family: 'Poppins', sans-serif;">No Errors Detected</p>
+                    <p style="font-size: 0.5659rem; color: #6b7280; margin: 0; font-family: 'Poppins', sans-serif;">Great job! No errors were found in this audit.</p>
+                </div>
+            </div>
+            `}
             </div>
             
         <!-- Avg Score & Passing Status -->
@@ -1790,28 +1925,6 @@ function generateErrorDetails(audit, errorFields) {
                 <div>
                     <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Status</p>
                     <div style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${audit.passingStatus || 'N/A'}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Error Counts: Total Errors, Critical Fail, Critical, Significant -->
-        <div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; margin-bottom: 0.6469rem; border: 0.0304rem solid #e5e7eb;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.6469rem;">
-                <div>
-                    <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Total Errors</p>
-                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${audit.totalErrorsCount || '0'}</div>
-                </div>
-                <div>
-                    <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Critical Fail</p>
-                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${criticalFailTotal}</div>
-                </div>
-                <div>
-                    <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Critical</p>
-                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${criticalTotal}</div>
-                </div>
-                <div>
-                    <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Significant Error</p>
-                    <div style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">${significantTotal}</div>
                 </div>
             </div>
         </div>
