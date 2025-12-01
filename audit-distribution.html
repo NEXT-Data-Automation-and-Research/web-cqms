@@ -1208,7 +1208,7 @@
                         <button onclick="applyBulkEdit()" class="btn-secondary" style="background: #1A733E; color: white; border-color: #1A733E; padding: 0.1875rem 0.5625rem; font-size: 0.5625rem;">
                             Apply Changes
                         </button>
-                        <button onclick="bulkDeleteAssignments()" class="btn-secondary" style="background: #ef4444; color: white; border-color: #ef4444; padding: 0.1875rem 0.5625rem; font-size: 0.5625rem;">
+                        <button id="bulkDeleteButton" onclick="bulkDeleteAssignments()" class="btn-secondary" style="background: #ef4444; color: white; border-color: #ef4444; padding: 0.1875rem 0.5625rem; font-size: 0.5625rem; display: none;">
                             Delete Selected
                         </button>
                     </div>
@@ -1312,6 +1312,31 @@ let currentPage = 1;
 let itemsPerPage = 20;
 
 // ============================================================================
+// Access Control - Deletion Permissions
+// ============================================================================
+function isSuperAdmin() {
+    try {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        return userInfo.role === 'Super Admin';
+    } catch (e) {
+        console.error('Error checking user role:', e);
+        return false;
+    }
+}
+
+function initializeDeletionAccessControl() {
+    // Show/hide bulk delete button based on Super Admin status
+    const bulkDeleteButton = document.getElementById('bulkDeleteButton');
+    if (bulkDeleteButton) {
+        if (isSuperAdmin()) {
+            bulkDeleteButton.style.display = 'inline-block';
+        } else {
+            bulkDeleteButton.style.display = 'none';
+        }
+    }
+}
+
+// ============================================================================
 // Initialize Page
 // ============================================================================
 document.addEventListener('DOMContentLoaded', async function() {
@@ -1363,6 +1388,9 @@ async function initializePage() {
         applyFiltersAndGroup();
         
         await loadAgentWiseSummary();
+        
+        // Initialize deletion access control
+        initializeDeletionAccessControl();
         
     } catch (error) {
         console.error('Error initializing page:', error);
@@ -1720,7 +1748,7 @@ async function loadAssignedAudits() {
                     </td>
                     <td style="padding: 0.2812rem; color: #6b7280; font-size: 0.5156rem;">${formattedDate}</td>
                     <td style="padding: 0.2812rem; text-align: center;">
-                            ${isDeletable ? `
+                            ${isDeletable && isSuperAdmin() ? `
                                 <div style="display: flex; gap: 0.1875rem; justify-content: center;">
                                     <button onclick="deleteAssignment('${assignment.id}')" 
                                         class="btn-action btn-action-danger"
@@ -2138,6 +2166,17 @@ async function saveAssignment(assignmentId) {
 }
 
 async function deleteAssignment(assignmentId) {
+    // Check if user is Super Admin
+    if (!isSuperAdmin()) {
+        await window.confirmationDialog.show({
+            title: 'Access Denied',
+            message: 'Only Super Admins can delete audit assignments.',
+            confirmText: 'OK',
+            type: 'error'
+        });
+        return;
+    }
+    
     try {
         // Find the assignment in local data
         const assignment = allAssignments.find(a => a.id === assignmentId);
@@ -4017,10 +4056,17 @@ function toggleAssignmentSelection() {
     
     const bulkActions = document.getElementById('bulkAssignmentActions');
     const countSpan = document.getElementById('bulkAssignmentCount');
+    const bulkDeleteButton = document.getElementById('bulkDeleteButton');
     
     if (visibleCheckedCount > 0) {
         bulkActions.style.display = 'flex';
         countSpan.textContent = `${visibleCheckedCount} selected`;
+        // Show bulk delete button only if user is Super Admin
+        if (bulkDeleteButton && isSuperAdmin()) {
+            bulkDeleteButton.style.display = 'inline-block';
+        } else if (bulkDeleteButton) {
+            bulkDeleteButton.style.display = 'none';
+        }
     } else {
         bulkActions.style.display = 'none';
     }
@@ -4122,6 +4168,17 @@ async function applyBulkEdit() {
 }
 
 async function bulkDeleteAssignments() {
+    // Check if user is Super Admin
+    if (!isSuperAdmin()) {
+        await window.confirmationDialog.show({
+            title: 'Access Denied',
+            message: 'Only Super Admins can delete audit assignments.',
+            confirmText: 'OK',
+            type: 'error'
+        });
+        return;
+    }
+    
     // Only get checkboxes from visible rows (respecting filters) to prevent accidental deletion
     const tbody = document.getElementById('assignedAuditsTableBody');
     const rows = tbody.querySelectorAll('tr');
