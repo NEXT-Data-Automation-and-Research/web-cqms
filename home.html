@@ -2488,7 +2488,7 @@ async function fetchAndCacheRecentUpdates(period) {
             displayEmail: assignment.employee_email,
             timestamp: assignment.status === 'completed' && assignment.completed_at 
               ? assignment.completed_at 
-              : assignment.created_at,
+              : (assignment.scheduled_date ? new Date(assignment.scheduled_date + 'T00:00:00').toISOString() : assignment.created_at),
             status: assignment.status,
             assignmentId: assignment.id
           });
@@ -2938,10 +2938,13 @@ async function loadPendingAssignmentsForAuditor() {
     return auditorEmail === normalizedCurrentEmail;
   });
   
-  // Apply date filter (week or date range)
+  // Apply date filter (week or date range) - use scheduled_date if available, otherwise created_at
   const period = getCurrentPeriodDates();
   filteredAssignments = filteredAssignments.filter(assignment => {
-    const assignmentDate = assignment.created_at;
+    // Use scheduled_date if available, otherwise fall back to created_at date
+    const assignmentDate = assignment.scheduled_date 
+      ? new Date(assignment.scheduled_date + 'T00:00:00') // Convert DATE to Date object
+      : assignment.created_at;
     if (!assignmentDate) return false;
     return isDateInRange(assignmentDate, period.start, period.end);
   });
@@ -2976,7 +2979,8 @@ async function loadPendingAssignmentsForAuditor() {
     employee_email: assignment.employee_email,
     auditor_email: assignment.auditor_email,
     status: assignment.status,
-    created_at: assignment.created_at
+    created_at: assignment.created_at,
+    scheduled_date: assignment.scheduled_date
   }));
   
   allAssignments = assignedAudits;
@@ -3328,7 +3332,10 @@ async function fetchAndCacheStats(period) {
     let allAssignments = assignments || [];
     const period = getCurrentPeriodDates();
     allAssignments = allAssignments.filter(assignment => {
-      const assignmentDate = assignment.created_at;
+      // Use scheduled_date if available, otherwise fall back to created_at date
+      const assignmentDate = assignment.scheduled_date 
+        ? new Date(assignment.scheduled_date + 'T00:00:00') // Convert DATE to Date object
+        : assignment.created_at;
       if (!assignmentDate) return false;
       return isDateInRange(assignmentDate, period.start, period.end);
     });
@@ -4519,7 +4526,7 @@ async function fetchAndCacheNotifications() {
         type: 'assignment',
         title: `Audit ${assignment.status === 'completed' ? 'completed' : assignment.status === 'in_progress' ? 'started' : 'assigned'}`,
         message: `${employeeName} - ${assignment.employee_name || 'Audit'}`,
-        timestamp: assignment.created_at,
+        timestamp: assignment.scheduled_date ? new Date(assignment.scheduled_date + 'T00:00:00').toISOString() : assignment.created_at,
         status: assignment.status,
         assignmentId: assignment.id
       });

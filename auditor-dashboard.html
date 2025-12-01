@@ -648,8 +648,12 @@ async function fetchAndCacheAssignments(period) {
             
             if (retryResult.data && period && period.start) {
                 retryResult.data = retryResult.data.filter(assignment => {
-                    if (!assignment.created_at) return false;
-                        const assignmentDate = toDhakaTime(assignment.created_at);
+                    // Use scheduled_date if available, otherwise created_at
+                    const dateToUse = assignment.scheduled_date 
+                        ? new Date(assignment.scheduled_date + 'T00:00:00')
+                        : assignment.created_at;
+                    if (!dateToUse) return false;
+                    const assignmentDate = toDhakaTime(dateToUse);
                     return (!period.start || assignmentDate >= period.start) && 
                            (!period.end || assignmentDate <= period.end);
                 });
@@ -738,14 +742,120 @@ async function fetchAndCacheTeamStats(period) {
             await loadAllUsers();
         }
         
-        // Get all Quality Analysts (auditors)
-        const qualityAnalysts = allUsers.filter(u => u.role === 'Quality Analyst');
+        // Load assignments in two ways:
+        // 1. Assignments scheduled in the date range (for assigned count)
+        // 2. Assignments completed in the date range (for completed count)
+        // This ensures we show auditors who either have assignments scheduled OR completed in the period
         
-        if (qualityAnalysts.length === 0) {
+        // Query 1: Assignments scheduled in the date range
+        // Filter by scheduled_date if available, otherwise created_at
+        let scheduledQuery = window.supabaseClient
+            .from('audit_assignments')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        // Try to filter by scheduled_date on server-side first (if period is a single day)
+        // For date range, we'll filter client-side since scheduled_date is a DATE column
+        let { data: scheduledData, error: scheduledError } = await scheduledQuery;
+        
+        // Filter by scheduled_date (or created_at as fallback) client-side
+        let scheduledAssignments = [];
+        if (scheduledData) {
+            scheduledAssignments = scheduledData.filter(assignment => {
+                // Use scheduled_date if available, otherwise created_at
+                let assignmentDate;
+                if (assignment.scheduled_date) {
+                    // scheduled_date is a DATE string (YYYY-MM-DD), parse it in Dhaka timezone
+                    assignmentDate = getDhakaStartOfDay(parseDhakaDate(assignment.scheduled_date));
+                } else if (assignment.created_at) {
+                    // Fallback to created_at - get the date part in Dhaka timezone
+                    assignmentDate = getDhakaStartOfDay(assignment.created_at);
+                } else {
+                    return false; // No date available
+                }
+                
+                // Check if assignment date falls within the period (compare at day level)
+                // period.start and period.end are already start/end of day in Dhaka timezone
+                // Compare dates by converting to YYYY-MM-DD strings for reliable comparison
+                const assignmentDateStr = formatDhakaDateForInput(assignmentDate);
+                const periodStartStr = period.start ? formatDhakaDateForInput(period.start) : null;
+                const periodEndStr = period.end ? formatDhakaDateForInput(period.end) : null;
+                
+                const inRange = (!periodStartStr || assignmentDateStr >= periodStartStr) && 
+                               (!periodEndStr || assignmentDateStr <= periodEndStr);
+                
+                return inRange;
+            });
+        }
+        
+        // Query 2: Assignments completed in the date range (for completed count)
+        let completedQuery = window.supabaseClient
+                .from('audit_assignments')
+                .select('*')
+            .eq('status', 'completed')
+            .not('completed_at', 'is', null)
+            .order('completed_at', { ascending: false });
+            
+        // Apply date filters for completed_at server-side
+            if (period.start) {
+            completedQuery = completedQuery.gte('completed_at', dhakaDateToUTCISO(period.start));
+            }
+            if (period.end) {
+            completedQuery = completedQuery.lte('completed_at', dhakaDateToUTCISO(period.end));
+        }
+        
+        let { data: completedData, error: completedError } = await completedQuery;
+        
+        // If server-side date filter fails, filter client-side
+        if (completedError && period && (period.start || period.end)) {
+            console.warn('Server-side completed_at filter failed, falling back to client-side filtering:', completedError);
+                const retryResult = await window.supabaseClient
+                    .from('audit_assignments')
+                    .select('*')
+                .eq('status', 'completed')
+                .not('completed_at', 'is', null)
+                .order('completed_at', { ascending: false });
+                
+                if (retryResult.data && period.start) {
+                    retryResult.data = retryResult.data.filter(assignment => {
+                    if (!assignment.completed_at) return false;
+                    const completedDate = toDhakaTime(assignment.completed_at);
+                    return (!period.start || completedDate >= period.start) && 
+                           (!period.end || completedDate <= period.end);
+                });
+            }
+            completedData = retryResult.data;
+            completedError = retryResult.error;
+        }
+        
+        // Merge both sets of assignments (scheduled + completed) to get all relevant assignments
+        // Use a Map to deduplicate by assignment ID
+        const assignmentsMap = new Map();
+        
+        // Add scheduled assignments
+        scheduledAssignments.forEach(a => assignmentsMap.set(a.id, a));
+        
+        // Add completed assignments (may overlap with scheduled, but that's fine - Map will dedupe)
+        if (completedData) {
+            completedData.forEach(a => assignmentsMap.set(a.id, a));
+        }
+        
+        const teamAssignments = Array.from(assignmentsMap.values());
+        
+        // Get unique auditor emails from all assignments (scheduled OR completed in period)
+        const auditorEmails = [...new Set(teamAssignments.map(a => a.auditor_email).filter(Boolean))];
+        
+        // Get user info for all auditors (any role)
+        const auditors = auditorEmails.map(email => {
+            const user = allUsers.find(u => u.email === email);
+            return user || { email, name: email, role: 'Unknown' };
+        });
+        
+        if (auditors.length === 0) {
             const tableBody = document.getElementById('performanceTableBody');
             tableBody.innerHTML = `
                 <div style="text-align: center; padding: 1.5rem; color: #6b7280;">
-                    No Quality Analysts found in the system.
+                    No auditors found with assignments in the selected date range.
                 </div>
             `;
             
@@ -764,54 +874,14 @@ async function fetchAndCacheTeamStats(period) {
             return;
         }
         
-        // Load all assignments for all Quality Analysts with date filtering
-        // Note: period is already passed as a parameter to this function
-            let assignmentsQuery = window.supabaseClient
-                .from('audit_assignments')
-                .select('*')
-                .in('auditor_email', qualityAnalysts.map(qa => qa.email))
-                .order('created_at', { ascending: false });
-            
-            // Apply date filters server-side if possible (convert Dhaka to UTC)
-            if (period.start) {
-                assignmentsQuery = assignmentsQuery.gte('created_at', dhakaDateToUTCISO(period.start));
-            }
-            if (period.end) {
-                assignmentsQuery = assignmentsQuery.lte('created_at', dhakaDateToUTCISO(period.end));
-            }
-            
-            let { data, error } = await assignmentsQuery;
-            
-            // If server-side date filter fails, try without date filter and filter client-side
-            if (error && period && (period.start || period.end)) {
-                console.warn('Server-side date filter failed, falling back to client-side filtering:', error);
-                const retryResult = await window.supabaseClient
-                    .from('audit_assignments')
-                    .select('*')
-                    .in('auditor_email', qualityAnalysts.map(qa => qa.email))
-                    .order('created_at', { ascending: false });
-                
-                if (retryResult.data && period.start) {
-                    retryResult.data = retryResult.data.filter(assignment => {
-                        if (!assignment.created_at) return false;
-                        const assignmentDate = toDhakaTime(assignment.created_at);
-                        return (!period.start || assignmentDate >= period.start) && 
-                               (!period.end || assignmentDate <= period.end);
-                    });
-                }
-                data = retryResult.data;
-                error = retryResult.error;
-            }
-            
-            if (error) throw error;
-            
-            const teamAssignments = data || [];
-        
         // Calculate overall team stats
-        const totalAssigned = teamAssignments.length;
-        const inProgress = teamAssignments.filter(a => a.status === 'in_progress').length;
-        const pending = teamAssignments.filter(a => a.status === 'pending').length;
-        const completed = teamAssignments.filter(a => a.status === 'completed').length;
+        // Assigned count: assignments scheduled in the period
+        const totalAssigned = scheduledAssignments.length;
+        const inProgress = scheduledAssignments.filter(a => a.status === 'in_progress').length;
+        const pending = scheduledAssignments.filter(a => a.status === 'pending').length;
+        // Completed count: assignments that are scheduled in the period AND completed
+        // (not just any completed assignment, but ones scheduled for this period)
+        const completed = scheduledAssignments.filter(a => a.status === 'completed').length;
         const remaining = pending + inProgress;
         
         // Calculate team average audit duration and reversal count in parallel
@@ -980,18 +1050,12 @@ async function fetchAndCacheTeamStats(period) {
             // completed count remains 0 if there's an error (always use scorecard tables)
         }
         
-        // Calculate same-day completed (assignments created and completed on the same day)
-        // Exclude backlog audits from completed count for team stats
-        let sameDayCompleted = completed;
-        const completedAssignments = teamAssignments.filter(a => a.status === 'completed');
-        sameDayCompleted = completedAssignments.filter(a => {
-            if (!a.created_at || !a.completed_at) return true; // Include if dates are missing
-            const createdDate = toDhakaTime(a.created_at);
-            const completedDate = toDhakaTime(a.completed_at);
-            const createdDay = formatDhakaDate(createdDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-            const completedDay = formatDhakaDate(completedDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-            return createdDay === completedDay;
-        }).length;
+        // Calculate same-day completed (assignments scheduled and completed on the same day)
+        // For the selected period, count assignments that are:
+        // 1. Scheduled in the period
+        // 2. Completed (regardless of when completed)
+        // This means if scheduled for Dec 3 and completed on Dec 1, it counts as completed on Dec 3
+        let sameDayCompleted = completed; // Already filtered to scheduled assignments that are completed
         
         const percentage = totalAssigned > 0 ? Math.round((sameDayCompleted / totalAssigned) * 100) : 0;
         console.log('Team Stats - Reversal count:', teamReversalCount);
@@ -1027,12 +1091,28 @@ async function fetchAndCacheTeamStats(period) {
         }
         
         // Parallelize all auditor duration queries
-        const auditorDurationPromises = qualityAnalysts.map(async (qa) => {
-            const qaAssignments = teamAssignments.filter(a => a.auditor_email === qa.email);
-            const qaInProgress = qaAssignments.filter(a => a.status === 'in_progress').length;
-            const qaPending = qaAssignments.filter(a => a.status === 'pending').length;
-            const qaCompleted = qaAssignments.filter(a => a.status === 'completed').length;
+        const auditorDurationPromises = auditors.map(async (qa) => {
+            // Get assignments scheduled in period for this auditor
+            const qaScheduledAssignments = scheduledAssignments.filter(a => a.auditor_email === qa.email);
+            
+            // Get assignments completed in period for this auditor
+            const qaCompletedInPeriod = completedData ? completedData.filter(a => a.auditor_email === qa.email) : [];
+            
+            // For stats: 
+            // - Assigned: assignments scheduled in the period
+            // - Completed: assignments that are BOTH scheduled in period AND completed
+            //   (not just any completed assignment, but ones scheduled for this period)
+            const qaInProgress = qaScheduledAssignments.filter(a => a.status === 'in_progress').length;
+            const qaPending = qaScheduledAssignments.filter(a => a.status === 'pending').length;
+            
+            // Completed count: only count assignments that are scheduled in this period AND completed
+            // This means if an assignment is scheduled for Dec 3 and completed, it shows as completed on Dec 3
+            // If it's scheduled for Dec 3 but completed on Dec 1, it still shows as completed on Dec 3 (not Dec 1)
+            const qaCompleted = qaScheduledAssignments.filter(a => a.status === 'completed').length;
             const qaRemaining = qaPending + qaInProgress;
+            
+            // For duration calculation, we need all assignments for this auditor
+            const qaAssignments = teamAssignments.filter(a => a.auditor_email === qa.email);
             
             // Calculate average duration by querying scorecard tables (based on submitted_at)
             let avgDurationText = '-';
@@ -1156,96 +1236,111 @@ async function fetchAndCacheTeamStats(period) {
                 // qaCompleted count remains 0 if there's an error (always use scorecard tables)
             }
             
-            // Calculate backlog coverage: Only count audits completed in the selected period
-            // Backlog = assignments completed in the period but created on a different day
-            // This ensures backlog only shows on the day it was completed, not when it was assigned
+            // Calculate backlog and early completions: Assignments completed in the period but scheduled for a different day
+            // Early = completed before scheduled_date
+            // Backlog = completed after scheduled_date
             // Use Dhaka timezone for date comparison to match the rest of the dashboard
             let backlogCount = 0;
-            let backlogDates = []; // Store dates when backlog audits were created
+            let earlyCount = 0;
+            let backlogDates = []; // Store dates when backlog audits were scheduled
+            let earlyDates = []; // Store dates when early audits were scheduled
             try {
-                // Query for assignments completed in the period but created on a different day
-                // This shows backlog work that was completed in the selected date range
-                let backlogItems = [];
-                if (period && (period.start || period.end)) {
-                    try {
-                        let completedBacklogQuery = window.supabaseClient
-                            .from('audit_assignments')
-                            .select('*')
-                            .eq('auditor_email', qa.email)
-                            .eq('status', 'completed')
-                            .not('completed_at', 'is', null)
-                            .not('created_at', 'is', null);
-                        
-                        // Filter by completed_at date (when the audit was completed)
-                        if (period.start) {
-                            completedBacklogQuery = completedBacklogQuery.gte('completed_at', dhakaDateToUTCISO(period.start));
-                        }
-                        if (period.end) {
-                            completedBacklogQuery = completedBacklogQuery.lte('completed_at', dhakaDateToUTCISO(period.end));
-                        }
-                        
-                        const { data: completedAssignments, error: completedError } = await completedBacklogQuery;
-                        
-                        if (!completedError && completedAssignments) {
-                            // Filter for assignments completed in period but created on different day
-                            backlogItems = completedAssignments.filter(a => {
-                                if (!a.completed_at || !a.created_at) return false;
-                                const completedDate = toDhakaTime(a.completed_at);
-                                // Check if completed date falls within the period
-                                const inPeriod = (!period.start || completedDate >= period.start) && 
-                                                (!period.end || completedDate <= period.end);
-                                if (!inPeriod) return false;
-                                
-                                const createdDate = toDhakaTime(a.created_at);
-                                const createdDay = formatDhakaDate(createdDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                                const completedDay = formatDhakaDate(completedDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                                return createdDay !== completedDay;
-                            });
-                        }
-                    } catch (queryError) {
-                        console.warn(`Error querying completed backlog for ${qa.email}:`, queryError);
-                    }
-                }
+                // Get assignments completed in the period for this auditor
+                const qaCompletedInPeriod = completedData ? completedData.filter(a => a.auditor_email === qa.email) : [];
                 
+                if (qaCompletedInPeriod.length > 0 && period) {
+                    // Separate early and backlog items
+                    const earlyItems = [];
+                    const backlogItems = [];
+                    
+                    qaCompletedInPeriod.forEach(a => {
+                        if (!a.completed_at) return;
+                        const completedDate = toDhakaTime(a.completed_at);
+                        // Check if completed date falls within the period
+                        const inPeriod = (!period.start || completedDate >= period.start) && 
+                                        (!period.end || completedDate <= period.end);
+                        if (!inPeriod) return;
+                        
+                        // Check if scheduled_date is different from completed date
+                        let scheduledDate;
+                        if (a.scheduled_date) {
+                            scheduledDate = getDhakaStartOfDay(parseDhakaDate(a.scheduled_date));
+                        } else if (a.created_at) {
+                            scheduledDate = getDhakaStartOfDay(a.created_at);
+                        } else {
+                            return; // No scheduled date to compare
+                        }
+                        
+                        const completedDay = getDhakaStartOfDay(completedDate);
+                        const scheduledDay = getDhakaStartOfDay(scheduledDate);
+                        
+                        // If scheduled date is different from completed date
+                        if (scheduledDay.getTime() !== completedDay.getTime()) {
+                            // Early = completed before scheduled date
+                            if (completedDay.getTime() < scheduledDay.getTime()) {
+                                earlyItems.push(a);
+                            } else {
+                                // Backlog = completed after scheduled date
+                                backlogItems.push(a);
+                            }
+                        }
+                    });
+                
+                earlyCount = earlyItems.length;
                 backlogCount = backlogItems.length;
-                backlogDates = [...new Set(backlogItems.map(a => {
-                    const createdDate = toDhakaTime(a.created_at);
-                    return formatDhakaDate(createdDate, { year: 'numeric', month: 'short', day: 'numeric' });
+                
+                earlyDates = [...new Set(earlyItems.map(a => {
+                    let scheduledDate;
+                    if (a.scheduled_date) {
+                        scheduledDate = getDhakaStartOfDay(parseDhakaDate(a.scheduled_date));
+                    } else if (a.created_at) {
+                        scheduledDate = getDhakaStartOfDay(a.created_at);
+                    } else {
+                        return 'Unknown';
+                    }
+                    return formatDhakaDate(scheduledDate, { year: 'numeric', month: 'short', day: 'numeric' });
                 }))].sort();
+                
+                backlogDates = [...new Set(backlogItems.map(a => {
+                    let scheduledDate;
+                    if (a.scheduled_date) {
+                        scheduledDate = getDhakaStartOfDay(parseDhakaDate(a.scheduled_date));
+                    } else if (a.created_at) {
+                        scheduledDate = getDhakaStartOfDay(a.created_at);
+                    } else {
+                        return 'Unknown';
+                    }
+                    return formatDhakaDate(scheduledDate, { year: 'numeric', month: 'short', day: 'numeric' });
+                }))].sort();
+                }
             } catch (error) {
-                console.warn(`Error calculating backlog for ${qa.email}:`, error);
+                console.warn(`Error calculating backlog/early for ${qa.email}:`, error);
                 backlogCount = 0;
+                earlyCount = 0;
                 backlogDates = [];
+                earlyDates = [];
             }
             
-            // Calculate same-day completed (assignments created and completed on the same day)
-            // Exclude backlog audits from completed count
-            let sameDayCompleted = qaCompleted;
-            if (backlogCount > 0) {
-                // Filter completed assignments to exclude backlog (created on different day than completed)
-                const completedAssignments = qaAssignments.filter(a => a.status === 'completed');
-                sameDayCompleted = completedAssignments.filter(a => {
-                    if (!a.created_at || !a.completed_at) return true; // Include if dates are missing
-                    const createdDate = toDhakaTime(a.created_at);
-                    const completedDate = toDhakaTime(a.completed_at);
-                    const createdDay = formatDhakaDate(createdDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                    const completedDay = formatDhakaDate(completedDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                    return createdDay === completedDay;
-                }).length;
-            }
+            // Calculate same-day completed: assignments scheduled in the period that are completed
+            // This means if scheduled for Dec 3 and completed (even on Dec 1), it counts as completed on Dec 3
+            // Backlog is separate - it's assignments completed in the period but scheduled for a different day
+            let sameDayCompleted = qaCompleted; // Already filtered to scheduled assignments that are completed
             
-            const qaPercentage = qaAssignments.length > 0 ? Math.round((sameDayCompleted / qaAssignments.length) * 100) : 0;
+            // Use scheduled assignments count for percentage calculation
+            const qaPercentage = qaScheduledAssignments.length > 0 ? Math.round((sameDayCompleted / qaScheduledAssignments.length) * 100) : 0;
             
             return {
                 name: qa.name || qa.email,
                 email: qa.email,
-                assigned: qaAssignments.length,
-                completed: sameDayCompleted,
+                assigned: qaScheduledAssignments.length, // Count of assignments scheduled in period
+                completed: sameDayCompleted, // Count of assignments completed in period (same-day only, excluding backlog/early)
                 remaining: qaRemaining,
                 percentage: qaPercentage,
                 avgDuration: avgDurationText,
                 backlogCovered: backlogCount,
                 backlogDates: backlogDates,
+                earlyCovered: earlyCount,
+                earlyDates: earlyDates,
                 isCurrentUser: qa.email === currentUserEmail
             };
         });
@@ -1260,8 +1355,9 @@ async function fetchAndCacheTeamStats(period) {
             return a.name.localeCompare(b.name);
         });
         
-        // Calculate total backlog count from all auditors
+        // Calculate total backlog and early counts from all auditors
         const totalBacklogCount = auditorStats.reduce((sum, auditor) => sum + (auditor.backlogCovered || 0), 0);
+        const totalEarlyCount = auditorStats.reduce((sum, auditor) => sum + (auditor.earlyCovered || 0), 0);
         
         // Note: sameDayCompleted is already calculated above, excluding backlog
         // Recalculate percentage based on same-day completed count (already done above)
@@ -1270,7 +1366,7 @@ async function fetchAndCacheTeamStats(period) {
         // Prepare the stats data
         const statsData = {
             totalAssigned,
-            completed: sameDayCompleted, // Same-day completed count (excluding backlog)
+            completed: sameDayCompleted, // Same-day completed count (excluding backlog/early)
             inProgress,
             pending,
             remaining,
@@ -1279,8 +1375,9 @@ async function fetchAndCacheTeamStats(period) {
             avgDurationSubtitle,
             teamReversalCount,
             totalBacklogCount,
+            totalEarlyCount,
             auditorStats,
-            qualityAnalystsCount: qualityAnalysts.length
+            auditorsCount: auditors.length
         };
         
         // Update UI with fresh data (only if still on Team Stats tab)
@@ -1337,15 +1434,15 @@ function renderTeamStats(statsData) {
         avgDurationSubtitle,
         teamReversalCount,
         totalBacklogCount,
+        totalEarlyCount,
         auditorStats,
         qualityAnalystsCount
     } = statsData;
     
-    // Get all Quality Analysts (auditors)
-    const qualityAnalysts = allUsers.filter(u => u.role === 'Quality Analyst');
-    const qualityAnalystsLength = qualityAnalystsCount || qualityAnalysts.length;
+    // Get auditors from stats data (any role, not just Quality Analysts)
+    const auditorsCount = statsData.auditorsCount || auditorStats.length;
     
-    if (qualityAnalysts.length === 0) {
+    if (auditorStats.length === 0) {
         const tableBody = document.getElementById('performanceTableBody');
         tableBody.innerHTML = `
             <div style="text-align: center; padding: 1.5rem; color: #6b7280;">
@@ -1397,12 +1494,20 @@ function renderTeamStats(statsData) {
     document.getElementById('stat1Count').textContent = totalAssigned;
     document.getElementById('completedCount').textContent = completed;
     
-    // Update backlog count text next to completed count
+    // Update backlog and early count text next to completed count
     const backlogCountText = document.getElementById('backlogCountText');
     if (backlogCountText) {
         const backlogCount = totalBacklogCount || 0;
+        const earlyCount = totalEarlyCount || 0;
+        const parts = [];
         if (backlogCount > 0) {
-            backlogCountText.textContent = `+${backlogCount} Backlog`;
+            parts.push(`+${backlogCount} Backlog`);
+        }
+        if (earlyCount > 0) {
+            parts.push(`+${earlyCount} Early`);
+        }
+        if (parts.length > 0) {
+            backlogCountText.textContent = parts.join(', ');
             backlogCountText.style.display = 'block';
         } else {
             backlogCountText.textContent = '';
@@ -1420,7 +1525,7 @@ function renderTeamStats(statsData) {
     const stat4Count = document.getElementById('stat4Count');
     stat4Count.style.fontSize = '2.625rem';
     stat4Count.textContent = inProgress;
-    document.getElementById('stat4Subtitle').textContent = `${qualityAnalystsLength} auditor${qualityAnalystsLength !== 1 ? 's' : ''}`;
+    document.getElementById('stat4Subtitle').textContent = `${auditorsCount} auditor${auditorsCount !== 1 ? 's' : ''}`;
     document.getElementById('stat5Label').textContent = 'REVERSAL RATE';
     document.getElementById('stat5Count').textContent = teamReversalCount;
     document.getElementById('stat5Subtitle').textContent = '';
@@ -1443,14 +1548,19 @@ function renderTeamStats(statsData) {
         <div style="text-align: center;">Progress Meter</div>
     `;
     
-    // Update table with all Quality Analysts
+    // Update table with all auditors (any role)
     const tableBody = document.getElementById('performanceTableBody');
     tableBody.innerHTML = auditorStats.map(stats => {
-        // Build tooltip text for backlog
+        // Build tooltip text for backlog and early
         let backlogTooltip = '';
+        let earlyTooltip = '';
         if (stats.backlogCovered > 0 && stats.backlogDates && stats.backlogDates.length > 0) {
             const datesText = stats.backlogDates.join(', ');
             backlogTooltip = `${stats.backlogCovered} backlog covered from ${datesText}`;
+        }
+        if (stats.earlyCovered > 0 && stats.earlyDates && stats.earlyDates.length > 0) {
+            const datesText = stats.earlyDates.join(', ');
+            earlyTooltip = `${stats.earlyCovered} early completed for ${datesText}`;
         }
         
         return `
@@ -1461,9 +1571,10 @@ function renderTeamStats(statsData) {
             </div>
             <div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;" data-label="Assigned">${stats.assigned}</div>
             <div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;" data-label="Completed">
-                <div style="display: inline-flex; align-items: baseline; gap: 0.25rem;">
+                <div style="display: inline-flex; align-items: baseline; gap: 0.25rem; flex-wrap: wrap; justify-content: center;">
                     <span>${stats.completed}</span>
-                    ${stats.backlogCovered > 0 ? `<span style="font-size: 0.5rem; color: #f59e0b; font-weight: 600; cursor: help;" title="${escapeHtml(backlogTooltip)}">+${stats.backlogCovered}</span>` : ''}
+                    ${stats.earlyCovered > 0 ? `<span style="font-size: 0.5rem; color: #10b981; font-weight: 600; cursor: help;" title="${escapeHtml(earlyTooltip)}">+${stats.earlyCovered} Early</span>` : ''}
+                    ${stats.backlogCovered > 0 ? `<span style="font-size: 0.5rem; color: #f59e0b; font-weight: 600; cursor: help;" title="${escapeHtml(backlogTooltip)}">+${stats.backlogCovered} Backlog</span>` : ''}
                 </div>
             </div>
             <div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;" data-label="Remaining">${stats.remaining}</div>
@@ -1671,26 +1782,10 @@ async function fetchAndCacheStandupView(period) {
         // Load all audit assignments with date filtering
         // Filter to only Quality Analysts (auditors) to match Team Stats calculation
         
-        // Get all Quality Analysts (auditors) - matching Team Stats logic
-        const qualityAnalysts = allUsers.filter(u => u.role === 'Quality Analyst');
-        
-        if (qualityAnalysts.length === 0) {
-            const tableBody = document.getElementById('performanceTableBody');
-            if (tableBody) {
-                tableBody.innerHTML = `
-                    <div style="text-align: center; padding: 1.5rem; color: #6b7280;">
-                        No Quality Analysts found in the system.
-                    </div>
-                `;
-            }
-            hideLoadingState();
-            return;
-        }
-        
+        // Load all assignments with date filtering (no role restriction)
         let assignmentsQuery = window.supabaseClient
             .from('audit_assignments')
             .select('*')
-            .in('auditor_email', qualityAnalysts.map(qa => qa.email))
             .order('created_at', { ascending: false });
         
         // Apply date filters server-side if possible (convert Dhaka to UTC)
@@ -1709,13 +1804,16 @@ async function fetchAndCacheStandupView(period) {
             const retryResult = await window.supabaseClient
                 .from('audit_assignments')
                 .select('*')
-                .in('auditor_email', qualityAnalysts.map(qa => qa.email))
                 .order('created_at', { ascending: false });
             
             if (retryResult.data && period.start) {
                 retryResult.data = retryResult.data.filter(assignment => {
-                    if (!assignment.created_at) return false;
-                    const assignmentDate = toDhakaTime(assignment.created_at);
+                    // Use scheduled_date if available, otherwise created_at
+                    const dateToUse = assignment.scheduled_date 
+                        ? new Date(assignment.scheduled_date + 'T00:00:00')
+                        : assignment.created_at;
+                    if (!dateToUse) return false;
+                    const assignmentDate = toDhakaTime(dateToUse);
                     return (!period.start || assignmentDate >= period.start) && 
                            (!period.end || assignmentDate <= period.end);
                 });
@@ -1727,6 +1825,22 @@ async function fetchAndCacheStandupView(period) {
         if (error) throw error;
         
         const allAuditAssignments = data || [];
+        
+        // Get unique auditor emails from assignments (any role, not just Quality Analysts)
+        const auditorEmails = [...new Set(allAuditAssignments.map(a => a.auditor_email).filter(Boolean))];
+        
+        if (auditorEmails.length === 0) {
+            const tableBody = document.getElementById('performanceTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <div style="text-align: center; padding: 1.5rem; color: #6b7280;">
+                        No auditors found with assignments in the selected date range.
+                    </div>
+                `;
+            }
+            hideLoadingState();
+            return;
+        }
         
         // Calculate overall stats
         const totalAssigned = allAuditAssignments.length;
@@ -2003,26 +2117,23 @@ async function fetchAndCacheStandupView(period) {
         console.log('Standup View - Reversal count:', standupReversalCount);
         console.log('Standup View - Completed count:', completed);
         
-        // Calculate backlog coverage (assignments created on one day but completed on another)
-        // Filter by completed_at date (not created_at) to show backlog work completed in the selected period
+        // Calculate backlog and early completions (assignments completed on a different day than scheduled)
+        // Filter by completed_at date to show work completed in the selected period
         // Use Dhaka timezone for date comparison to match the rest of the dashboard
-        // This matches Team Stats calculation logic exactly
+        // Early = completed before scheduled_date
+        // Backlog = completed after scheduled_date
         let totalBacklogCount = 0;
+        let totalEarlyCount = 0;
         let backlogByChannel = {}; // Track backlog per channel
+        let earlyByChannel = {}; // Track early completions per channel
         
         try {
-            // Get all Quality Analysts (auditors) - matching Team Stats logic
-            const qualityAnalysts = allUsers.filter(u => u.role === 'Quality Analyst');
-            
-            // Fetch all completed assignments for Quality Analysts, filtered by completed_at date
-            // This matches Team Stats calculation logic exactly
+            // Fetch all completed assignments (any role), filtered by completed_at date
             let backlogQuery = window.supabaseClient
                 .from('audit_assignments')
                 .select('*')
-                .in('auditor_email', qualityAnalysts.map(qa => qa.email))
                 .eq('status', 'completed')
-                .not('completed_at', 'is', null)
-                .not('created_at', 'is', null);
+                .not('completed_at', 'is', null);
             
             // Filter by completed_at date (when the audit was completed, not when it was assigned)
             if (period.start) {
@@ -2036,26 +2147,56 @@ async function fetchAndCacheStandupView(period) {
             
             if (!backlogError && completedAssignments) {
                 // Filter client-side to ensure accuracy with Dhaka timezone
-                const filteredCompleted = completedAssignments.filter(a => {
-                    if (!a.completed_at) return false;
+                const earlyItems = [];
+                const backlogItems = [];
+                
+                completedAssignments.forEach(a => {
+                    if (!a.completed_at) return;
                     const completedDate = toDhakaTime(a.completed_at);
                     // Check if completed date falls within the period
                     const inPeriod = (!period.start || completedDate >= period.start) && 
                                     (!period.end || completedDate <= period.end);
-                    if (!inPeriod) return false;
+                    if (!inPeriod) return;
                     
-                    // Check if created on a different day than completed (in Dhaka timezone)
-                    if (!a.created_at) return false;
-                    const createdDate = toDhakaTime(a.created_at);
-                    const createdDay = formatDhakaDate(createdDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                    const completedDay = formatDhakaDate(completedDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                    return createdDay !== completedDay;
+                    // Get scheduled date (prefer scheduled_date, fallback to created_at)
+                    let scheduledDate;
+                    if (a.scheduled_date) {
+                        scheduledDate = getDhakaStartOfDay(parseDhakaDate(a.scheduled_date));
+                    } else if (a.created_at) {
+                        scheduledDate = getDhakaStartOfDay(a.created_at);
+                    } else {
+                        return; // No scheduled date to compare
+                    }
+                    
+                    const completedDay = getDhakaStartOfDay(completedDate);
+                    const scheduledDay = getDhakaStartOfDay(scheduledDate);
+                    
+                    // If scheduled date is different from completed date
+                    if (scheduledDay.getTime() !== completedDay.getTime()) {
+                        // Early = completed before scheduled date
+                        if (completedDay.getTime() < scheduledDay.getTime()) {
+                            earlyItems.push(a);
+                        } else {
+                            // Backlog = completed after scheduled date
+                            backlogItems.push(a);
+                        }
+                    }
                 });
                 
-                totalBacklogCount = filteredCompleted.length;
+                totalEarlyCount = earlyItems.length;
+                totalBacklogCount = backlogItems.length;
                 
-                // Group backlog by channel
-                filteredCompleted.forEach(a => {
+                // Group early and backlog by channel
+                earlyItems.forEach(a => {
+                    const emp = allUsers.find(u => u.email === a.employee_email);
+                    const channel = emp?.channel || 'Unknown';
+                    if (!earlyByChannel[channel]) {
+                        earlyByChannel[channel] = 0;
+                    }
+                    earlyByChannel[channel]++;
+                });
+                
+                backlogItems.forEach(a => {
                     const emp = allUsers.find(u => u.email === a.employee_email);
                     const channel = emp?.channel || 'Unknown';
                     if (!backlogByChannel[channel]) {
@@ -2065,24 +2206,56 @@ async function fetchAndCacheStandupView(period) {
                 });
             } else if (backlogError) {
                 // Fallback: filter from all assignments if query fails
-                const allCompleted = allAuditAssignments.filter(a => {
-                    if (a.status !== 'completed' || !a.completed_at || !a.created_at) return false;
+                const earlyItems = [];
+                const backlogItems = [];
+                
+                allAuditAssignments.forEach(a => {
+                    if (a.status !== 'completed' || !a.completed_at) return;
                     const completedDate = toDhakaTime(a.completed_at);
                     // Check if completed date falls within the period
                     const inPeriod = (!period.start || completedDate >= period.start) && 
                                     (!period.end || completedDate <= period.end);
-                    if (!inPeriod) return false;
+                    if (!inPeriod) return;
                     
-                    // Check if created on a different day than completed
-                    const createdDate = toDhakaTime(a.created_at);
-                    const createdDay = formatDhakaDate(createdDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                    const completedDay = formatDhakaDate(completedDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                    return createdDay !== completedDay;
+                    // Get scheduled date (prefer scheduled_date, fallback to created_at)
+                    let scheduledDate;
+                    if (a.scheduled_date) {
+                        scheduledDate = getDhakaStartOfDay(parseDhakaDate(a.scheduled_date));
+                    } else if (a.created_at) {
+                        scheduledDate = getDhakaStartOfDay(a.created_at);
+                    } else {
+                        return;
+                    }
+                    
+                    const completedDay = getDhakaStartOfDay(completedDate);
+                    const scheduledDay = getDhakaStartOfDay(scheduledDate);
+                    
+                    // If scheduled date is different from completed date
+                    if (scheduledDay.getTime() !== completedDay.getTime()) {
+                        // Early = completed before scheduled date
+                        if (completedDay.getTime() < scheduledDay.getTime()) {
+                            earlyItems.push(a);
+                        } else {
+                            // Backlog = completed after scheduled date
+                            backlogItems.push(a);
+                        }
+                    }
                 });
-                totalBacklogCount = allCompleted.length;
                 
-                // Group backlog by channel
-                allCompleted.forEach(a => {
+                totalEarlyCount = earlyItems.length;
+                totalBacklogCount = backlogItems.length;
+                
+                // Group early and backlog by channel
+                earlyItems.forEach(a => {
+                    const emp = allUsers.find(u => u.email === a.employee_email);
+                    const channel = emp?.channel || 'Unknown';
+                    if (!earlyByChannel[channel]) {
+                        earlyByChannel[channel] = 0;
+                    }
+                    earlyByChannel[channel]++;
+                });
+                
+                backlogItems.forEach(a => {
                     const emp = allUsers.find(u => u.email === a.employee_email);
                     const channel = emp?.channel || 'Unknown';
                     if (!backlogByChannel[channel]) {
@@ -2092,19 +2265,53 @@ async function fetchAndCacheStandupView(period) {
                 });
             }
         } catch (error) {
-            console.warn('Error calculating backlog for standup view:', error);
+            console.warn('Error calculating backlog/early for standup view:', error);
             // Fallback to simple calculation from allAuditAssignments
-            const backlogItems = allAuditAssignments.filter(a => {
-                if (a.status !== 'completed' || !a.completed_at || !a.created_at) return false;
-                const createdDate = toDhakaTime(a.created_at);
+            const earlyItems = [];
+            const backlogItems = [];
+            
+            allAuditAssignments.forEach(a => {
+                if (a.status !== 'completed' || !a.completed_at) return;
+                
+                // Get scheduled date (prefer scheduled_date, fallback to created_at)
+                let scheduledDate;
+                if (a.scheduled_date) {
+                    scheduledDate = getDhakaStartOfDay(parseDhakaDate(a.scheduled_date));
+                } else if (a.created_at) {
+                    scheduledDate = getDhakaStartOfDay(a.created_at);
+                } else {
+                    return;
+                }
+                
                 const completedDate = toDhakaTime(a.completed_at);
-                const createdDay = formatDhakaDate(createdDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                const completedDay = formatDhakaDate(completedDate, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                return createdDay !== completedDay;
+                const completedDay = getDhakaStartOfDay(completedDate);
+                const scheduledDay = getDhakaStartOfDay(scheduledDate);
+                
+                // If scheduled date is different from completed date
+                if (scheduledDay.getTime() !== completedDay.getTime()) {
+                    // Early = completed before scheduled date
+                    if (completedDay.getTime() < scheduledDay.getTime()) {
+                        earlyItems.push(a);
+                    } else {
+                        // Backlog = completed after scheduled date
+                        backlogItems.push(a);
+                    }
+                }
             });
+            
+            totalEarlyCount = earlyItems.length;
             totalBacklogCount = backlogItems.length;
             
-            // Group backlog by channel
+            // Group early and backlog by channel
+            earlyItems.forEach(a => {
+                const emp = allUsers.find(u => u.email === a.employee_email);
+                const channel = emp?.channel || 'Unknown';
+                if (!earlyByChannel[channel]) {
+                    earlyByChannel[channel] = 0;
+                }
+                earlyByChannel[channel]++;
+            });
+            
             backlogItems.forEach(a => {
                 const emp = allUsers.find(u => u.email === a.employee_email);
                 const channel = emp?.channel || 'Unknown';
@@ -2115,9 +2322,9 @@ async function fetchAndCacheStandupView(period) {
             });
         }
         
-        // Exclude backlog audits from completed count (matching Team Stats logic exactly)
-        // Completed count should only show same-day completions (not backlog)
-        const sameDayCompleted = Math.max(0, completed - totalBacklogCount);
+        // Exclude backlog and early audits from completed count (matching Team Stats logic exactly)
+        // Completed count should only show same-day completions (not backlog/early)
+        const sameDayCompleted = Math.max(0, completed - totalBacklogCount - totalEarlyCount);
         
         // Calculate percentage and coverage (using same-day completed count, matching Team Stats)
         const percentage = totalAssigned > 0 ? Math.round((sameDayCompleted / totalAssigned) * 100) : 0;
@@ -2154,7 +2361,7 @@ async function fetchAndCacheStandupView(period) {
         
         // Update completed counts from scorecard tables (completedAuditsByChannel)
         // This was populated in the results.forEach loop above
-        // Exclude backlog per channel to match Team Stats logic
+        // Exclude backlog and early per channel to match Team Stats logic
         Object.keys(completedAuditsByChannel || {}).forEach(channel => {
             if (!channelStats[channel]) {
                 channelStats[channel] = {
@@ -2166,10 +2373,11 @@ async function fetchAndCacheStandupView(period) {
                     percentage: 0
                 };
             }
-            // Exclude backlog from completed count per channel (matching Team Stats logic)
+            // Exclude backlog and early from completed count per channel (matching Team Stats logic)
             const channelBacklog = backlogByChannel[channel] || 0;
+            const channelEarly = earlyByChannel[channel] || 0;
             const channelCompleted = completedAuditsByChannel[channel] || 0;
-            channelStats[channel].completed = Math.max(0, channelCompleted - channelBacklog);
+            channelStats[channel].completed = Math.max(0, channelCompleted - channelBacklog - channelEarly);
         });
         
         // Calculate remaining and percentage for each channel (using same-day completed count)
@@ -2303,8 +2511,12 @@ function populateAuditorFilter() {
     const auditorFilter = document.getElementById('auditorFilter');
     if (!auditorFilter) return;
     
-    // Get all Quality Analysts (auditors)
-    const auditors = allUsers.filter(u => u.role === 'Quality Analyst');
+    // Get all unique auditors from assignments (any role, not just Quality Analysts)
+    const auditorEmails = [...new Set(unfilteredAssignments.map(a => a.auditor_email).filter(Boolean))];
+    const auditors = auditorEmails.map(email => {
+        const user = allUsers.find(u => u.email === email);
+        return user || { email, name: email };
+    });
     
     const existingValue = auditorFilter.value;
     auditorFilter.innerHTML = '<option value="">All Auditors</option>';
@@ -2777,6 +2989,13 @@ window.applyDateFilter = function() {
 
     const dateBtnTextEl = document.getElementById('dateBtnText');
     if (startDate || endDate) {
+        // If only one date is provided, set both start and end to that date (single day view)
+        if (startDate && !endDate) {
+            dateFilter.end = startDate;
+        } else if (endDate && !startDate) {
+            dateFilter.start = endDate;
+        }
+        
         const start = startDate ? formatDhakaDate(parseDhakaDate(startDate), { month: 'short', day: 'numeric' }) : 'Start';
         const end = endDate ? formatDhakaDate(parseDhakaDate(endDate), { month: 'short', day: 'numeric' }) : 'End';
         if (dateBtnTextEl) dateBtnTextEl.textContent = `${start} - ${end}`;

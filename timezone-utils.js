@@ -176,8 +176,10 @@ function dhakaDateToUTCISO(dhakaDate) {
     // we need to convert it to UTC for database storage
     const dateObj = dhakaDate instanceof Date ? dhakaDate : new Date(dhakaDate);
     
-    // Get the UTC equivalent
-    const utcTime = dateObj.getTime() - (DHAKA_UTC_OFFSET_MINUTES * 60000);
+    // Date objects created by createDhakaDate already have the offset applied
+    // (they represent the UTC time that, when displayed in Dhaka, shows the correct time)
+    // So we need to ADD the offset back to get the actual UTC time
+    const utcTime = dateObj.getTime() + (DHAKA_UTC_OFFSET_MINUTES * 60000);
     const utcDate = new Date(utcTime);
     
     return utcDate.toISOString();

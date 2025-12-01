@@ -11939,9 +11939,12 @@ async function loadAssignmentFromURL(assignmentId) {
         if (interactionDateField && assignment.interaction_date) {
             interactionDateField.value = assignment.interaction_date;
             console.log('✅ Interaction date pre-filled:', assignment.interaction_date);
-        } else if (interactionDateField && assignment.created_at) {
-            // Use assignment creation date as fallback
-            const assignmentDate = new Date(assignment.created_at);
+        } else if (interactionDateField && (assignment.scheduled_date || assignment.created_at)) {
+            // Use scheduled_date if available, otherwise created_at as fallback
+            const dateToUse = assignment.scheduled_date 
+                ? assignment.scheduled_date 
+                : assignment.created_at;
+            const assignmentDate = new Date(dateToUse + (assignment.scheduled_date ? 'T00:00:00' : ''));
             const dateStr = assignmentDate.toISOString().split('T')[0];
             interactionDateField.value = dateStr;
             console.log('✅ Interaction date pre-filled from assignment date:', dateStr);

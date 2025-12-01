@@ -2721,7 +2721,10 @@ async function updateYourStats() {
         const period = getCurrentPeriodDates();
         if (period.start || period.end) {
             filteredAssignments = filteredAssignments.filter(assignment => {
-                const assignmentDate = assignment.created_at;
+                // Use scheduled_date if available, otherwise created_at
+                const assignmentDate = assignment.scheduled_date 
+                    ? new Date(assignment.scheduled_date + 'T00:00:00')
+                    : assignment.created_at;
                 if (!assignmentDate) return false;
                 return isDateInRange(assignmentDate, period.start, period.end);
             });
