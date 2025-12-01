@@ -3172,6 +3172,9 @@ function displayConversationMessages(conversation) {
     // Reset images array
     allConversationImages = [];
 
+    // Track if we've already rendered rating cards to avoid duplicates
+    let ratingCardsRendered = false;
+
     // Cache dark mode values once (outside the loop for performance)
     // Use try-catch to prevent errors from breaking message rendering
     let isDarkMode = false;
@@ -3221,6 +3224,243 @@ function displayConversationMessages(conversation) {
             month: 'short',
             day: 'numeric'
         });
+        
+        // Calculate time ago for rating request
+        const now = Math.floor(Date.now() / 1000);
+        const partTimestamp = typeof part.created_at === 'number' ? part.created_at : timestamp.getTime() / 1000;
+        const diff = now - partTimestamp;
+        const days = Math.floor(diff / 86400);
+        let timeAgo = 'Today';
+        if (days === 1) {
+            timeAgo = '1d';
+        } else if (days > 1) {
+            timeAgo = `${days}d`;
+        }
+        
+        // Check if this is a conversation summary (should be displayed as chat bubble with note color)
+        const isConversationSummary = partType === 'conversation_summary';
+        
+        if (isConversationSummary) {
+            // Format the message body
+            let messageData;
+            try {
+                messageData = formatMessageBody(message);
+            } catch (e) {
+                console.error('Error formatting message body for conversation summary:', e);
+                messageData = { text: '', html: null, images: [] };
+            }
+            const formattedHtml = messageData?.html || message;
+            
+            // Render as right-aligned chat bubble with note-like color
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-end;
+                margin: 0.4043rem 0;
+                padding: 0 0.8086rem;
+            `;
+            
+            // Light brown-yellow note color (like Intercom) but as chat bubble
+            const noteBg = '#fef3c7'; // Light yellow/amber
+            const noteText = '#78350f'; // Dark brown text
+            const noteHeaderText = '#92400e'; // Slightly lighter brown for header
+            const secondaryText = '#a16207'; // Amber for timestamp
+            
+            // Generate avatar for AI
+            const avatar = generateAvatar(authorName, 'ai');
+            
+            messageDiv.innerHTML = `
+                <div style="
+                    background: ${noteBg};
+                    border-radius: 0.4852rem 0.4852rem 0.1617rem 0.4852rem;
+                    padding: 0.4852rem 0.6469rem;
+                    max-width: 70%;
+                    position: relative;
+                    margin-right: 0.3234rem;
+                ">
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        gap: 0.3234rem;
+                        margin-bottom: 0.2426rem;
+                    ">
+                        <span style="
+                            color: ${noteHeaderText};
+                            font-size: 0.4852rem;
+                            font-weight: 600;
+                        ">AI Summary</span>
+                    </div>
+                    <div style="
+                        color: ${noteText};
+                        font-size: 0.4447rem;
+                        line-height: 1.6;
+                        margin-bottom: 0.1617rem;
+                    ">
+                        ${formattedHtml || escapeHtml(message)}
+                    </div>
+                    <div style="
+                        color: ${secondaryText};
+                        font-size: 0.3639rem;
+                        text-align: right;
+                        margin-top: 0.1617rem;
+                    ">${timeStr} • ${dateStr}</div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 0.2426rem; margin-left: 0.3234rem; flex-shrink: 0; order: 3;">
+                    <div style="
+                        width: 1.455rem;
+                        height: 1.455rem;
+                        border-radius: 50%;
+                        background: ${avatar.bgGradient};
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        box-shadow: 0 0.0808rem 0.1617rem rgba(0,0,0,0.2), 0 0.0203rem 0.0405rem rgba(0,0,0,0.1);
+                        border: 0.0203rem solid ${avatar.borderColor};
+                        position: relative;
+                        overflow: hidden;
+                    ">
+                        <img src="./assets/logos/ai_avatar.webp" alt="AI Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="console.error('AI avatar image failed to load:', this.src); this.style.display='none'; this.parentElement.innerHTML='<span style=\\'position: relative; z-index: 1; text-shadow: 0 0.0203rem 0.0405rem rgba(0,0,0,0.2); color: ${avatar.textColor}; font-size: 0.5257rem; font-weight: 700;\\'>${avatar.initials}</span>';" />
+                    </div>
+                    <span style="
+                        font-size: 0.3639rem;
+                        font-weight: 600;
+                        color: #1d1d1d;
+                        margin-top: 0.0808rem;
+                        text-transform: uppercase;
+                        letter-spacing: 0.0203rem;
+                    ">${avatar.label}</span>
+                </div>
+            `;
+            
+            chatMessagesContainer.appendChild(messageDiv);
+            return; // Skip normal rendering
+        }
+        
+        // Check if this is a rating request system message
+        const isRatingRequest = part.body && 
+            (part.body.includes('[Conversation Rating Request]') || 
+             part.body.includes('Conversation Rating Request'));
+        
+        if (isRatingRequest && authorType === 'bot') {
+            // Get customer name
+            let customerName = 'Customer';
+            if (conversation.source?.author?.name) {
+                customerName = conversation.source.author.name;
+            } else if (conversation.contacts?.contacts && conversation.contacts.contacts.length > 0) {
+                const contact = conversation.contacts.contacts[0];
+                if (contact.name) {
+                    customerName = contact.name;
+                }
+            }
+            
+            // Render as system message bubble (like Intercom) - right-aligned like AI messages
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-end;
+                margin: 0.4043rem 0;
+                padding: 0 0.8086rem;
+            `;
+            
+            const cardBg = '#2C3E50'; // Dark blue-grey like Intercom
+            const textColor = '#ffffff';
+            const secondaryText = isDarkMode ? '#9ca3af' : '#d1d5db';
+            
+            // Generate avatar for AI
+            const avatar = generateAvatar(authorName, 'ai');
+            
+            messageDiv.innerHTML = `
+                <div style="
+                    background: ${cardBg};
+                    border-radius: 0.4852rem 0.4852rem 0.1617rem 0.4852rem;
+                    padding: 0.4852rem 0.6469rem;
+                    max-width: 70%;
+                    position: relative;
+                    margin-right: 0.3234rem;
+                ">
+                    <div style="
+                        color: ${textColor};
+                        font-size: 0.4852rem;
+                        line-height: 1.4;
+                        margin-bottom: 0.1617rem;
+                    ">${escapeHtml(authorName)} asked ${escapeHtml(customerName)} to rate this conversation</div>
+                    
+                    <div style="
+                        color: ${secondaryText};
+                        font-size: 0.3639rem;
+                        text-align: right;
+                        margin-top: 0.1617rem;
+                    ">${timeAgo}</div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 0.2426rem; margin-left: 0.3234rem; flex-shrink: 0; order: 3;">
+                    <div style="
+                        width: 1.455rem;
+                        height: 1.455rem;
+                        border-radius: 50%;
+                        background: ${avatar.bgGradient};
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        box-shadow: 0 0.0808rem 0.1617rem rgba(0,0,0,0.2), 0 0.0203rem 0.0405rem rgba(0,0,0,0.1);
+                        border: 0.0203rem solid ${avatar.borderColor};
+                        position: relative;
+                        overflow: hidden;
+                    ">
+                        <img src="./assets/logos/ai_avatar.webp" alt="AI Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="console.error('AI avatar image failed to load:', this.src); this.style.display='none'; this.parentElement.innerHTML='<span style=\\'position: relative; z-index: 1; text-shadow: 0 0.0203rem 0.0405rem rgba(0,0,0,0.2); color: ${avatar.textColor}; font-size: 0.5257rem; font-weight: 700;\\'>${avatar.initials}</span>';" />
+                    </div>
+                    <span style="
+                        font-size: 0.3639rem;
+                        font-weight: 600;
+                        color: ${isDarkMode ? '#6b46c1' : '#1d1d1d'};
+                        margin-top: 0.0808rem;
+                        text-transform: uppercase;
+                        letter-spacing: 0.0203rem;
+                    ">${avatar.label}</span>
+                </div>
+            `;
+            
+            chatMessagesContainer.appendChild(messageDiv);
+            return; // Skip normal rendering
+        }
+        
+        // Check if this is a rating-related part type (should be displayed as rating cards)
+        const isRatingPart = partType === 'conversation_rating_changed' || 
+                            partType === 'conversation_rating_remark_added';
+        
+        // Render rating cards if this is a rating part and we haven't rendered them yet
+        if (isRatingPart && !ratingCardsRendered) {
+            ratingCardsRendered = true; // Mark as rendered to avoid duplicates
+            
+            const rating = conversation.conversation_rating;
+                if (rating) {
+                    const ratingCardsHtml = renderRatingCards(rating, conversation, timestamp, isDarkMode);
+                    if (ratingCardsHtml) {
+                    const ratingDiv = document.createElement('div');
+                    ratingDiv.style.cssText = `
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: flex-end;
+                        margin: 0.4043rem 0;
+                        padding: 0 0.8086rem;
+                    `;
+                        ratingDiv.innerHTML = ratingCardsHtml;
+                        chatMessagesContainer.appendChild(ratingDiv);
+                    }
+                }
+            return; // Skip normal rendering for rating parts
+        }
+        
+        // Skip if we've already rendered rating cards and this is another rating part
+        if (isRatingPart && ratingCardsRendered) {
+            return;
+        }
         
         // Check if this is a system comment part type (should be displayed outside chat bubbles)
         const systemCommentTypes = [
@@ -4204,6 +4444,160 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Render rating cards for conversation rating
+ * @param {Object} rating - The conversation_rating object
+ * @param {Object} conversation - The full conversation object
+ * @param {Date} timestamp - The timestamp for the rating
+ * @param {boolean} isDarkMode - Whether dark mode is enabled
+ * @returns {string} HTML string for the rating cards
+ */
+function renderRatingCards(rating, conversation, timestamp, isDarkMode) {
+    const ratingValue = rating.rating;
+    const remark = rating.remark;
+    
+    // Get customer name
+    let customerName = 'Customer';
+    if (conversation.source?.author?.name) {
+        customerName = conversation.source.author.name;
+    } else if (conversation.contacts?.contacts && conversation.contacts.contacts.length > 0) {
+        const contact = conversation.contacts.contacts[0];
+        if (contact.name) {
+            customerName = contact.name;
+        }
+    }
+    
+    // Calculate time ago
+    const now = Math.floor(Date.now() / 1000);
+    const ratingTimestamp = typeof rating.updated_at === 'number' ? rating.updated_at : timestamp.getTime() / 1000;
+    const diff = now - ratingTimestamp;
+    const days = Math.floor(diff / 86400);
+    let timeAgo = 'Today';
+    if (days === 1) {
+        timeAgo = '1d';
+    } else if (days > 1) {
+        timeAgo = `${days}d`;
+    }
+    
+    // Emoji map for ratings
+    const emojiMap = {
+        1: { emoji: '😡', label: 'Very Dissatisfied' },
+        2: { emoji: '😐', label: 'Neutral' },
+        3: { emoji: '🙂', label: 'Satisfied' },
+        4: { emoji: '😀', label: 'Very Satisfied' },
+        5: { emoji: '🤩', label: 'Excellent' }
+    };
+    
+    let html = '';
+    
+    // Rating Card (Top) - only show if rating exists
+    if (ratingValue) {
+        const cardBg = isDarkMode ? '#1f2937' : '#f9fafb';
+        const textColor = isDarkMode ? '#e5e7eb' : '#374151';
+        const secondaryText = isDarkMode ? '#9ca3af' : '#6b7280';
+        
+        html += `
+            <div class="rating-card" style="
+                background: ${cardBg};
+                border-radius: 4px;
+                padding: 6px 8px;
+                margin-bottom: 4px;
+                width: 100%;
+                max-width: 400px;
+                text-align: center;
+            ">
+                <div style="
+                    color: ${textColor};
+                    font-size: 10px;
+                    font-weight: 500;
+                    margin-bottom: 4px;
+                    line-height: 1.2;
+                    text-align: center;
+                ">${escapeHtml(customerName)} rated the conversation</div>
+                
+                <div class="rating-emojis" style="
+                    display: flex;
+                    gap: 3px;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 3px;
+                ">
+                    ${[1, 2, 3, 4, 5].map(r => {
+                        const isSelected = r === parseInt(ratingValue, 10);
+                        const emojiData = emojiMap[r] || { emoji: '😐', label: 'Unknown' };
+                        return `
+                            <span style="
+                                font-size: 16px;
+                                padding: 1px;
+                                border-radius: 2px;
+                                background: ${isSelected ? '#ffd700' : 'transparent'};
+                                cursor: default;
+                                display: inline-block;
+                                line-height: 1;
+                                opacity: ${isSelected ? '1' : '0.6'};
+                            " title="${emojiData.label}">${emojiData.emoji}</span>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <div style="
+                    color: ${secondaryText};
+                    font-size: 9px;
+                    line-height: 1;
+                    text-align: center;
+                ">${timeAgo}</div>
+            </div>
+        `;
+    }
+    
+    // Feedback Card (Bottom) - only show if remark exists
+    if (remark) {
+        const cardBg = isDarkMode ? '#1f2937' : '#f9fafb';
+        const textColor = isDarkMode ? '#e5e7eb' : '#374151';
+        const secondaryText = isDarkMode ? '#9ca3af' : '#6b7280';
+        const remarkTextColor = isDarkMode ? '#d1d5db' : '#4b5563';
+        
+        html += `
+            <div class="feedback-card" style="
+                background: ${cardBg};
+                border-radius: 4px;
+                padding: 6px 8px;
+                width: 100%;
+                max-width: 400px;
+                text-align: center;
+            ">
+                <div style="
+                    color: ${textColor};
+                    font-size: 10px;
+                    font-weight: 500;
+                    margin-bottom: 4px;
+                    line-height: 1.2;
+                    text-align: center;
+                ">Feedback -</div>
+                
+                <div style="
+                    color: ${remarkTextColor};
+                    font-size: 10px;
+                    line-height: 1.4;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    margin-bottom: 3px;
+                    text-align: center;
+                ">${escapeHtml(remark)}</div>
+                
+                <div style="
+                    color: ${secondaryText};
+                    font-size: 9px;
+                    line-height: 1;
+                    text-align: center;
+                ">${timeAgo}</div>
+            </div>
+        `;
+    }
+    
+    return html;
 }
 
 // Toggle conversation info grid
