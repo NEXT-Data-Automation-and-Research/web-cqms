@@ -5705,8 +5705,10 @@ function getDateRangeForSelection(range) {
         case 'last3days':
             const threeDaysAgo = new Date(today);
             threeDaysAgo.setDate(today.getDate() - 3);
+            const yesterdayForLast3 = new Date(today);
+            yesterdayForLast3.setDate(today.getDate() - 1);
             startDate = threeDaysAgo.toISOString().split('T')[0];
-            endDate = today.toISOString().split('T')[0];
+            endDate = yesterdayForLast3.toISOString().split('T')[0];
             break;
         case 'thisweek':
             // Get Monday of current week
@@ -5714,8 +5716,10 @@ function getDateRangeForSelection(range) {
             const day = monday.getDay();
             const diff = monday.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
             monday.setDate(diff);
+            const yesterdayForWeek = new Date(today);
+            yesterdayForWeek.setDate(today.getDate() - 1);
             startDate = monday.toISOString().split('T')[0];
-            endDate = today.toISOString().split('T')[0];
+            endDate = yesterdayForWeek.toISOString().split('T')[0];
             break;
         case 'custom':
             // Get custom dates from input fields
@@ -5731,8 +5735,9 @@ function getDateRangeForSelection(range) {
             if (!startDate || !endDate) {
                 const defaultYesterday = new Date(today);
                 defaultYesterday.setDate(today.getDate() - 1);
-                startDate = startDate || defaultYesterday.toISOString().split('T')[0];
-                endDate = endDate || defaultYesterday.toISOString().split('T')[0];
+                const fallbackDate = defaultYesterday.toISOString().split('T')[0];
+                startDate = startDate || fallbackDate;
+                endDate = endDate || fallbackDate;
             }
             break;
         default:

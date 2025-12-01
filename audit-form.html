@@ -5387,9 +5387,12 @@ async function fetchConversationsForCurrentUser(selectedDate) {
     
     try {
         // Build edge function URL
-        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/intercom-proxy?endpoint=conversations&admin_id=${encodeURIComponent(pullConversationsAdminId)}&updated_date=${encodeURIComponent(selectedDate)}`;
+        const updatedSince = `${selectedDate} 00:00:00`;
+        const updatedBefore = `${selectedDate} 23:59:59`;
+        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/intercom-proxy?endpoint=conversations&admin_id=${encodeURIComponent(pullConversationsAdminId)}&updated_since=${encodeURIComponent(updatedSince)}&updated_before=${encodeURIComponent(updatedBefore)}`;
         
-        console.log('ðŸ“¡ Calling:', edgeFunctionUrl);
+        console.log('ðŸ"¡ Calling:', edgeFunctionUrl);
+        console.log('📅 Date range:', updatedSince, 'to', updatedBefore);
         
         // Update progress: Searching
         updateProgressIndicator(20, 'Searching conversations in Intercom...');
