@@ -1338,6 +1338,15 @@ class SidebarLoader {
         }
       }
 
+      // Hide Search
+      const searchBtn = document.querySelector('[aria-label="Search"]')
+      if (searchBtn) {
+        const parentLi = searchBtn.closest('li[role="none"]')
+        if (parentLi) {
+          parentLi.style.display = 'none'
+        }
+      }
+
       // Hide Scorecards and User Management from Settings submenu, but keep Profile
       const scorecardsLink = document.querySelector('.submenu-item[href="scorecards.html"]')
       if (scorecardsLink) {
