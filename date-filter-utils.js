@@ -5,9 +5,9 @@
  */
 
 /**
- * Apply quick date filter (Today, Yesterday, This Month)
+ * Apply quick date filter (Today, Yesterday, This Month, Last Month)
  * This function can be called directly or wrapped by page-specific implementations
- * @param {string} period - 'today', 'yesterday', or 'thisMonth'
+ * @param {string} period - 'today', 'yesterday', 'thisMonth', or 'lastMonth'
  * @param {Object} options - Configuration options
  * @param {Object} options.dateFilter - Date filter object to update (must have start and end properties)
  * @param {Function} options.setUseWeekFilter - Optional function to set useWeekFilter to false
@@ -49,6 +49,12 @@ window.applyQuickDateFilter = function(period, options = {}) {
         case 'thisMonth':
             startDate = getDhakaFirstDayOfMonth(today);
             endDate = getDhakaLastDayOfMonth(today);
+            break;
+        case 'lastMonth':
+            const lastMonthDate = new Date(today);
+            lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+            startDate = getDhakaFirstDayOfMonth(lastMonthDate);
+            endDate = getDhakaLastDayOfMonth(lastMonthDate);
             break;
         default:
             return;

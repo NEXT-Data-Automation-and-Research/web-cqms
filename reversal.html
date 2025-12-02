@@ -223,7 +223,8 @@
             <div style="display: flex; align-items: center; gap: 0.375rem;">
                 <button class="action-btn quick-date-btn" id="todayBtn" onclick="applyQuickDateFilter('today')">Today</button>
                 <button class="action-btn quick-date-btn" id="yesterdayBtn" onclick="applyQuickDateFilter('yesterday')">Yesterday</button>
-                <button class="action-btn quick-date-btn active" id="thisMonthBtn" onclick="applyQuickDateFilter('thisMonth')">This Month</button>
+                <button class="action-btn quick-date-btn" id="thisMonthBtn" onclick="applyQuickDateFilter('thisMonth')">This Month</button>
+                <button class="action-btn quick-date-btn" id="lastMonthBtn" onclick="applyQuickDateFilter('lastMonth')">Last Month</button>
             </div>
             <button id="filterToggleBtn" onclick="toggleFilters()" class="action-btn" style="background-color: var(--primary-color); color: var(--white); border-color: var(--primary-color);">
                 <svg style="width: 0.75rem; height: 0.75rem;" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
@@ -231,7 +232,6 @@
                 </svg>
                 Filters
             </button>
-            <button id="viewAllBtn" onclick="toggleViewAll()" style="padding: 0.375rem 0.75rem; background-color: #6b7280; color: white; border: none; border-radius: 0.2812rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">View All</button>
         </div>
         <button id="exportBtn" style="padding: 0.375rem 0.75rem; background-color: #1A733E; color: white; border: none; border-radius: 0.2812rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Export</button>
     </div>
@@ -311,6 +311,11 @@
         <div id="loadingIndicator" style="text-align: center; padding: 1.5rem; color: #6b7280; font-family: 'Poppins', sans-serif;">
             <p>Loading reversals...</p>
         </div>
+    </div>
+
+    <!-- View All Button -->
+    <div style="display: flex; justify-content: center; margin-top: 1.125rem; margin-bottom: 1.125rem;">
+        <button id="viewAllBtn" onclick="toggleViewAll()" style="padding: 0.375rem 0.75rem; background-color: #6b7280; color: white; border: none; border-radius: 0.2812rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">View All</button>
     </div>
 
     <!-- No Reversals Message -->
@@ -515,8 +520,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const startDate = startDateEl?.value || '';
             const endDate = endDateEl?.value || '';
             
-            if (startDate) dateFilter.start = startDate;
-            if (endDate) dateFilter.end = endDate;
+            // Update date filter - set to null if empty, otherwise set the value
+            dateFilter.start = startDate || null;
+            dateFilter.end = endDate || null;
 
             const dateBtnTextEl = document.getElementById('dateBtnText');
             if (startDate || endDate) {
@@ -531,6 +537,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 updateWeekDisplay(); // Update week display to show "-"
             } else {
+                // Both dates are empty - clear the filter
+                dateFilter.start = null;
+                dateFilter.end = null;
                 if (dateBtnTextEl) dateBtnTextEl.textContent = 'Date Range';
                 useWeekFilter = false; // Clear date filter means show all, not filter by current week
                 updateWeekDisplay(); // Update week display to show week number
@@ -694,7 +703,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     useWeekFilter = false;
                     dateFilteredReversals = dateFilteredReversals.filter(r => {
                         const submitted = new Date(r.submitted_at || r.submittedAt || r.reversal_requested_at);
-                        if (dateFilter.start && submitted < new Date(dateFilter.start)) return false;
+                        if (dateFilter.start) {
+                            const startDate = new Date(dateFilter.start);
+                            startDate.setHours(0, 0, 0, 0);
+                            if (submitted < startDate) return false;
+                        }
                         if (dateFilter.end) {
                             const endDate = new Date(dateFilter.end);
                             endDate.setHours(23, 59, 59, 999);
@@ -1186,7 +1199,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // First apply week/date filter from header controls (only if explicitly set)
                 if (dateFilter.start || dateFilter.end) {
                     const submitted = new Date(reversal.submitted_at || reversal.submittedAt || reversal.reversal_requested_at);
-                    if (dateFilter.start && submitted < new Date(dateFilter.start)) matchesDateRange = false;
+                    if (dateFilter.start) {
+                        const startDate = new Date(dateFilter.start);
+                        startDate.setHours(0, 0, 0, 0);
+                        if (submitted < startDate) matchesDateRange = false;
+                    }
                     if (dateFilter.end) {
                         const endDate = new Date(dateFilter.end);
                         endDate.setHours(23, 59, 59, 999);
@@ -1204,6 +1221,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const submitted = new Date(reversal.submitted_at || reversal.submittedAt || reversal.reversal_requested_at);
                     if (dateFrom) {
                         const fromDate = new Date(dateFrom);
+                        fromDate.setHours(0, 0, 0, 0);
                         if (submitted < fromDate) matchesDateRange = false;
                     }
                     if (dateTo) {
@@ -1571,39 +1589,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize week filter
         initializeWeekFilter();
         
-        // Initialize month filter and activate "This Month" button
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = today.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const firstDayStr = firstDay.toISOString().split('T')[0];
-        const lastDay = new Date(year, month + 1, 0);
-        const lastDayStr = lastDay.toISOString().split('T')[0];
-        
-        dateFilter.start = firstDayStr;
-        dateFilter.end = lastDayStr;
+        // Initialize with no date filters - show all reversals by default
+        dateFilter.start = null;
+        dateFilter.end = null;
         useWeekFilter = false;
         
-        const startDateEl = document.getElementById('startDate');
-        const endDateEl = document.getElementById('endDate');
-        const dateBtnTextEl = document.getElementById('dateBtnText');
-        
-        if (startDateEl) startDateEl.value = firstDayStr;
-        if (endDateEl) endDateEl.value = lastDayStr;
-        
-        if (dateBtnTextEl) {
-            const start = firstDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const end = lastDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            dateBtnTextEl.textContent = `${start} - ${end}`;
-        }
-        
-        // Activate "This Month" button
+        // Clear any active quick date filter buttons
         const quickDateButtons = document.querySelectorAll('.quick-date-btn');
         quickDateButtons.forEach(btn => btn.classList.remove('active'));
-        const thisMonthBtn = document.getElementById('thisMonthBtn');
-        if (thisMonthBtn) {
-            thisMonthBtn.classList.add('active');
-        }
         
         // Initialize - load only pending reversals by default
         loadReversals(true);
