@@ -23,6 +23,7 @@
     <script src="form-validation.js"></script>
     <script src="timezone-utils.js"></script>
     <script src="date-filter-utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         .header-actions {
             display: flex;
@@ -156,6 +157,24 @@
         #performanceTableBody {
             transition: opacity 0.2s ease;
         }
+        
+        /* Hourly Breakdown responsive layout */
+        #hourlyBreakdownTable .hourly-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            padding: 0.75rem;
+        }
+        
+        @media (max-width: 768px) {
+            #hourlyBreakdownTable .hourly-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .lunch-break-row:hover .lunch-break-text {
+            opacity: 1 !important;
+        }
     </style>
 
 </head>
@@ -284,36 +303,47 @@
 
             <!-- stat Cards -->
             <div id="statsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1.125rem; margin-bottom: 1.5rem; width: 100%;">
-                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 4.5rem; display: flex; flex-direction: column; justify-content: center;">
-                    <div id="stat1Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.0938rem;">Assigned</div>
-                    <div id="stat1Count" style="font-size: 2.625rem; font-weight: 700; margin-bottom: 0.1875rem;">-</div>
+                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                    <div id="stat1Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Assigned</div>
+                    <div id="stat1Count" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
+                    <div id="stat1Workload" style="margin-top: auto; font-size: 0.5625rem; opacity: 0.9; line-height: 1.3; display: flex; gap: 0.375rem; flex-wrap: wrap;">
+                        <div id="stat1Avg">Avg: -</div>
+                        <div id="stat1Max">Max: -</div>
+                        <div id="stat1Min">Min: -</div>
                 </div>
-                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 4.5rem; display: flex; flex-direction: column; justify-content: center;">
-                    <div style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.0938rem;">Completed</div>
-                    <div style="display: flex; align-items: baseline; gap: 0.375rem; margin-bottom: 0.1875rem;">
+                </div>
+                <div id="completedCard" style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                    <div style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Completed</div>
+                    <div style="display: flex; align-items: baseline; gap: 0.375rem; margin-bottom: auto; line-height: 1.2;">
                         <div id="completedCount" style="font-size: 2.625rem; font-weight: 700;">-</div>
                         <div id="backlogCountText" style="font-size: 0.5625rem; opacity: 0.85; font-weight: 500;"></div>
                     </div>
-                    <div id="targetAchieved" style="font-size: 0.5625rem; opacity: 0.9; margin-top: 0.1875rem;">-</div>
+                    <div style="margin-top: auto; min-height: 0.75rem;">
+                        <div id="targetAchieved" style="font-size: 0.5625rem; opacity: 0.9; line-height: 1.2; margin-bottom: 0.1875rem;">-</div>
+                        <div id="completedProgressBar" class="progress-bar-container" style="width: 100%; height: 0.375rem; background-color: rgba(255,255,255,0.2); border-radius: 0.1875rem; overflow: hidden; margin-bottom: 0.1875rem; display: none;">
+                            <div style="height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 0.1875rem; transition: width 0.3s ease; width: 0%;"></div>
                 </div>
-                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 4.5rem; display: flex; flex-direction: column; justify-content: center;">
-                    <div style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.0938rem;">Remaining</div>
-                    <div id="remainingCount" style="font-size: 2.625rem; font-weight: 700; margin-bottom: 0.1875rem;">-</div>
                 </div>
-                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 4.5rem; display: flex; flex-direction: column; justify-content: center;">
-                    <div id="stat4Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.0938rem;">In Progress</div>
-                    <div id="stat4Count" style="font-size: 2.625rem; font-weight: 700; margin-bottom: 0.1875rem;">-</div>
-                    <div id="stat4Subtitle" style="font-size: 0.5625rem; opacity: 0.9; margin-top: 0.1875rem;">-</div>
                 </div>
-                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 4.5rem; display: flex; flex-direction: column; justify-content: center;">
-                    <div id="stat5Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.0938rem;">Reversal Rate</div>
-                    <div id="stat5Count" style="font-size: 2.625rem; font-weight: 700; margin-bottom: 0.1875rem;">-</div>
-                    <div id="stat5Subtitle" style="font-size: 0.5625rem; opacity: 0.9; margin-top: 0.1875rem;"></div>
+                <div id="remainingCard" style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                    <div style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Remaining</div>
+                    <div id="remainingCount" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
+                    <div style="font-size: 0.5625rem; opacity: 0; height: 0.5625rem; margin-top: 0.1875rem;">&nbsp;</div>
                 </div>
-                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 4.5rem; display: flex; flex-direction: column; justify-content: center;">
-                    <div id="stat6Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.0938rem;">Avg Duration</div>
-                    <div id="stat6Count" style="font-size: 1.875rem; font-weight: 700; margin-bottom: 0.1875rem;">-</div>
-                    <div id="stat6Subtitle" style="font-size: 0.5625rem; opacity: 0.9; margin-top: 0.1875rem;">-</div>
+                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                    <div id="stat4Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">In Progress</div>
+                    <div id="stat4Count" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
+                    <div id="stat4Subtitle" style="font-size: 0.5625rem; opacity: 0.9; line-height: 1.2; margin-top: auto; min-height: 0.5625rem;">-</div>
+                </div>
+                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                    <div id="stat5Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Reversal Rate</div>
+                    <div id="stat5Count" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
+                    <div id="stat5Subtitle" style="font-size: 0.5625rem; opacity: 0.9; line-height: 1.2; margin-top: auto; min-height: 0.5625rem;"></div>
+                </div>
+                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                    <div id="stat6Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Avg Duration</div>
+                    <div id="stat6Count" style="font-size: 1.875rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
+                    <div id="stat6Subtitle" style="font-size: 0.5625rem; opacity: 0.9; line-height: 1.2; margin-top: auto; min-height: 0.5625rem;">-</div>
                 </div>
             </div>
 
@@ -334,6 +364,25 @@
                     </div>
                     <div id="performanceTableBody" style="min-width: fit-content;">
                         <div style="text-align: center; padding: 1.5rem; color: #6b7280;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hourly Breakdown Container -->
+            <div id="hourlyBreakdownTable" style="background-color: var(--white); border-radius: 0.5625rem; box-shadow: 0 0.0469rem 0.1406rem 0 rgba(0, 0, 0, 0.1); overflow: hidden; max-width: 80%; width: fit-content; min-width: 100%; margin-top: 1.5rem;">
+                <div style="background-color: #f8f9fa; padding: 0.5625rem 0.75rem; border-bottom: 0.0469rem solid #e5e7eb;">
+                    <h3 style="font-size: 0.8438rem; font-weight: 600; color: var(--text-color);">Hourly Breakdown</h3>
+                </div>
+                <div class="hourly-content">
+                    <!-- Chart on the left -->
+                    <div style="min-height: 20rem; position: relative;">
+                        <canvas id="hourlyChart"></canvas>
+                    </div>
+                    <!-- Table on the right -->
+                    <div style="overflow-x: auto;">
+                        <div id="hourlyTableBody" style="min-width: fit-content;">
+                            <div style="text-align: center; padding: 1.5rem; color: #6b7280;">Loading...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -865,7 +914,10 @@ async function fetchAndCacheTeamStats(period) {
             document.getElementById('stat1Count').textContent = '0';
             document.getElementById('completedCount').textContent = '0';
             document.getElementById('targetAchieved').textContent = '-';
-            document.getElementById('remainingCount').textContent = '0';
+            const remainingCount = document.getElementById('remainingCount');
+            if (remainingCount) remainingCount.textContent = '0';
+            const completedProgressBar = document.getElementById('completedProgressBar');
+            if (completedProgressBar) completedProgressBar.style.display = 'none';
             document.getElementById('stat4Label').textContent = 'IN PROGRESS';
             document.getElementById('stat4Count').textContent = '0';
             document.getElementById('stat4Subtitle').textContent = '-';
@@ -1378,13 +1430,14 @@ async function fetchAndCacheTeamStats(period) {
             totalBacklogCount,
             totalEarlyCount,
             auditorStats,
-            auditorsCount: auditors.length
+            auditorsCount: auditors.length,
+            period: period
         };
         
         // Update UI with fresh data (only if still on Team Stats tab)
         if (currentTab === 0) {
             console.log('Updating UI with fresh team stats');
-            renderTeamStats(statsData);
+            await renderTeamStats(statsData);
             // Update online status indicators after rendering
             setTimeout(() => updateOnlineStatusIndicators(), 100);
             hideLoadingState();
@@ -1412,7 +1465,10 @@ async function fetchAndCacheTeamStats(period) {
             document.getElementById('stat1Count').textContent = '0';
             document.getElementById('completedCount').textContent = '0';
             document.getElementById('targetAchieved').textContent = '-';
-            document.getElementById('remainingCount').textContent = '0';
+            const remainingCount = document.getElementById('remainingCount');
+            if (remainingCount) remainingCount.textContent = '0';
+            const completedProgressBar = document.getElementById('completedProgressBar');
+            if (completedProgressBar) completedProgressBar.style.display = 'none';
             document.getElementById('stat4Label').textContent = 'IN PROGRESS';
             document.getElementById('stat4Count').textContent = '0';
             document.getElementById('stat4Subtitle').textContent = '-';
@@ -1424,7 +1480,7 @@ async function fetchAndCacheTeamStats(period) {
     }
 }
 
-function renderTeamStats(statsData) {
+async function renderTeamStats(statsData) {
     const {
         totalAssigned,
         completed,
@@ -1437,7 +1493,8 @@ function renderTeamStats(statsData) {
         totalBacklogCount,
         totalEarlyCount,
         auditorStats,
-        qualityAnalystsCount
+        qualityAnalystsCount,
+        period
     } = statsData;
     
     // Get auditors from stats data (any role, not just Quality Analysts)
@@ -1454,9 +1511,15 @@ function renderTeamStats(statsData) {
         // Reset stats
         document.getElementById('stat1Label').textContent = 'ASSIGNED';
         document.getElementById('stat1Count').textContent = '0';
+        document.getElementById('stat1Avg').textContent = 'Avg: -';
+        document.getElementById('stat1Max').textContent = 'Max: -';
+        document.getElementById('stat1Min').textContent = 'Min: -';
         document.getElementById('completedCount').textContent = '0';
         document.getElementById('targetAchieved').textContent = '-';
-        document.getElementById('remainingCount').textContent = '0';
+        const remainingCount = document.getElementById('remainingCount');
+        if (remainingCount) remainingCount.textContent = '0';
+        const completedProgressBar = document.getElementById('completedProgressBar');
+        if (completedProgressBar) completedProgressBar.style.display = 'none';
         document.getElementById('stat4Label').textContent = 'IN PROGRESS';
         document.getElementById('stat4Count').textContent = '0';
         document.getElementById('stat4Subtitle').textContent = '-';
@@ -1479,20 +1542,28 @@ function renderTeamStats(statsData) {
         stat6Card.style.display = 'flex';
     }
     
-    // Reset 3rd card label to REMAINING and remove progress bar
-    const remainingCard = document.querySelector('#remainingCount').closest('div[style*="background-color: var(--dark-forest)"]');
-    if (remainingCard) {
-        const label = remainingCard.querySelector('div[style*="font-size: 0.6562rem"]');
-        if (label) label.textContent = 'REMAINING';
-        
-        // Remove progress bar if it exists
-        const progressBar = remainingCard.querySelector('.progress-bar-container');
-        if (progressBar) progressBar.remove();
+    // Calculate workload metrics (average, max, min assigned per auditor)
+    let avgAssigned = 0;
+    let maxAssigned = 0;
+    let minAssigned = 0;
+    
+    if (auditorStats.length > 0) {
+        const assignedCounts = auditorStats.map(s => s.assigned || 0);
+        const totalAssignedCount = assignedCounts.reduce((sum, count) => sum + count, 0);
+        avgAssigned = Math.round((totalAssignedCount / auditorStats.length) * 10) / 10; // Round to 1 decimal
+        maxAssigned = Math.max(...assignedCounts);
+        minAssigned = Math.min(...assignedCounts.filter(c => c > 0)); // Exclude 0 if there are any non-zero values
+        if (minAssigned === Infinity || minAssigned === -Infinity) {
+            minAssigned = 0; // If all are 0, set min to 0
+        }
     }
     
     // Update stat cards with team stats
     document.getElementById('stat1Label').textContent = 'ASSIGNED';
     document.getElementById('stat1Count').textContent = totalAssigned;
+    document.getElementById('stat1Avg').textContent = `Avg: ${avgAssigned}`;
+    document.getElementById('stat1Max').textContent = `Max: ${maxAssigned}`;
+    document.getElementById('stat1Min').textContent = `Min: ${minAssigned}`;
     document.getElementById('completedCount').textContent = completed;
     
     // Update backlog and early count text next to completed count
@@ -1516,11 +1587,27 @@ function renderTeamStats(statsData) {
         }
     }
     
-    document.getElementById('targetAchieved').textContent = `${percentage}% Team Target Achieved`;
-    
+    // Update remaining count in separate remaining card
     const remainingCount = document.getElementById('remainingCount');
-    remainingCount.style.fontSize = '2.625rem';
+    if (remainingCount) {
     remainingCount.textContent = remaining;
+    }
+    
+    // Update progress bar in completed card with temperature-based color
+    const completedProgressBar = document.getElementById('completedProgressBar');
+    if (completedProgressBar) {
+        const progressBarFill = completedProgressBar.querySelector('div');
+        if (progressBarFill && totalAssigned > 0) {
+            const progressPercentage = Math.min(100, Math.round((completed / totalAssigned) * 100));
+            progressBarFill.style.width = `${progressPercentage}%`;
+            progressBarFill.style.background = getProgressBarColor(progressPercentage);
+            completedProgressBar.style.display = 'block';
+        } else {
+            completedProgressBar.style.display = 'none';
+        }
+    }
+    
+    document.getElementById('targetAchieved').textContent = `${percentage}% Target Achieved`;
     
     document.getElementById('stat4Label').textContent = 'IN PROGRESS';
     const stat4Count = document.getElementById('stat4Count');
@@ -1584,7 +1671,7 @@ function renderTeamStats(statsData) {
                 <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: center;">
                     <span style="font-size: 0.6562rem; font-weight: 600; color: var(--text-color); min-width: 1.875rem;">${stats.percentage}%</span>
                     <div style="flex: 1; height: 0.5625rem; background-color: var(--dark-forest); border-radius: 0.2812rem; overflow: hidden; position: relative; max-width: 5rem;">
-                        <div style="height: 100%; background: var(--success-color); border-radius: 0.2812rem; transition: width 0.3s ease; width: ${stats.percentage}%;"></div>
+                        <div style="height: 100%; background: ${getProgressBarColor(stats.percentage)}; border-radius: 0.2812rem; transition: width 0.3s ease; width: ${stats.percentage}%;"></div>
                     </div>
                 </div>
             </div>
@@ -1594,6 +1681,562 @@ function renderTeamStats(statsData) {
     
     // Update online status indicators after rendering
     setTimeout(() => updateOnlineStatusIndicators(), 100);
+    
+    // Load and render hourly breakdown
+    if (period && auditorStats) {
+        await renderHourlyBreakdown(period, auditorStats, totalAssigned);
+    }
+}
+
+let hourlyChartInstance = null;
+
+function renderHourlyChart(labels, data, targetPerHour = 0, workingHours = [], sortedHours = []) {
+    try {
+        // Validate inputs
+        if (!labels || !Array.isArray(labels) || labels.length === 0) {
+            console.warn('Invalid chart labels');
+            return;
+        }
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn('Invalid chart data');
+            return;
+        }
+        
+        const canvas = document.getElementById('hourlyChart');
+        if (!canvas) {
+            console.warn('Hourly chart canvas not found');
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.warn('Could not get chart context');
+            return;
+        }
+        
+        // Destroy existing chart if it exists
+        if (hourlyChartInstance) {
+            hourlyChartInstance.destroy();
+            hourlyChartInstance = null;
+        }
+        
+        // Create target line data (target for working hours, null for others)
+        const targetData = sortedHours && workingHours ? sortedHours.map(hour => {
+            const isWorkingHour = workingHours.includes(hour);
+            return isWorkingHour ? targetPerHour : null;
+        }) : [];
+        
+        // Calculate dynamic Y-axis max based on target and actual data
+        const maxDataValue = Math.max(...data, 0);
+        const maxValue = Math.max(maxDataValue, targetPerHour);
+        // Add 20% padding and round up to nearest 0.5
+        const yAxisMax = Math.ceil(maxValue * 1.2 * 2) / 2;
+        
+        hourlyChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Total Audits',
+                    data: data,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'Target',
+                    data: targetData,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0,
+                    tension: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 11
+                        },
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 12,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 11
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 0) {
+                                // Main data line
+                                const value = context.parsed.y;
+                                const hourIndex = context.dataIndex;
+                                if (sortedHours && sortedHours.length > hourIndex) {
+                                    const hour = sortedHours[hourIndex];
+                                    const isWorkingHour = workingHours && workingHours.includes(hour);
+                                    
+                                    if (isWorkingHour && targetPerHour > 0) {
+                                        const status = value >= targetPerHour ? ' (Target Met ✓)' : ' (Target Not Met ✗)';
+                                        return value + ' audits' + status;
+                                    }
+                                }
+                                return value + ' audits';
+                            } else {
+                                // Target line
+                                if (context.parsed.y !== null) {
+                                    return 'Target: ' + context.parsed.y + ' audits';
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: yAxisMax,
+                    ticks: {
+                        stepSize: yAxisMax <= 10 ? 1 : (yAxisMax <= 20 ? 2 : Math.ceil(yAxisMax / 10)),
+                        font: {
+                            size: 10
+                        },
+                        color: '#6b7280'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 10
+                        },
+                        color: '#6b7280',
+                        maxRotation: 45,
+                        minRotation: 45
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        },
+        plugins: [
+            {
+                id: 'datalabels',
+                afterDatasetsDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((point, index) => {
+                            const value = dataset.data[index];
+                            if (value > 0) {
+                                const x = point.x;
+                                const y = point.y;
+                                ctx.save();
+                                ctx.fillStyle = '#10b981';
+                                ctx.font = '600 10px Poppins';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'bottom';
+                                ctx.fillText(value, x, y - 8);
+                                ctx.restore();
+                            }
+                        });
+                    });
+                }
+            },
+            {
+                id: 'targetLines',
+                afterDatasetsDraw: (chart) => {
+                    if (!sortedHours || !workingHours || targetPerHour <= 0) return;
+                    
+                    const ctx = chart.ctx;
+                    const meta0 = chart.getDatasetMeta(0); // Actual data
+                    const meta1 = chart.getDatasetMeta(1); // Target line
+                    
+                    sortedHours.forEach((hour, index) => {
+                        const isWorkingHour = workingHours.includes(hour);
+                        if (!isWorkingHour) return;
+                        
+                        const actualPoint = meta0.data[index];
+                        const targetPoint = meta1.data[index];
+                        
+                        if (!actualPoint || !targetPoint || targetPoint.y === null) return;
+                        
+                        const actualValue = data[index] || 0;
+                        const targetValue = targetPerHour;
+                        
+                        // Only draw line if there's a difference
+                        if (Math.abs(actualValue - targetValue) > 0.01) {
+                            ctx.save();
+                            
+                            // Color: red if below target, green if above
+                            ctx.strokeStyle = actualValue >= targetValue ? '#10b981' : '#ef4444';
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([]);
+                            
+                            // Draw vertical line from target to actual
+                            ctx.beginPath();
+                            ctx.moveTo(actualPoint.x, targetPoint.y);
+                            ctx.lineTo(actualPoint.x, actualPoint.y);
+                            ctx.stroke();
+                            
+                            ctx.restore();
+                        }
+                    });
+                }
+            },
+            {
+                id: 'lunchBreak',
+                beforeDatasetsDraw: (chart) => {
+                    if (!sortedHours) return;
+                    
+                    const ctx = chart.ctx;
+                    const chartArea = chart.chartArea;
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+                    
+                    // Find indices for lunch break hours (13:30 to 14:30)
+                    const lunchStartIndex = sortedHours.findIndex(hour => hour === '13:30');
+                    const lunchEndIndex = sortedHours.findIndex(hour => hour === '14:30');
+                    
+                    if (lunchStartIndex === -1 || lunchEndIndex === -1) return;
+                    
+                    const meta0 = chart.getDatasetMeta(0);
+                    if (!meta0.data[lunchStartIndex] || !meta0.data[lunchEndIndex]) return;
+                    
+                    const startX = meta0.data[lunchStartIndex].x;
+                    const endX = meta0.data[lunchEndIndex].x;
+                    const width = endX - startX;
+                    
+                    // Draw shaded rectangle for lunch break (from 1:30 to 2:30)
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
+                    ctx.fillRect(startX, chartArea.top, width, chartArea.bottom - chartArea.top);
+                    ctx.restore();
+                    
+                    // Add vertical text label centered between 1:30 and 2:30, vertically centered in chart
+                    ctx.save();
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.font = '600 9px Poppins';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const centerY = (chartArea.top + chartArea.bottom) / 2;
+                    ctx.translate(startX + width / 2, centerY);
+                    ctx.rotate(-Math.PI / 2); // Rotate 90 degrees counterclockwise
+                    ctx.fillText('Lunch Break', 0, 0);
+                    ctx.restore();
+                }
+            }
+        ]
+    });
+    } catch (error) {
+        console.error('Error rendering hourly chart:', error);
+    }
+}
+
+async function renderHourlyBreakdown(period, auditorStats, totalAssigned = 0) {
+    try {
+        // Only show hourly breakdown in Team Stats view
+        if (currentTab !== 0) {
+            const hourlyTableBody = document.getElementById('hourlyTableBody');
+            if (hourlyTableBody) {
+                hourlyTableBody.innerHTML = '';
+            }
+            // Clear chart
+            if (hourlyChartInstance) {
+                hourlyChartInstance.destroy();
+                hourlyChartInstance = null;
+            }
+            return;
+        }
+        
+        const hourlyTableBody = document.getElementById('hourlyTableBody');
+        if (!hourlyTableBody) return;
+        
+        // Check if auditorStats is valid
+        if (!auditorStats || !Array.isArray(auditorStats) || auditorStats.length === 0) {
+            hourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">No auditors found</div>';
+            return;
+        }
+        
+        // Check if period is valid
+        if (!period) {
+            hourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">No date range selected</div>';
+            return;
+        }
+        
+        hourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">Loading...</div>';
+        
+        // Ensure scorecards are loaded
+        if (!cachedScorecardTables || cachedScorecardTables.length === 0) {
+            await loadScorecards();
+        }
+        
+        // Discover all audit tables
+        let tablesToQuery = [];
+        try {
+            const { data: allTables, error: tablesError } = await window.supabaseClient.rpc('get_audit_tables');
+            
+            if (!tablesError && allTables && allTables.length > 0) {
+                tablesToQuery = allTables
+                    .filter(t => t.table_name !== 'ai_analysis_results' && t.table_name !== 'calibration_results')
+                    .map(t => t.table_name);
+            } else {
+                tablesToQuery = cachedScorecardTables.length > 0 
+                    ? cachedScorecardTables 
+                    : (await window.supabaseClient.from('scorecards').select('table_name').eq('is_active', true)).data?.map(s => s.table_name) || [];
+            }
+        } catch (rpcError) {
+            console.warn('RPC get_audit_tables failed, using scorecard-based loading:', rpcError);
+            tablesToQuery = cachedScorecardTables.length > 0 
+                ? cachedScorecardTables 
+                : (await window.supabaseClient.from('scorecards').select('table_name').eq('is_active', true)).data?.map(s => s.table_name) || [];
+        }
+        
+        if (tablesToQuery.length === 0) {
+            hourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">No audit data available</div>';
+            return;
+        }
+        
+        // Query all audits with submitted_at and auditor_email
+        const auditPromises = tablesToQuery.map(async (tableName) => {
+            try {
+                let query = window.supabaseClient
+                    .from(tableName)
+                    .select('submitted_at, auditor_email')
+                    .not('submitted_at', 'is', null);
+                
+                // Apply date filters
+                if (period.start) {
+                    query = query.gte('submitted_at', dhakaDateToUTCISO(period.start));
+                }
+                if (period.end) {
+                    query = query.lte('submitted_at', dhakaDateToUTCISO(period.end));
+                }
+                
+                const result = await query;
+                
+                // Check if error is due to missing auditor_email column
+                if (result.error) {
+                    const errorMessage = result.error.message || JSON.stringify(result.error);
+                    if (errorMessage.includes('auditor_email') && 
+                        (result.error.code === '42703' || result.error.code === 'PGRST116')) {
+                        console.warn(`Table ${tableName} does not have auditor_email column, skipping`);
+                        return [];
+                    }
+                    throw result.error;
+                }
+                
+                // Filter client-side if needed
+                let audits = result.data || [];
+                if (period.start) {
+                    audits = audits.filter(audit => {
+                        if (!audit.submitted_at) return false;
+                        const auditDate = toDhakaTime(audit.submitted_at);
+                        return (!period.start || auditDate >= period.start) && 
+                               (!period.end || auditDate <= period.end);
+                    });
+                }
+                
+                return audits;
+            } catch (err) {
+                console.warn(`Error querying ${tableName} for hourly breakdown:`, err);
+                return [];
+            }
+        });
+        
+        const allAuditResults = await Promise.all(auditPromises);
+        const allAudits = allAuditResults.flat();
+        
+        // Group by hour starting at :30 minutes (in Dhaka timezone) and auditor
+        // Starting at 9:30 AM, ending at 9:30 PM
+        const hourlyData = {};
+        
+        allAudits.forEach(audit => {
+            if (!audit.submitted_at) return;
+            
+            const submittedDate = toDhakaTime(audit.submitted_at);
+            const hour = submittedDate.getHours();
+            const minutes = submittedDate.getMinutes();
+            
+            // Group by hour starting at :30 (9:30-10:29 -> 9:30, 10:30-11:29 -> 10:30, etc.)
+            let groupHour = hour;
+            
+            // If minutes < 30, it belongs to the previous hour's :30 slot
+            if (minutes < 30) {
+                groupHour = hour - 1;
+                if (groupHour < 0) groupHour = 23; // Handle midnight edge case
+            }
+            
+            // Only include hours from 9:30 to 21:30 (9 AM to 9 PM at :30)
+            if (groupHour < 9 || groupHour > 21) {
+                return; // Skip audits outside the shift hours
+            }
+            
+            const hourKey = `${groupHour.toString().padStart(2, '0')}:30`;
+            const auditorEmail = audit.auditor_email || 'Unknown';
+            
+            if (!hourlyData[hourKey]) {
+                hourlyData[hourKey] = {};
+            }
+            
+            if (!hourlyData[hourKey][auditorEmail]) {
+                hourlyData[hourKey][auditorEmail] = 0;
+            }
+            
+            hourlyData[hourKey][auditorEmail]++;
+        });
+        
+        // Get auditor names
+        const auditorMap = {};
+        auditorStats.forEach(stat => {
+            auditorMap[stat.email] = stat.name;
+        });
+        
+        // Check if there's any data after 18:30 (6:30 PM)
+        const hasDataAfter1830 = Object.keys(hourlyData).some(hourKey => {
+            const hour = parseInt(hourKey.split(':')[0]);
+            return hour > 18;
+        });
+        
+        // Prepare hours array - default to 9:30am-6:30pm, extend to 9:30pm if data exists
+        const maxHour = hasDataAfter1830 ? 21 : 18;
+        const sortedHours = [];
+        for (let h = 9; h <= maxHour; h++) {
+            sortedHours.push(`${h.toString().padStart(2, '0')}:30`);
+        }
+        
+        if (sortedHours.length === 0) {
+            hourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">No audit activity in the selected period</div>';
+            return;
+        }
+        
+        // Get auditors from Progress Overview (auditorStats) only
+        const progressOverviewAuditors = new Set(auditorStats.map(stat => stat.email));
+        
+        // Filter to only include auditors from Progress Overview
+        const sortedAuditors = auditorStats
+            .map(stat => stat.email)
+            .sort((a, b) => {
+                const nameA = auditorMap[a] || a;
+                const nameB = auditorMap[b] || b;
+                return nameA.localeCompare(nameB);
+            });
+        
+        // Calculate total audits per hour for chart
+        const hourlyTotals = {};
+        sortedHours.forEach(hour => {
+            const hourData = hourlyData[hour] || {};
+            let total = 0;
+            sortedAuditors.forEach(email => {
+                total += (hourData[email] || 0);
+            });
+            hourlyTotals[hour] = total;
+        });
+        
+        // Prepare chart data - show 9:30am to 9:30pm at :30 intervals
+        const chartLabels = sortedHours.map(h => {
+            const [hourStr, minStr] = h.split(':');
+            const hourNum = parseInt(hourStr);
+            const displayHour = hourNum === 0 ? 12 : (hourNum > 12 ? hourNum - 12 : hourNum);
+            const ampm = hourNum < 12 ? 'AM' : 'PM';
+            return `${displayHour}:${minStr} ${ampm}`;
+        });
+        
+        const chartData = sortedHours.map(hour => hourlyTotals[hour] || 0);
+        
+        // Calculate target per hour (8 working hours: 10:30, 11:30, 12:30, 1:30, 3:30, 4:30, 5:30, 6:30)
+        // Note: 9:30 AM has no target (shift starts), 2:30 PM has no target (lunch break period 1:30-2:30)
+        // Each hour shows target for work done in the previous hour (e.g., 10:30 shows target for 9:30-10:30)
+        const workingHours = ['10:30', '11:30', '12:30', '13:30', '15:30', '16:30', '17:30', '18:30'];
+        const targetPerHour = totalAssigned > 0 ? Math.round((totalAssigned / 8) * 10) / 10 : 0; // Round to 1 decimal (8 working hours)
+        
+        // Render chart with target visualization
+        renderHourlyChart(chartLabels, chartData, targetPerHour, workingHours, sortedHours);
+        
+        // Build table HTML with Target and Status columns
+        let tableHTML = `
+            <div style="display: grid; grid-template-columns: minmax(4rem, 1fr) minmax(3.5rem, 0.8fr) minmax(3.5rem, 0.8fr) repeat(${sortedAuditors.length}, minmax(5rem, 1fr)); gap: 0.75rem; align-items: center; padding: 0.375rem 0 0.5625rem 0; font-weight: 700; font-size: 0.6562rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 0.0469rem solid #e5e7eb; margin-bottom: 0.375rem;">
+                <div>Hour</div>
+                <div style="text-align: center;">Target</div>
+                <div style="text-align: center;">Status</div>
+                ${sortedAuditors.map(email => `<div style="text-align: center;">${escapeHtml(auditorMap[email] || email)}</div>`).join('')}
+            </div>
+        `;
+        
+        sortedHours.forEach(hour => {
+            const hourData = hourlyData[hour] || {};
+            // Format hour to AM/PM format with :30 minutes
+            const [hourStr, minStr] = hour.split(':');
+            const hourNum = parseInt(hourStr);
+            const displayHour = hourNum === 0 ? 12 : (hourNum > 12 ? hourNum - 12 : hourNum);
+            const ampm = hourNum < 12 ? 'AM' : 'PM';
+            const hourDisplay = `${displayHour}:${minStr} ${ampm}`;
+            
+            // Check if this is lunch break (2:30 PM only)
+            const isLunchBreak = hour === '14:30';
+            
+            // Calculate total for this hour
+            const hourTotal = hourlyTotals[hour] || 0;
+            
+            // Check if this is a working hour (1:30 has target, 2:30 does not)
+            const isWorkingHour = workingHours.includes(hour);
+            const target = isWorkingHour ? targetPerHour : 0;
+            const targetMet = isWorkingHour ? (hourTotal >= target) : null;
+            
+            // Add lunch break indicator (only at 2:30 PM, shown on hover in Status column)
+            const lunchBreakIndicator = isLunchBreak ? '<span class="lunch-break-text" style="font-size: 0.5rem; color: #f59e0b; opacity: 0; transition: opacity 0.2s;">Lunch</span>' : '';
+            
+            tableHTML += `
+                <div class="${isLunchBreak ? 'lunch-break-row' : ''}" style="display: grid; grid-template-columns: minmax(4rem, 1fr) minmax(3.5rem, 0.8fr) minmax(3.5rem, 0.8fr) repeat(${sortedAuditors.length}, minmax(5rem, 1fr)); gap: 0.75rem; align-items: center; padding: 0.375rem 0; border-bottom: 0.0469rem solid #f3f4f6; ${isLunchBreak ? 'background-color: rgba(245, 158, 11, 0.05);' : ''}">
+                    <div style="font-size: 0.6562rem; color: var(--text-color); font-weight: 600;">${hourDisplay}</div>
+                    <div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;">${isWorkingHour ? target : ''}</div>
+                    <div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;">
+                        ${targetMet === true ? '<span style="color: #10b981; font-weight: 600;">✓</span>' : targetMet === false ? '<span style="color: #ef4444; font-weight: 600;">✗</span>' : ''}${lunchBreakIndicator}
+                    </div>
+                    ${sortedAuditors.map(email => {
+                        const count = hourData[email] || 0;
+                        return `<div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;">${count > 0 ? count : ''}</div>`;
+                    }).join('')}
+                </div>
+            `;
+        });
+        
+        hourlyTableBody.innerHTML = tableHTML;
+        
+    } catch (error) {
+        console.error('Error rendering hourly breakdown:', error);
+        const hourlyTableBody = document.getElementById('hourlyTableBody');
+        if (hourlyTableBody) {
+            hourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #ef4444;">Error loading hourly breakdown</div>';
+        }
+    }
 }
 
 async function updateStandupView() {
@@ -1644,12 +2287,7 @@ function renderStandupViewStructure() {
     const stat1Label = document.getElementById('stat1Label');
     if (stat1Label) stat1Label.textContent = 'ASSIGNED';
     
-    // Update 3rd card to COVERAGE
-    const remainingCard = document.querySelector('#remainingCount')?.closest('div[style*="background-color: var(--dark-forest)"]');
-    if (remainingCard) {
-        const label = remainingCard.querySelector('div[style*="font-size: 0.6562rem"]');
-        if (label) label.textContent = 'COVERAGE';
-    }
+    // Note: 3rd card (REMAINING) has been merged into completed card, so we don't need to update it separately
     
     // Update 4th card to PASSING RATE
     const stat4Card = document.getElementById('stat4Count')?.closest('div[style*="background-color: var(--dark-forest)"]');
@@ -1682,6 +2320,17 @@ function renderStandupViewData(standupData) {
         channelStats
     } = standupData;
     
+    // Hide hourly breakdown table and chart in standup view
+    const hourlyTableBody = document.getElementById('hourlyTableBody');
+    if (hourlyTableBody) {
+        hourlyTableBody.innerHTML = '';
+    }
+    // Clear chart
+    if (hourlyChartInstance) {
+        hourlyChartInstance.destroy();
+        hourlyChartInstance = null;
+    }
+    
     // Update stat cards
     const stat1Count = document.getElementById('stat1Count');
     if (stat1Count) stat1Count.textContent = totalAssigned || 0;
@@ -1689,28 +2338,38 @@ function renderStandupViewData(standupData) {
     const completedCount = document.getElementById('completedCount');
     if (completedCount) completedCount.textContent = completed || 0;
     
-    const targetAchieved = document.getElementById('targetAchieved');
-    if (targetAchieved) targetAchieved.textContent = `${percentage || 0}% Target Achieved`;
+    // Hide backlog/early counts in standup view (team-specific)
+    const backlogCountText = document.getElementById('backlogCountText');
+    if (backlogCountText) {
+        backlogCountText.textContent = '';
+        backlogCountText.style.display = 'none';
+    }
     
-    // Update 3rd card to COVERAGE with progress bar
-    const remainingCard = document.querySelector('#remainingCount')?.closest('div[style*="background-color: var(--dark-forest)"]');
-    if (remainingCard) {
-        const countDiv = remainingCard.querySelector('#remainingCount');
-        if (countDiv) {
-            countDiv.style.fontSize = '2.625rem';
-            countDiv.textContent = (coveragePercent || 0) + '%';
-            
-            // Add/update progress bar
-            let progressContainer = remainingCard.querySelector('.progress-bar-container');
-            if (!progressContainer) {
-                progressContainer = document.createElement('div');
-                progressContainer.className = 'progress-bar-container';
-                progressContainer.style.cssText = 'width: 100%; height: 0.375rem; background-color: rgba(255,255,255,0.2); border-radius: 0.1875rem; overflow: hidden; margin-top: 0.375rem;';
-                countDiv.parentElement.appendChild(progressContainer);
-            }
-            progressContainer.innerHTML = `<div style="height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 0.1875rem; transition: width 0.3s ease; width: ${coveragePercent || 0}%;"></div>`;
+    // Calculate remaining from totalAssigned and completed
+    const remaining = (totalAssigned || 0) - (completed || 0);
+    
+    // Update remaining count in separate remaining card
+    const remainingCount = document.getElementById('remainingCount');
+    if (remainingCount) {
+        remainingCount.textContent = remaining;
+    }
+    
+    // Update progress bar in completed card (showing coverage/completion percentage) with temperature-based color
+    const completedProgressBar = document.getElementById('completedProgressBar');
+    if (completedProgressBar) {
+        const progressBarFill = completedProgressBar.querySelector('div');
+        if (progressBarFill && totalAssigned > 0) {
+            const progressPercentage = coveragePercent || percentage || 0;
+            progressBarFill.style.width = `${progressPercentage}%`;
+            progressBarFill.style.background = getProgressBarColor(progressPercentage);
+            completedProgressBar.style.display = 'block';
+        } else {
+            completedProgressBar.style.display = 'none';
         }
     }
+    
+    const targetAchieved = document.getElementById('targetAchieved');
+    if (targetAchieved) targetAchieved.textContent = `${percentage || 0}% Target Achieved`;
     
     // Update 4th card to PASSING RATE with progress bar
     const stat4Card = document.getElementById('stat4Count')?.closest('div[style*="background-color: var(--dark-forest)"]');
@@ -1762,7 +2421,7 @@ function renderStandupViewData(standupData) {
                             <div style="display: flex; align-items: center; gap: 0.75rem;">
                                 <span style="font-size: 0.6562rem; font-weight: 600; color: var(--text-color); min-width: 1.875rem;">${stats.percentage || 0}%</span>
                                 <div style="flex: 1; height: 0.5625rem; background-color: var(--dark-forest); border-radius: 0.2812rem; overflow: hidden; position: relative;">
-                                    <div style="height: 100%; background: var(--success-color); border-radius: 0.2812rem; transition: width 0.3s ease; width: ${stats.percentage || 0}%;"></div>
+                                    <div style="height: 100%; background: ${getProgressBarColor(stats.percentage || 0)}; border-radius: 0.2812rem; transition: width 0.3s ease; width: ${stats.percentage || 0}%;"></div>
                                 </div>
                             </div>
                         </div>
@@ -3318,22 +3977,22 @@ function hideLoadingState() {
     });
 }
 
-function renderTeamStatsWithFade(statsData) {
+async function renderTeamStatsWithFade(statsData) {
     // Fade out, update, fade in
     const tableBody = document.getElementById('performanceTableBody');
     if (tableBody) {
         tableBody.style.opacity = '0.5';
         tableBody.style.transition = 'opacity 0.2s ease';
         
-        setTimeout(() => {
-            renderTeamStats(statsData);
+        setTimeout(async () => {
+            await renderTeamStats(statsData);
             setTimeout(() => {
                 tableBody.style.opacity = '1';
                 setTimeout(() => updateOnlineStatusIndicators(), 100);
             }, 50);
         }, 200);
     } else {
-        renderTeamStats(statsData);
+        await renderTeamStats(statsData);
     }
 }
 
@@ -3344,6 +4003,20 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Get progress bar color based on completion percentage (temperature-based)
+function getProgressBarColor(percentage) {
+    if (percentage <= 33) {
+        // Red for low completion (0-33%)
+        return 'linear-gradient(90deg, #ef4444, #f87171)';
+    } else if (percentage <= 66) {
+        // Yellow for medium completion (34-66%)
+        return 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+    } else {
+        // Green for high completion (67-100%)
+        return 'linear-gradient(90deg, #10b981, #34d399)';
+    }
 }
 
 // ============================================================================
