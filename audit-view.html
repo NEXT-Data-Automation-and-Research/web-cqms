@@ -877,6 +877,26 @@ function isCurrentUserQualityAnalyst() {
     return role !== 'Employee' && role !== '';
 }
 
+// Check if current user is the auditor of the current audit
+function isCurrentUserAuditor() {
+    if (!currentUserEmail || !currentAudit) {
+        return false;
+    }
+    
+    // Compare emails (case-insensitive)
+    const auditAuditorEmail = currentAudit.auditorEmail || currentAudit.auditor_email || '';
+    return auditAuditorEmail.toLowerCase() === currentUserEmail.toLowerCase();
+}
+
+// Helper function to check if acknowledgement status is considered "acknowledged" (locked, no edits/comments)
+function isAcknowledgedStatus(status) {
+    if (!status) return false;
+    const statusLower = status.toLowerCase();
+    return statusLower === 'acknowledged' || 
+           statusLower === 'acknowledged - after reversal approved' || 
+           statusLower === 'acknowledged - after reversal rejected';
+}
+
 // Check if there's a pending reversal request
 function hasPendingReversalRequest() {
     if (!currentAudit) {
@@ -902,9 +922,25 @@ function hasPendingReversalRequest() {
     return false;
 }
 
-// Check if edit button should be shown (only for Quality Analysts when reversal is pending)
+// Check if edit button should be shown
 function shouldShowEditButton() {
-    return hasPendingReversalRequest() && isCurrentUserQualityAnalyst();
+    // Check if audit is acknowledged - if so, lock editing for everyone
+    const acknowledgementStatus = currentAudit?.acknowledgementStatus || currentAudit?.acknowledgement_status || '';
+    if (isAcknowledgedStatus(acknowledgementStatus)) {
+        return false; // Locked - no edits allowed
+    }
+    
+    // Auditors can edit anytime unless acknowledged
+    if (isCurrentUserAuditor()) {
+        return true;
+    }
+    
+    // For Quality Analysts (non-auditors), can only edit when reversal is pending
+    if (hasPendingReversalRequest() && isCurrentUserQualityAnalyst()) {
+        return true;
+    }
+    
+    return false;
 }
 
 // Check if reversal button should be shown (hide after 150 hours from audit submission)
@@ -1429,16 +1465,24 @@ function showError(message) {
 
 // Edit current audit
 function editCurrentAudit() {
-    // Verify that current user is a Quality Analyst and there's a pending reversal
-    if (!shouldShowEditButton()) {
-        alert('Error: You can only edit audits with pending reversal requests.');
-        return;
-    }
-    
     if (!currentAudit || !currentScorecardId || !currentTableName) {
         alert('Cannot edit audit: missing required data');
         return;
     }
+    
+    // Check if audit is acknowledged - lock editing for everyone
+    const acknowledgementStatus = currentAudit.acknowledgementStatus || currentAudit.acknowledgement_status || '';
+    if (isAcknowledgedStatus(acknowledgementStatus)) {
+        alert('This audit has been acknowledged and cannot be edited.');
+        return;
+    }
+    
+    // Verify that current user has permission to edit
+    if (!shouldShowEditButton()) {
+        alert('Error: You do not have permission to edit this audit.');
+        return;
+    }
+    
     window.location.href = `edit-audit.html?id=${currentAudit.id}&scorecard=${currentScorecardId}&table=${currentTableName}`;
 }
 
