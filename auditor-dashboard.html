@@ -159,7 +159,8 @@
         }
         
         /* Hourly Breakdown responsive layout */
-        #hourlyBreakdownTable .hourly-content {
+        #hourlyBreakdownTable .hourly-content,
+        #dynamicHourlyBreakdownTable .hourly-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
@@ -167,7 +168,8 @@
         }
         
         @media (max-width: 768px) {
-            #hourlyBreakdownTable .hourly-content {
+            #hourlyBreakdownTable .hourly-content,
+            #dynamicHourlyBreakdownTable .hourly-content {
                 grid-template-columns: 1fr;
             }
         }
@@ -330,13 +332,29 @@
                     <div id="remainingCount" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
                     <div style="font-size: 0.5625rem; opacity: 0; height: 0.5625rem; margin-top: 0.1875rem;">&nbsp;</div>
                 </div>
-                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                <div id="stat4Card" style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: none; flex-direction: column;">
                     <div id="stat4Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">In Progress</div>
-                    <div id="stat4Count" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
+                    <div id="stat4CountContainer" style="display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: auto;">
+                        <div id="stat4Count" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2;">-</div>
+                        <div id="stat4ChipsContainer" style="display: none; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem;">
+                            <div id="stat4PassingCount" style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.5rem; font-weight: 600; background-color: rgba(16, 185, 129, 0.2); color: #10b981; line-height: 1.2;">
+                                <svg style="width: 0.5rem; height: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>-</span>
+                            </div>
+                            <div id="stat4NotPassingCount" style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.5rem; font-weight: 600; background-color: rgba(239, 68, 68, 0.2); color: #ef4444; line-height: 1.2;">
+                                <svg style="width: 0.5rem; height: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                <span>-</span>
+                            </div>
+                        </div>
+                    </div>
                     <div id="stat4Subtitle" style="font-size: 0.5625rem; opacity: 0.9; line-height: 1.2; margin-top: auto; min-height: 0.5625rem;">-</div>
                 </div>
-                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
-                    <div id="stat5Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Reversal Rate</div>
+                <div id="stat5Card" style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                    <div id="stat5Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Reversals</div>
                     <div id="stat5Count" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
                     <div id="stat5Subtitle" style="font-size: 0.5625rem; opacity: 0.9; line-height: 1.2; margin-top: auto; min-height: 0.5625rem;"></div>
                 </div>
@@ -344,6 +362,27 @@
                     <div id="stat6Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Avg Duration</div>
                     <div id="stat6Count" style="font-size: 1.875rem; font-weight: 700; line-height: 1.2; margin-bottom: auto;">-</div>
                     <div id="stat6Subtitle" style="font-size: 0.5625rem; opacity: 0.9; line-height: 1.2; margin-top: auto; min-height: 0.5625rem;">-</div>
+                </div>
+                <div style="background-color: var(--dark-forest); color: var(--white); padding: 0.75rem; border-radius: 0.5625rem; text-align: left; box-shadow: 0 0.1875rem 0.2812rem -0.0469rem rgba(0, 0, 0, 0.1); min-height: 6.5rem; display: flex; flex-direction: column;">
+                    <div id="stat7Label" style="font-size: 0.6562rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.375rem; line-height: 1.2;">Passing Rate</div>
+                    <div style="display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: auto;">
+                        <div id="stat7Count" style="font-size: 2.625rem; font-weight: 700; line-height: 1.2;">-</div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem;">
+                            <div id="stat7PassingCount" style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.5rem; font-weight: 600; background-color: rgba(16, 185, 129, 0.2); color: #10b981; line-height: 1.2;">
+                                <svg style="width: 0.5rem; height: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>-</span>
+                            </div>
+                            <div id="stat7NotPassingCount" style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.5rem; font-weight: 600; background-color: rgba(239, 68, 68, 0.2); color: #ef4444; line-height: 1.2;">
+                                <svg style="width: 0.5rem; height: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                <span>-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="stat7Subtitle" style="font-size: 0.5625rem; opacity: 0.9; line-height: 1.2; margin-top: auto; min-height: 0.5625rem;">-</div>
                 </div>
             </div>
 
@@ -364,6 +403,25 @@
                     </div>
                     <div id="performanceTableBody" style="min-width: fit-content;">
                         <div style="text-align: center; padding: 1.5rem; color: #6b7280;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic/Realtime Hourly Breakdown Container -->
+            <div id="dynamicHourlyBreakdownTable" style="background-color: var(--white); border-radius: 0.5625rem; box-shadow: 0 0.0469rem 0.1406rem 0 rgba(0, 0, 0, 0.1); overflow: hidden; max-width: 80%; width: fit-content; min-width: 100%; margin-top: 1.5rem;">
+                <div style="background-color: #f8f9fa; padding: 0.5625rem 0.75rem; border-bottom: 0.0469rem solid #e5e7eb;">
+                    <h3 style="font-size: 0.8438rem; font-weight: 600; color: var(--text-color);">Dynamic/Realtime Hourly Breakdown</h3>
+                </div>
+                <div class="hourly-content">
+                    <!-- Chart on the left -->
+                    <div style="min-height: 20rem; position: relative;">
+                        <canvas id="dynamicHourlyChart"></canvas>
+                    </div>
+                    <!-- Table on the right -->
+                    <div style="overflow-x: auto;">
+                        <div id="dynamicHourlyTableBody" style="min-width: fit-content;">
+                            <div style="text-align: center; padding: 1.5rem; color: #6b7280;">Loading...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -420,6 +478,7 @@ let isInitialLoad = true; // Track if this is the first load
 let isLoading = false; // Track if data is currently loading
 let renderInProgress = false; // Prevent duplicate renders
 let loadingTimeout = null; // Track loading timeout
+let currentFetchId = 0; // Track the current fetch request ID to cancel stale fetches
 
 // ============================================================================
 // Initialize Page
@@ -436,6 +495,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function initializeDashboard() {
     try {
+        // Hide stat4 card immediately (IN PROGRESS - not used in Team Stats)
+        const stat4Card = document.getElementById('stat4Card');
+        if (stat4Card) {
+            stat4Card.style.display = 'none';
+        }
+        
         // Show initial loading state
         showLoadingState();
         
@@ -564,21 +629,6 @@ function formatDurationText(avgDurationMinutes) {
     }
 }
 
-// Helper to add date filter to query (converts Dhaka dates to UTC for database)
-function addDateFilter(query, period) {
-    if (!period || (!period.start && !period.end)) return query;
-    
-    if (period.start && period.end) {
-        return query.gte('submitted_at', dhakaDateToUTCISO(period.start))
-                    .lte('submitted_at', dhakaDateToUTCISO(period.end));
-    } else if (period.start) {
-        return query.gte('submitted_at', dhakaDateToUTCISO(period.start));
-    } else if (period.end) {
-        return query.lte('submitted_at', dhakaDateToUTCISO(period.end));
-    }
-    return query;
-}
-
 // ============================================================================
 // Load Data
 // ============================================================================
@@ -643,10 +693,9 @@ async function loadAssignments() {
     try {
         const period = getCurrentPeriodDates();
         
-        // Show loading if initial load
-        if (isInitialLoad) {
-            showLoadingState();
-        }
+        // Show loading state (always show when loading assignments)
+        showLoadingState();
+        
         // Populate filters with empty data so UI is ready
         populateChannelFilter();
         populateAuditorFilter();
@@ -664,11 +713,11 @@ async function loadAssignments() {
 }
 
 async function fetchAndCacheAssignments(period) {
+    // Capture the current fetch ID at the start of this fetch
+    const fetchId = currentFetchId;
+    
     try {
-        // Prevent duplicate fetches
-        if (isLoading) {
-            return;
-        }
+        // Set loading state immediately
         isLoading = true;
         
         let assignmentsQuery = window.supabaseClient
@@ -714,6 +763,13 @@ async function fetchAndCacheAssignments(period) {
         
         if (error) throw error;
         
+        // Check if this fetch is still the current one before processing data
+        if (fetchId !== currentFetchId) {
+            console.log('Fetch cancelled - newer fetch in progress');
+            isLoading = false;
+            return;
+        }
+        
         allAssignments = data || [];
         unfilteredAssignments = [...allAssignments]; // Store unfiltered copy
         console.log(`Loaded ${allAssignments.length} assignments`);
@@ -722,6 +778,20 @@ async function fetchAndCacheAssignments(period) {
         populateChannelFilter();
         populateAuditorFilter();
         populateEmployeeFilter();
+        
+        // Check again before updating UI (in case fetch was cancelled during filter population)
+        if (fetchId !== currentFetchId) {
+            console.log('Fetch cancelled - newer fetch in progress');
+            isLoading = false;
+            return;
+        }
+        
+        // Check one more time before calling updateDashboard (which triggers stats fetches)
+        if (fetchId !== currentFetchId) {
+            console.log('Fetch cancelled - newer fetch in progress');
+            isLoading = false;
+            return;
+        }
         
         // Update UI with fresh data
         console.log('Updating UI with fresh assignments');
@@ -785,11 +855,20 @@ async function updateTeamStats() {
 }
 
 async function fetchAndCacheTeamStats(period) {
+    // Capture the current fetch ID at the start of this fetch
+    const fetchId = currentFetchId;
+    
     try {
         // Ensure allUsers is loaded
         if (!allUsers || allUsers.length === 0) {
             console.warn('Users not loaded yet, waiting...');
             await loadAllUsers();
+        }
+        
+        // Check if this fetch is still the current one
+        if (fetchId !== currentFetchId) {
+            console.log('Team stats fetch cancelled - newer fetch in progress');
+            return;
         }
         
         // Load assignments in two ways:
@@ -921,8 +1000,28 @@ async function fetchAndCacheTeamStats(period) {
             document.getElementById('stat4Label').textContent = 'IN PROGRESS';
             document.getElementById('stat4Count').textContent = '0';
             document.getElementById('stat4Subtitle').textContent = '-';
-            document.getElementById('stat5Label').textContent = 'REVERSAL RATE';
+            document.getElementById('stat5Label').textContent = 'REVERSALS';
             document.getElementById('stat5Count').textContent = '0';
+            const stat5Card = document.getElementById('stat5Card');
+            if (stat5Card) stat5Card.style.backgroundColor = 'var(--dark-forest)';
+            document.getElementById('stat7Label').textContent = 'PASSING RATE';
+            document.getElementById('stat7Count').textContent = '0';
+            document.getElementById('stat7Subtitle').textContent = '';
+            const stat7PassingCount = document.getElementById('stat7PassingCount');
+            const stat7NotPassingCount = document.getElementById('stat7NotPassingCount');
+            if (stat7PassingCount) {
+                const span = stat7PassingCount.querySelector('span');
+                if (span) span.textContent = '0 Passed';
+            }
+            if (stat7NotPassingCount) {
+                const span = stat7NotPassingCount.querySelector('span');
+                if (span) span.textContent = '0 Not Passed';
+            }
+            const stat7Card = document.getElementById('stat7Count')?.closest('div[style*="background-color: var(--dark-forest)"]');
+            if (stat7Card) {
+                const progressBar = stat7Card.querySelector('.progress-bar-container');
+                if (progressBar) progressBar.remove();
+            }
             hideLoadingState();
             return;
         }
@@ -937,10 +1036,13 @@ async function fetchAndCacheTeamStats(period) {
         const completed = scheduledAssignments.filter(a => a.status === 'completed').length;
         const remaining = pending + inProgress;
         
-        // Calculate team average audit duration and reversal count in parallel
+        // Calculate team average audit duration, reversal count, and passing rate in parallel
         let avgDurationText = '-';
         let avgDurationSubtitle = 'per audit';
         let teamReversalCount = 0;
+        let teamPassingRate = 0;
+        let teamPassingCount = 0;
+        let teamNotPassingCount = 0;
         
         try {
             // Ensure scorecards are loaded
@@ -987,19 +1089,25 @@ async function fetchAndCacheTeamStats(period) {
                             .select('id, submitted_at')
                             .not('reversal_requested_at', 'is', null);
                         
+                        let passingQuery = window.supabaseClient
+                            .from(tableName)
+                            .select('passing_status, submitted_at');
+                        
                         // Apply date filters server-side if possible (convert Dhaka to UTC)
                         if (period.start) {
                             durationQuery = durationQuery.gte('submitted_at', dhakaDateToUTCISO(period.start));
                             reversalQuery = reversalQuery.gte('submitted_at', dhakaDateToUTCISO(period.start));
+                            passingQuery = passingQuery.gte('submitted_at', dhakaDateToUTCISO(period.start));
                         }
                         if (period.end) {
                             durationQuery = durationQuery.lte('submitted_at', dhakaDateToUTCISO(period.end));
                             reversalQuery = reversalQuery.lte('submitted_at', dhakaDateToUTCISO(period.end));
+                            passingQuery = passingQuery.lte('submitted_at', dhakaDateToUTCISO(period.end));
                         }
                         
-                        // Query for duration and reversals in parallel for each table
+                        // Query for duration, reversals, and passing status in parallel for each table
                         // Note: completed count is now from assignments table, not scorecard tables
-                        const [durationResult, reversalResult] = await Promise.all([
+                        const [durationResult, reversalResult, passingResult] = await Promise.all([
                             (async () => {
                                 try {
                                     let result = await durationQuery;
@@ -1061,16 +1169,47 @@ async function fetchAndCacheTeamStats(period) {
                                     }
                                     return retryResult;
                                 }
+                            })(),
+                            (async () => {
+                                try {
+                                    let result = await passingQuery;
+                                    // Fallback client-side filtering if server-side filter fails or data has no date
+                                    if (result.data && period.start) {
+                                        result.data = result.data.filter(audit => {
+                                            if (!audit.submitted_at) return false;
+                                            const auditDate = toDhakaTime(audit.submitted_at);
+                                            return (!period.start || auditDate >= period.start) && 
+                                                   (!period.end || auditDate <= period.end);
+                                        });
+                                    }
+                                    return result;
+                                } catch (err) {
+                                    // If server-side date filter fails, try without date filter and filter client-side
+                                    const retryResult = await window.supabaseClient
+                                        .from(tableName)
+                                        .select('passing_status, submitted_at');
+                                    
+                                    if (retryResult.data && period.start) {
+                                        retryResult.data = retryResult.data.filter(audit => {
+                                            if (!audit.submitted_at) return false;
+                                            const auditDate = toDhakaTime(audit.submitted_at);
+                                            return (!period.start || auditDate >= period.start) && 
+                                                   (!period.end || auditDate <= period.end);
+                                        });
+                                    }
+                                    return retryResult;
+                                }
                             })()
                         ]);
                         
                         return {
                             durations: durationResult.data || [],
-                            reversals: reversalResult.data || []
+                            reversals: reversalResult.data || [],
+                            passing: passingResult.data || []
                         };
                     } catch (err) {
                         console.warn(`Error querying ${tableName}:`, err);
-                        return { durations: [], reversals: [] };
+                        return { durations: [], reversals: [], passing: [] };
                     }
                 });
                 
@@ -1079,6 +1218,8 @@ async function fetchAndCacheTeamStats(period) {
                 // Aggregate results
                 let totalDuration = 0;
                 let auditCount = 0;
+                let totalAudits = 0;
+                let passedAudits = 0;
                 
                 results.forEach(result => {
                     result.durations.forEach(audit => {
@@ -1089,7 +1230,24 @@ async function fetchAndCacheTeamStats(period) {
                         }
                     });
                     teamReversalCount += result.reversals.length;
+                    
+                    // Count passing rate
+                    result.passing.forEach(audit => {
+                        totalAudits++;
+                        const passingStatus = audit.passing_status || audit.passingStatus;
+                        const normalizedStatus = normalizePassingStatus(passingStatus);
+                        if (normalizedStatus === 'Passed') {
+                            passedAudits++;
+                        }
+                    });
                 });
+                
+                // Calculate passing rate
+                if (totalAudits > 0) {
+                    teamPassingRate = Math.round((passedAudits / totalAudits) * 100);
+                    teamPassingCount = passedAudits;
+                    teamNotPassingCount = totalAudits - passedAudits;
+                }
                 
                 if (auditCount > 0) {
                     const avgDuration = totalDuration / auditCount;
@@ -1427,6 +1585,9 @@ async function fetchAndCacheTeamStats(period) {
             avgDurationText,
             avgDurationSubtitle,
             teamReversalCount,
+            teamPassingRate,
+            teamPassingCount,
+            teamNotPassingCount,
             totalBacklogCount,
             totalEarlyCount,
             auditorStats,
@@ -1434,10 +1595,39 @@ async function fetchAndCacheTeamStats(period) {
             period: period
         };
         
+        // Check if this fetch is still the current one before updating UI
+        if (fetchId !== currentFetchId) {
+            console.log('Team stats fetch cancelled - newer fetch in progress');
+            return;
+        }
+        
         // Update UI with fresh data (only if still on Team Stats tab)
         if (currentTab === 0) {
             console.log('Updating UI with fresh team stats');
             await renderTeamStats(statsData);
+            
+            // Show hourly breakdown in Team Stats view
+            const hourlyBreakdownTable = document.getElementById('hourlyBreakdownTable');
+            if (hourlyBreakdownTable) {
+                hourlyBreakdownTable.style.display = 'block';
+            }
+            
+            // Show dynamic hourly breakdown in Team Stats view
+            const dynamicHourlyBreakdownTable = document.getElementById('dynamicHourlyBreakdownTable');
+            if (dynamicHourlyBreakdownTable) {
+                dynamicHourlyBreakdownTable.style.display = 'block';
+            }
+            
+            // Load and render dynamic hourly breakdown
+            if (period && statsData.auditorStats) {
+                await renderDynamicHourlyBreakdown(period, statsData.auditorStats, statsData.totalAssigned);
+            }
+            
+            // Load and render hourly breakdown
+            if (period && statsData.auditorStats) {
+                await renderHourlyBreakdown(period, statsData.auditorStats, statsData.totalAssigned);
+            }
+            
             // Update online status indicators after rendering
             setTimeout(() => updateOnlineStatusIndicators(), 100);
             hideLoadingState();
@@ -1472,8 +1662,28 @@ async function fetchAndCacheTeamStats(period) {
             document.getElementById('stat4Label').textContent = 'IN PROGRESS';
             document.getElementById('stat4Count').textContent = '0';
             document.getElementById('stat4Subtitle').textContent = '-';
-            document.getElementById('stat5Label').textContent = 'REVERSAL RATE';
+            document.getElementById('stat5Label').textContent = 'REVERSALS';
             document.getElementById('stat5Count').textContent = '0';
+            const stat5Card = document.getElementById('stat5Card');
+            if (stat5Card) stat5Card.style.backgroundColor = 'var(--dark-forest)';
+            document.getElementById('stat7Label').textContent = 'PASSING RATE';
+            document.getElementById('stat7Count').textContent = '0';
+            document.getElementById('stat7Subtitle').textContent = '';
+            const stat7PassingCount = document.getElementById('stat7PassingCount');
+            const stat7NotPassingCount = document.getElementById('stat7NotPassingCount');
+            if (stat7PassingCount) {
+                const span = stat7PassingCount.querySelector('span');
+                if (span) span.textContent = '0 Passed';
+            }
+            if (stat7NotPassingCount) {
+                const span = stat7NotPassingCount.querySelector('span');
+                if (span) span.textContent = '0 Not Passed';
+            }
+            const stat7Card = document.getElementById('stat7Count')?.closest('div[style*="background-color: var(--dark-forest)"]');
+            if (stat7Card) {
+                const progressBar = stat7Card.querySelector('.progress-bar-container');
+                if (progressBar) progressBar.remove();
+            }
         } catch (e) {
             // Ignore errors if elements don't exist
         }
@@ -1490,15 +1700,21 @@ async function renderTeamStats(statsData) {
         avgDurationText,
         avgDurationSubtitle,
         teamReversalCount,
+        teamPassingRate,
+        teamPassingCount,
+        teamNotPassingCount,
         totalBacklogCount,
         totalEarlyCount,
         auditorStats,
-        qualityAnalystsCount,
         period
     } = statsData;
     
     // Get auditors from stats data (any role, not just Quality Analysts)
     const auditorsCount = statsData.auditorsCount || auditorStats.length;
+    
+    // Get stat card elements once at the top of the function
+    const stat4Card = document.getElementById('stat4Count')?.closest('div[style*="background-color: var(--dark-forest)"]');
+    const stat7Card = document.getElementById('stat7Count')?.closest('div[style*="background-color: var(--dark-forest)"]');
     
     if (auditorStats.length === 0) {
         const tableBody = document.getElementById('performanceTableBody');
@@ -1525,21 +1741,43 @@ async function renderTeamStats(statsData) {
         document.getElementById('stat4Subtitle').textContent = '-';
         document.getElementById('stat5Label').textContent = 'REVERSAL RATE';
         document.getElementById('stat5Count').textContent = '0';
+        const stat5Card = document.getElementById('stat5Card');
+        if (stat5Card) stat5Card.style.backgroundColor = 'var(--dark-forest)';
+        document.getElementById('stat7Label').textContent = 'PASSING RATE';
+        document.getElementById('stat7Count').textContent = '0';
+        document.getElementById('stat7Subtitle').textContent = '';
+        const stat7PassingCount = document.getElementById('stat7PassingCount');
+        const stat7NotPassingCount = document.getElementById('stat7NotPassingCount');
+        if (stat7PassingCount) {
+            const span = stat7PassingCount.querySelector('span');
+            if (span) span.textContent = '0 Passed';
+        }
+        if (stat7NotPassingCount) {
+            const span = stat7NotPassingCount.querySelector('span');
+            if (span) span.textContent = '0 Not Passed';
+        }
+        const stat7Card = document.getElementById('stat7Count')?.closest('div[style*="background-color: var(--dark-forest)"]');
+        if (stat7Card) {
+            const progressBar = stat7Card.querySelector('.progress-bar-container');
+            if (progressBar) progressBar.remove();
+        }
         return;
     }
     
-    // Show the 4th and 6th stat cards (in case they were hidden in standup view)
-    const stat4Card = document.getElementById('stat4Count').closest('div[style*="background-color: var(--dark-forest)"]');
+    // Hide the 4th card (IN PROGRESS) in Team Stats - not used in Team Stats
+    // Show the 6th and 7th stat cards (in case they were hidden in standup view)
     if (stat4Card) {
-        stat4Card.style.display = 'flex';
-        // Remove progress bar if it exists
-        const progressBar = stat4Card.querySelector('.progress-bar-container');
-        if (progressBar) progressBar.remove();
+        stat4Card.style.display = 'none';
     }
     
     const stat6Card = document.getElementById('stat6Count').closest('div[style*="background-color: var(--dark-forest)"]');
     if (stat6Card) {
         stat6Card.style.display = 'flex';
+    }
+    
+    // Show stat7Card (Passing Rate) in Team Stats
+    if (stat7Card) {
+        stat7Card.style.display = 'flex';
     }
     
     // Calculate workload metrics (average, max, min assigned per auditor)
@@ -1609,17 +1847,71 @@ async function renderTeamStats(statsData) {
     
     document.getElementById('targetAchieved').textContent = `${percentage}% Target Achieved`;
     
-    document.getElementById('stat4Label').textContent = 'IN PROGRESS';
-    const stat4Count = document.getElementById('stat4Count');
-    stat4Count.style.fontSize = '2.625rem';
-    stat4Count.textContent = inProgress;
-    document.getElementById('stat4Subtitle').textContent = `${auditorsCount} auditor${auditorsCount !== 1 ? 's' : ''}`;
-    document.getElementById('stat5Label').textContent = 'REVERSAL RATE';
+    // Update 5th card to REVERSALS
+    document.getElementById('stat5Label').textContent = 'REVERSALS';
     document.getElementById('stat5Count').textContent = teamReversalCount;
     document.getElementById('stat5Subtitle').textContent = '';
+    
+    // Change card background to red if reversal count > 0
+    const stat5Card = document.getElementById('stat5Card');
+    if (stat5Card) {
+        if (teamReversalCount > 0) {
+            stat5Card.style.backgroundColor = '#dc2626'; // Darker red color
+        } else {
+            stat5Card.style.backgroundColor = 'var(--dark-forest)'; // Default dark forest color
+        }
+    }
+    
+    // Update 6th card to AVG DURATION
     document.getElementById('stat6Label').textContent = 'AVG DURATION';
     document.getElementById('stat6Count').textContent = avgDurationText;
     document.getElementById('stat6Subtitle').textContent = avgDurationSubtitle;
+    
+    // Update 7th card to PASSING RATE (new card)
+    // stat7Card is already declared at the top of the function
+    document.getElementById('stat7Label').textContent = 'PASSING RATE';
+    const stat7Count = document.getElementById('stat7Count');
+    if (stat7Count) {
+        stat7Count.style.fontSize = '2.625rem';
+        stat7Count.textContent = (teamPassingRate || 0) + '%';
+        
+        // Update chips with passing and not passing counts
+        const passingCount = teamPassingCount || 0;
+        const notPassingCount = teamNotPassingCount || 0;
+        const stat7PassingCount = document.getElementById('stat7PassingCount');
+        const stat7NotPassingCount = document.getElementById('stat7NotPassingCount');
+        
+        if (stat7PassingCount) {
+            const span = stat7PassingCount.querySelector('span');
+            if (span) span.textContent = `${passingCount} Passed`;
+        }
+        if (stat7NotPassingCount) {
+            const span = stat7NotPassingCount.querySelector('span');
+            if (span) span.textContent = `${notPassingCount} Not Passed`;
+        }
+        
+        // Add/update progress bar
+        let progressContainer = stat7Card?.querySelector('.progress-bar-container');
+        if (!progressContainer && stat7Card) {
+            progressContainer = document.createElement('div');
+            progressContainer.className = 'progress-bar-container';
+            progressContainer.style.cssText = 'width: 100%; height: 0.375rem; background-color: rgba(255,255,255,0.2); border-radius: 0.1875rem; overflow: hidden; margin-top: 0.375rem;';
+            const stat7Subtitle = document.getElementById('stat7Subtitle');
+            if (stat7Subtitle && stat7Subtitle.parentElement) {
+                stat7Subtitle.parentElement.insertBefore(progressContainer, stat7Subtitle);
+            }
+        }
+        if (progressContainer) {
+            const passingRate = teamPassingRate || 0;
+            progressContainer.innerHTML = `<div style="height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 0.1875rem; transition: width 0.3s ease; width: ${passingRate}%;"></div>`;
+        }
+        
+        // Clear subtitle (chips now show the counts)
+        const stat7Subtitle = document.getElementById('stat7Subtitle');
+        if (stat7Subtitle) {
+            stat7Subtitle.textContent = '';
+        }
+    }
     
     // Update table header
     const tableHeader = document.getElementById('tableHeader');
@@ -1681,14 +1973,10 @@ async function renderTeamStats(statsData) {
     
     // Update online status indicators after rendering
     setTimeout(() => updateOnlineStatusIndicators(), 100);
-    
-    // Load and render hourly breakdown
-    if (period && auditorStats) {
-        await renderHourlyBreakdown(period, auditorStats, totalAssigned);
-    }
 }
 
 let hourlyChartInstance = null;
+let dynamicHourlyChartInstance = null;
 
 function renderHourlyChart(labels, data, targetPerHour = 0, workingHours = [], sortedHours = []) {
     try {
@@ -1849,22 +2137,58 @@ function renderHourlyChart(labels, data, targetPerHour = 0, workingHours = [], s
         plugins: [
             {
                 id: 'datalabels',
-                afterDatasetsDraw: (chart) => {
+                afterDraw: (chart) => {
                     const ctx = chart.ctx;
                     chart.data.datasets.forEach((dataset, i) => {
                         const meta = chart.getDatasetMeta(i);
                         meta.data.forEach((point, index) => {
                             const value = dataset.data[index];
-                            if (value > 0) {
-                                const x = point.x;
-                                const y = point.y;
-                                ctx.save();
-                                ctx.fillStyle = '#10b981';
-                                ctx.font = '600 10px Poppins';
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                ctx.fillText(value, x, y - 8);
-                                ctx.restore();
+                            if (i === 0) {
+                                // Show labels for actual data
+                                if (value > 0) {
+                                    const x = point.x;
+                                    const y = point.y;
+                                    const text = value.toString();
+                                    ctx.save();
+                                    ctx.font = '600 10px Poppins';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    
+                                    // Draw white background/stroke for visibility
+                                    ctx.strokeStyle = '#ffffff';
+                                    ctx.lineWidth = 3;
+                                    ctx.lineJoin = 'round';
+                                    ctx.miterLimit = 2;
+                                    ctx.strokeText(text, x, y - 8);
+                                    
+                                    // Draw the actual text
+                                    ctx.fillStyle = '#10b981';
+                                    ctx.fillText(text, x, y - 8);
+                                    ctx.restore();
+                                }
+                            } else if (i === 1) {
+                                // Show labels for target line (above the point)
+                                if (value !== null && value !== undefined && value > 0) {
+                                    const x = point.x;
+                                    const y = point.y;
+                                    const text = value.toFixed(1);
+                                    ctx.save();
+                                    ctx.font = '600 10px Poppins';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    
+                                    // Draw white background/stroke for visibility
+                                    ctx.strokeStyle = '#ffffff';
+                                    ctx.lineWidth = 3;
+                                    ctx.lineJoin = 'round';
+                                    ctx.miterLimit = 2;
+                                    ctx.strokeText(text, x, y - 8);
+                                    
+                                    // Draw the actual text
+                                    ctx.fillStyle = '#f59e0b';
+                                    ctx.fillText(text, x, y - 8);
+                                    ctx.restore();
+                                }
                             }
                         });
                     });
@@ -2239,6 +2563,772 @@ async function renderHourlyBreakdown(period, auditorStats, totalAssigned = 0) {
     }
 }
 
+// ============================================================================
+// Dynamic Hourly Breakdown Functions
+// ============================================================================
+
+function renderDynamicHourlyChart(labels, data, dynamicTargets = [], workingHours = [], sortedHours = [], deficiencies = [], currentHourIndex = -1) {
+    try {
+        // Validate inputs
+        if (!labels || !Array.isArray(labels) || labels.length === 0) {
+            console.warn('Invalid dynamic chart labels');
+            return;
+        }
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn('Invalid dynamic chart data');
+            return;
+        }
+        
+        const canvas = document.getElementById('dynamicHourlyChart');
+        if (!canvas) {
+            console.warn('Dynamic hourly chart canvas not found');
+            return;
+        }
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.warn('Could not get dynamic chart context');
+            return;
+        }
+
+        // Destroy existing chart instance if it exists
+        if (dynamicHourlyChartInstance) {
+            dynamicHourlyChartInstance.destroy();
+            dynamicHourlyChartInstance = null;
+        }
+
+        // Create dynamic target line data (target for working hours, null for others)
+        // dynamicTargets parameter is already mapped to sortedHours (as chartDynamicTargets)
+        // So we can use it directly as targetData
+        const targetData = dynamicTargets || [];
+
+        // Calculate dynamic Y-axis max based on target and actual data
+        const maxDataValue = Math.max(...data, 0);
+        const validTargets = targetData.filter(t => t !== null && t !== undefined && t > 0);
+        const maxTargetValue = validTargets.length > 0 ? Math.max(...validTargets) : 0;
+        const maxValue = Math.max(maxDataValue, maxTargetValue);
+        // Add 20% padding and round up to nearest 0.5
+        const yAxisMax = maxValue > 0 ? Math.ceil(maxValue * 1.2 * 2) / 2 : 10;
+        
+        dynamicHourlyChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Total Audits',
+                        data: data,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        order: 1 // Draw actual data line below target
+                    },
+                    {
+                        label: 'Dynamic Target',
+                        data: targetData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0,
+                        spanGaps: false,
+                        order: 0 // Draw target line on top
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 11
+                            },
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 11
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    // Main data line
+                                    const value = context.parsed.y;
+                                    const hourIndex = context.dataIndex;
+                                    if (sortedHours && sortedHours.length > hourIndex) {
+                                        const hour = sortedHours[hourIndex];
+                                        const isWorkingHour = workingHours && workingHours.includes(hour);
+                                        
+                                        // targetData is available in closure
+                                        const targetValue = targetData && targetData[hourIndex];
+                                        if (isWorkingHour && targetValue !== null && targetValue !== undefined && targetValue > 0) {
+                                            const status = value >= targetValue ? ' (Target Met ✓)' : ' (Target Not Met ✗)';
+                                            return value + ' audits' + status;
+                                        }
+                                    }
+                                    return value + ' audits';
+                                } else {
+                                    // Dynamic Target line
+                                    if (context.parsed.y !== null) {
+                                        return 'Dynamic Target: ' + context.parsed.y.toFixed(1) + ' audits';
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: yAxisMax,
+                        ticks: {
+                            stepSize: yAxisMax <= 10 ? 1 : (yAxisMax <= 20 ? 2 : Math.ceil(yAxisMax / 10)),
+                            font: {
+                                size: 10
+                            },
+                            color: '#6b7280'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 10
+                            },
+                            color: '#6b7280',
+                            maxRotation: 45,
+                            minRotation: 45
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            },
+            plugins: [
+                {
+                    id: 'datalabels',
+                    afterDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach((dataset, i) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((point, index) => {
+                                const value = dataset.data[index];
+                                if (i === 0) {
+                                    // Show labels for actual data
+                                    if (value > 0) {
+                                        const x = point.x;
+                                        const y = point.y;
+                                        const text = value.toString();
+                                        ctx.save();
+                                        ctx.font = '600 10px Poppins';
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'bottom';
+                                        
+                                        // Draw white background/stroke for visibility
+                                        ctx.strokeStyle = '#ffffff';
+                                        ctx.lineWidth = 3;
+                                        ctx.lineJoin = 'round';
+                                        ctx.miterLimit = 2;
+                                        ctx.strokeText(text, x, y - 8);
+                                        
+                                        // Draw the actual text
+                                        ctx.fillStyle = '#10b981';
+                                        ctx.fillText(text, x, y - 8);
+                                        ctx.restore();
+                                    }
+                                } else if (i === 1) {
+                                    // Show labels for dynamic target line (above the point)
+                                    if (value !== null && value !== undefined && value > 0) {
+                                        const x = point.x;
+                                        const y = point.y;
+                                        const hourIndex = index;
+                                        
+                                        // Get deficiency if this is a past hour
+                                        const hour = sortedHours && sortedHours[hourIndex];
+                                        const workingHourIndex = hour ? workingHours.indexOf(hour) : -1;
+                                        const deficiency = deficiencies && deficiencies[hourIndex];
+                                        const isPastHour = currentHourIndex >= 0 && workingHourIndex >= 0 && workingHourIndex < currentHourIndex;
+                                        
+                                        ctx.save();
+                                        
+                                        // Draw target value with white background/stroke
+                                        const targetText = value.toFixed(1);
+                                        ctx.font = '600 10px Poppins';
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'bottom';
+                                        
+                                        // Draw white background/stroke for visibility
+                                        ctx.strokeStyle = '#ffffff';
+                                        ctx.lineWidth = 3;
+                                        ctx.lineJoin = 'round';
+                                        ctx.miterLimit = 2;
+                                        ctx.strokeText(targetText, x, y - 8);
+                                        
+                                        // Draw the actual text
+                                        ctx.fillStyle = '#f59e0b';
+                                        ctx.fillText(targetText, x, y - 8);
+                                        
+                                        // Draw deficiency below target if it's a past hour with shortfall
+                                        if (isPastHour && deficiency !== null && deficiency > 0) {
+                                            const deficiencyText = `-${deficiency.toFixed(1)}`;
+                                            ctx.font = '600 9px Poppins';
+                                            ctx.textBaseline = 'top';
+                                            
+                                            // Draw white background/stroke for deficiency
+                                            ctx.strokeStyle = '#ffffff';
+                                            ctx.lineWidth = 3;
+                                            ctx.strokeText(deficiencyText, x, y - 8 + 12);
+                                            
+                                            // Draw the actual text
+                                            ctx.fillStyle = '#ef4444';
+                                            ctx.fillText(deficiencyText, x, y - 8 + 12);
+                                        }
+                                        
+                                        ctx.restore();
+                                    }
+                                }
+                            });
+                        });
+                    }
+                },
+                {
+                    id: 'targetLines',
+                    afterDatasetsDraw: (chart) => {
+                        if (!sortedHours || !workingHours || !targetData || targetData.length === 0) return;
+                        
+                        const ctx = chart.ctx;
+                        const meta0 = chart.getDatasetMeta(0); // Actual data
+                        const meta1 = chart.getDatasetMeta(1); // Dynamic Target line
+                        
+                        sortedHours.forEach((hour, index) => {
+                            const isWorkingHour = workingHours.includes(hour);
+                            if (!isWorkingHour) return;
+                            
+                            const actualPoint = meta0.data[index];
+                            const targetPoint = meta1.data[index];
+                            
+                            if (!actualPoint || !targetPoint || targetPoint.y === null) return;
+                            
+                            const actualValue = data[index] || 0;
+                            const targetValue = targetData[index];
+                            
+                            if (!targetValue || targetValue <= 0) return;
+                            
+                            // Only draw line if there's a difference
+                            if (Math.abs(actualValue - targetValue) > 0.01) {
+                                ctx.save();
+                                
+                                // Color: red if below target, green if above
+                                ctx.strokeStyle = actualValue >= targetValue ? '#10b981' : '#ef4444';
+                                ctx.lineWidth = 2;
+                                ctx.setLineDash([]);
+                                
+                                // Draw vertical line from target to actual
+                                ctx.beginPath();
+                                ctx.moveTo(actualPoint.x, targetPoint.y);
+                                ctx.lineTo(actualPoint.x, actualPoint.y);
+                                ctx.stroke();
+                                
+                                ctx.restore();
+                            }
+                        });
+                    }
+                },
+                {
+                    id: 'lunchBreak',
+                    beforeDatasetsDraw: (chart) => {
+                        if (!sortedHours) return;
+                        
+                        const ctx = chart.ctx;
+                        const chartArea = chart.chartArea;
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        
+                        // Find indices for lunch break hours (13:30 to 14:30)
+                        const lunchStartIndex = sortedHours.findIndex(hour => hour === '13:30');
+                        const lunchEndIndex = sortedHours.findIndex(hour => hour === '14:30');
+                        
+                        if (lunchStartIndex === -1 || lunchEndIndex === -1) return;
+                        
+                        const meta0 = chart.getDatasetMeta(0);
+                        if (!meta0.data[lunchStartIndex] || !meta0.data[lunchEndIndex]) return;
+                        
+                        const startX = meta0.data[lunchStartIndex].x;
+                        const endX = meta0.data[lunchEndIndex].x;
+                        const width = endX - startX;
+                        
+                        // Draw shaded rectangle for lunch break (from 1:30 to 2:30)
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
+                        ctx.fillRect(startX, chartArea.top, width, chartArea.bottom - chartArea.top);
+                        ctx.restore();
+                        
+                        // Add vertical text label centered between 1:30 and 2:30, vertically centered in chart
+                        ctx.save();
+                        ctx.fillStyle = '#f59e0b';
+                        ctx.font = '600 9px Poppins';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const centerY = (chartArea.top + chartArea.bottom) / 2;
+                        ctx.translate(startX + width / 2, centerY);
+                        ctx.rotate(-Math.PI / 2); // Rotate 90 degrees counterclockwise
+                        ctx.fillText('Lunch Break', 0, 0);
+                        ctx.restore();
+                    }
+                }
+            ]
+        });
+    } catch (error) {
+        console.error('Error rendering dynamic hourly chart:', error);
+    }
+}
+
+function calculateDynamicHourlyTargets(totalAssigned, completedSoFar, currentHour, workingHours) {
+    const remainingTarget = totalAssigned - completedSoFar;
+    const currentHourIndex = workingHours.findIndex(h => {
+        const hour = parseInt(h.split(':')[0]);
+        return hour >= currentHour;
+    });
+    
+    if (currentHourIndex === -1) {
+        return workingHours.map(() => 0);
+    }
+    
+    const remainingWorkingHours = workingHours.slice(currentHourIndex);
+    const remainingHoursCount = remainingWorkingHours.length;
+    
+    if (remainingHoursCount === 0) {
+        return workingHours.map(() => 0);
+    }
+    
+    const baseTargetPerHour = totalAssigned / 8;
+    const hoursPassed = currentHourIndex;
+    const expectedCompletedByNow = baseTargetPerHour * hoursPassed;
+    const deficit = expectedCompletedByNow - completedSoFar;
+    
+    if (deficit <= 0) {
+        return workingHours.map((hour, index) => {
+            if (index < currentHourIndex) return 0;
+            return baseTargetPerHour;
+        });
+    }
+    
+    const additionalTargetPerHour = deficit / remainingHoursCount;
+    const dynamicTargetPerHour = baseTargetPerHour + additionalTargetPerHour;
+    
+    return workingHours.map((hour, index) => {
+        if (index < currentHourIndex) return 0;
+        return dynamicTargetPerHour;
+    });
+}
+
+async function renderDynamicHourlyBreakdown(period, auditorStats, totalAssigned = 0) {
+    try {
+        // Only show dynamic hourly breakdown in Team Stats view
+        if (currentTab !== 0) {
+            const dynamicHourlyTableBody = document.getElementById('dynamicHourlyTableBody');
+            if (dynamicHourlyTableBody) {
+                dynamicHourlyTableBody.innerHTML = '';
+            }
+            if (dynamicHourlyChartInstance) {
+                dynamicHourlyChartInstance.destroy();
+                dynamicHourlyChartInstance = null;
+            }
+            return;
+        }
+        
+        const dynamicHourlyTableBody = document.getElementById('dynamicHourlyTableBody');
+        if (!dynamicHourlyTableBody) {
+            console.warn('Dynamic hourly table body not found');
+            return;
+        }
+        
+        if (!auditorStats || !Array.isArray(auditorStats) || auditorStats.length === 0) {
+            dynamicHourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">No auditors found</div>';
+            return;
+        }
+        
+        if (!period) {
+            dynamicHourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">No date range selected</div>';
+            return;
+        }
+        
+        // Only show for today's data
+        try {
+            const today = getDhakaNow();
+            const todayStr = formatDhakaDateForInput(today);
+            const periodStartStr = period.start ? formatDhakaDateForInput(period.start) : null;
+            const periodEndStr = period.end ? formatDhakaDateForInput(period.end) : null;
+            
+            if (periodStartStr !== todayStr || periodEndStr !== todayStr) {
+                dynamicHourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">Dynamic breakdown available only for today</div>';
+                if (dynamicHourlyChartInstance) {
+                    dynamicHourlyChartInstance.destroy();
+                    dynamicHourlyChartInstance = null;
+                }
+                return;
+            }
+        } catch (dateError) {
+            console.error('Error checking date for dynamic breakdown:', dateError);
+            dynamicHourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #ef4444;">Error checking date range</div>';
+            return;
+        }
+        
+        dynamicHourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">Loading...</div>';
+        
+        if (!cachedScorecardTables || cachedScorecardTables.length === 0) {
+            await loadScorecards();
+        }
+        
+        let tablesToQuery = [];
+        try {
+            const { data: allTables, error: tablesError } = await window.supabaseClient.rpc('get_audit_tables');
+            if (!tablesError && allTables && allTables.length > 0) {
+                tablesToQuery = allTables
+                    .filter(t => t.table_name !== 'ai_analysis_results' && t.table_name !== 'calibration_results')
+                    .map(t => t.table_name);
+            } else {
+                tablesToQuery = cachedScorecardTables.length > 0 
+                    ? cachedScorecardTables 
+                    : (await window.supabaseClient.from('scorecards').select('table_name').eq('is_active', true)).data?.map(s => s.table_name) || [];
+            }
+        } catch (rpcError) {
+            tablesToQuery = cachedScorecardTables.length > 0 
+                ? cachedScorecardTables 
+                : (await window.supabaseClient.from('scorecards').select('table_name').eq('is_active', true)).data?.map(s => s.table_name) || [];
+        }
+        
+        if (tablesToQuery.length === 0) {
+            dynamicHourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">No audit data available</div>';
+            return;
+        }
+        
+        const auditPromises = tablesToQuery.map(async (tableName) => {
+            try {
+                let query = window.supabaseClient
+                    .from(tableName)
+                    .select('submitted_at, auditor_email')
+                    .not('submitted_at', 'is', null);
+                
+                if (period.start) {
+                    query = query.gte('submitted_at', dhakaDateToUTCISO(period.start));
+                }
+                if (period.end) {
+                    query = query.lte('submitted_at', dhakaDateToUTCISO(period.end));
+                }
+                
+                const result = await query;
+                if (result.error) {
+                    const errorMessage = result.error.message || JSON.stringify(result.error);
+                    if (errorMessage.includes('auditor_email') && 
+                        (result.error.code === '42703' || result.error.code === 'PGRST116')) {
+                        return [];
+                    }
+                    throw result.error;
+                }
+                
+                let audits = result.data || [];
+                if (period.start) {
+                    audits = audits.filter(audit => {
+                        if (!audit.submitted_at) return false;
+                        const auditDate = toDhakaTime(audit.submitted_at);
+                        return (!period.start || auditDate >= period.start) && 
+                               (!period.end || auditDate <= period.end);
+                    });
+                }
+                return audits;
+            } catch (err) {
+                console.warn(`Error querying ${tableName} for dynamic hourly breakdown:`, err);
+                return [];
+            }
+        });
+        
+        const allAuditResults = await Promise.all(auditPromises);
+        const allAudits = allAuditResults.flat();
+        
+        const now = toDhakaTime(new Date());
+        const currentHour = now.getHours();
+        const currentMinutes = now.getMinutes();
+        
+        const hourlyData = {};
+        allAudits.forEach(audit => {
+            if (!audit.submitted_at) return;
+            const submittedDate = toDhakaTime(audit.submitted_at);
+            const hour = submittedDate.getHours();
+            const minutes = submittedDate.getMinutes();
+            let groupHour = hour;
+            if (minutes < 30) {
+                groupHour = hour - 1;
+                if (groupHour < 0) groupHour = 23;
+            }
+            if (groupHour < 9 || groupHour > 21) return;
+            const hourKey = `${groupHour.toString().padStart(2, '0')}:30`;
+            const auditorEmail = audit.auditor_email || 'Unknown';
+            if (!hourlyData[hourKey]) hourlyData[hourKey] = {};
+            if (!hourlyData[hourKey][auditorEmail]) hourlyData[hourKey][auditorEmail] = 0;
+            hourlyData[hourKey][auditorEmail]++;
+        });
+        
+        const auditorMap = {};
+        auditorStats.forEach(stat => {
+            auditorMap[stat.email] = stat.name;
+        });
+        
+        const hasDataAfter1830 = Object.keys(hourlyData).some(hourKey => {
+            const hour = parseInt(hourKey.split(':')[0]);
+            return hour > 18;
+        });
+        
+        const maxHour = hasDataAfter1830 ? 21 : 18;
+        const sortedHours = [];
+        for (let h = 9; h <= maxHour; h++) {
+            sortedHours.push(`${h.toString().padStart(2, '0')}:30`);
+        }
+        
+        if (sortedHours.length === 0) {
+            dynamicHourlyTableBody.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #6b7280;">No audit activity in the selected period</div>';
+            return;
+        }
+        
+        const sortedAuditors = auditorStats
+            .map(stat => stat.email)
+            .sort((a, b) => {
+                const nameA = auditorMap[a] || a;
+                const nameB = auditorMap[b] || b;
+                return nameA.localeCompare(nameB);
+            });
+        
+        const hourlyTotals = {};
+        sortedHours.forEach(hour => {
+            const hourData = hourlyData[hour] || {};
+            let total = 0;
+            sortedAuditors.forEach(email => {
+                total += (hourData[email] || 0);
+            });
+            hourlyTotals[hour] = total;
+        });
+        
+        let completedSoFar = 0;
+        sortedHours.forEach(hour => {
+            const hourNum = parseInt(hour.split(':')[0]);
+            if (hourNum < currentHour || (hourNum === currentHour && currentMinutes >= 30)) {
+                completedSoFar += (hourlyTotals[hour] || 0);
+            }
+        });
+        
+        const workingHours = ['10:30', '11:30', '12:30', '13:30', '15:30', '16:30', '17:30', '18:30'];
+        
+        // Find current hour index in working hours
+        const currentHourIndex = workingHours.findIndex(h => {
+            const hour = parseInt(h.split(':')[0]);
+            return hour >= currentHour;
+        });
+        
+        const chartLabels = sortedHours.map(h => {
+            const [hourStr, minStr] = h.split(':');
+            const hourNum = parseInt(hourStr);
+            const displayHour = hourNum === 0 ? 12 : (hourNum > 12 ? hourNum - 12 : hourNum);
+            const ampm = hourNum < 12 ? 'AM' : 'PM';
+            return `${displayHour}:${minStr} ${ampm}`;
+        });
+        
+        const chartData = sortedHours.map(hour => hourlyTotals[hour] || 0);
+        
+        // Calculate historical dynamic targets for each hour
+        // For past hours, calculate what the target was at that specific time
+        const chartDynamicTargets = sortedHours.map((hour, hourIndex) => {
+            const index = workingHours.indexOf(hour);
+            if (index < 0) return null; // Non-working hour
+            
+            // For past hours, calculate what the dynamic target was FOR that hour when it was current
+            if (currentHourIndex >= 0 && index < currentHourIndex) {
+                // Calculate completed so far up to (but not including) this hour
+                let completedUpToThisHour = 0;
+                const thisHourNum = parseInt(hour.split(':')[0]);
+                sortedHours.forEach((h, idx) => {
+                    const hNum = parseInt(h.split(':')[0]);
+                    // Count hours before this hour (completed before this hour started)
+                    if (hNum < thisHourNum || (hNum === thisHourNum && idx < hourIndex)) {
+                        completedUpToThisHour += (hourlyTotals[h] || 0);
+                    }
+                });
+                
+                // Calculate what the target would have been FOR this hour when it was the current hour
+                // When this hour was current, we calculate targets starting from this hour
+                const historicalTargets = calculateDynamicHourlyTargets(
+                    totalAssigned, 
+                    completedUpToThisHour, 
+                    thisHourNum, 
+                    workingHours
+                );
+                
+                // When this hour was current, currentHourIndex would have been 'index'
+                // So the target for this hour would be at historicalTargets[index]
+                // But the function sets past hours to 0, so we need to get it differently
+                // Actually, when thisHourNum was current, the function calculates for index >= currentHourIndex
+                // So if currentHourIndex = index (this hour), then historicalTargets[index] should have the target
+                
+                // However, the function returns 0 for index < currentHourIndex
+                // So when we call it with thisHourNum, if currentHourIndex = index, then index is NOT < index
+                // So historicalTargets[index] should have the calculated target
+                if (historicalTargets && historicalTargets[index] !== undefined) {
+                    // If it's 0, it means it was set to 0 because it was considered "past"
+                    // But we want the target that was calculated for it when it was current
+                    // So we need to recalculate it manually
+                    if (historicalTargets[index] > 0) {
+                        return historicalTargets[index];
+                    }
+                    
+                    // If it's 0, we need to calculate what it should have been
+                    // When this hour was current, it was the first remaining hour
+                    const baseTargetPerHour = totalAssigned / 8;
+                    const hoursPassedAtThatTime = index; // How many working hours had passed
+                    const expectedCompletedByThen = baseTargetPerHour * hoursPassedAtThatTime;
+                    const deficitAtThatTime = expectedCompletedByThen - completedUpToThisHour;
+                    const remainingHoursAtThatTime = workingHours.length - index;
+                    
+                    if (deficitAtThatTime <= 0) {
+                        // On track, use base target
+                        return baseTargetPerHour;
+                    } else {
+                        // Behind, calculate dynamic target
+                        const additionalTargetPerHour = deficitAtThatTime / remainingHoursAtThatTime;
+                        return baseTargetPerHour + additionalTargetPerHour;
+                    }
+                }
+                
+                return null;
+            }
+            
+            // For current and future hours, calculate dynamic target based on current state
+            if (index >= currentHourIndex) {
+                const dynamicTargets = calculateDynamicHourlyTargets(totalAssigned, completedSoFar, currentHour, workingHours);
+                if (dynamicTargets && dynamicTargets[index] !== undefined && dynamicTargets[index] > 0) {
+                    return dynamicTargets[index];
+                }
+            }
+            
+            return null;
+        });
+        
+        // Calculate deficiencies for past hours (target - actual)
+        const deficiencies = sortedHours.map((hour, hourIndex) => {
+            const index = workingHours.indexOf(hour);
+            if (index < 0) return null;
+            
+            const actual = chartData[hourIndex] || 0;
+            const target = chartDynamicTargets[hourIndex];
+            
+            // Only calculate deficiency for past working hours where we had a target
+            if (currentHourIndex >= 0 && index < currentHourIndex && target !== null && target > 0) {
+                const deficiency = target - actual;
+                return deficiency > 0 ? deficiency : 0; // Only show positive deficiency (shortfall)
+            }
+            
+            return null;
+        });
+        
+        renderDynamicHourlyChart(chartLabels, chartData, chartDynamicTargets, workingHours, sortedHours, deficiencies, currentHourIndex);
+        
+        let tableHTML = `
+            <div style="display: grid; grid-template-columns: minmax(4rem, 1fr) minmax(3.5rem, 0.8fr) minmax(3.5rem, 0.8fr) repeat(${sortedAuditors.length}, minmax(5rem, 1fr)); gap: 0.75rem; align-items: center; padding: 0.375rem 0 0.5625rem 0; font-weight: 700; font-size: 0.6562rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 0.0469rem solid #e5e7eb; margin-bottom: 0.375rem;">
+                <div>Hour</div>
+                <div style="text-align: center;">Dynamic Target</div>
+                <div style="text-align: center;">Status</div>
+                ${sortedAuditors.map(email => `<div style="text-align: center;">${escapeHtml(auditorMap[email] || email)}</div>`).join('')}
+            </div>
+        `;
+        
+        sortedHours.forEach((hour, hourIndex) => {
+            const hourData = hourlyData[hour] || {};
+            const [hourStr, minStr] = hour.split(':');
+            const hourNum = parseInt(hourStr);
+            const displayHour = hourNum === 0 ? 12 : (hourNum > 12 ? hourNum - 12 : hourNum);
+            const ampm = hourNum < 12 ? 'AM' : 'PM';
+            const hourDisplay = `${displayHour}:${minStr} ${ampm}`;
+            const isLunchBreak = hour === '14:30';
+            const hourTotal = hourlyTotals[hour] || 0;
+            
+            // Use the same chartDynamicTargets array that's used in the chart
+            // This ensures table and chart show the exact same values
+            const dynamicTarget = chartDynamicTargets[hourIndex];
+            const workingHourIndex = workingHours.indexOf(hour);
+            const isPastHour = currentHourIndex >= 0 && workingHourIndex >= 0 && workingHourIndex < currentHourIndex;
+            const deficiency = deficiencies && deficiencies[hourIndex];
+            const targetMet = (dynamicTarget !== null && dynamicTarget !== undefined && dynamicTarget > 0) ? (hourTotal >= dynamicTarget) : null;
+            const lunchBreakIndicator = isLunchBreak ? '<span class="lunch-break-text" style="font-size: 0.5rem; color: #f59e0b; opacity: 0; transition: opacity 0.2s;">Lunch</span>' : '';
+            
+            // Format target display with deficiency for past hours
+            let targetDisplay = '';
+            if (dynamicTarget !== null && dynamicTarget !== undefined && dynamicTarget > 0) {
+                targetDisplay = dynamicTarget.toFixed(1);
+                // Add deficiency in red for past hours with shortfall
+                if (isPastHour && deficiency !== null && deficiency > 0) {
+                    targetDisplay += ` <span style="color: #ef4444; font-size: 0.5625rem;">(-${deficiency.toFixed(1)})</span>`;
+                }
+            }
+            
+            tableHTML += `
+                <div class="${isLunchBreak ? 'lunch-break-row' : ''}" style="display: grid; grid-template-columns: minmax(4rem, 1fr) minmax(3.5rem, 0.8fr) minmax(3.5rem, 0.8fr) repeat(${sortedAuditors.length}, minmax(5rem, 1fr)); gap: 0.75rem; align-items: center; padding: 0.375rem 0; border-bottom: 0.0469rem solid #f3f4f6; ${isLunchBreak ? 'background-color: rgba(245, 158, 11, 0.05);' : ''}">
+                    <div style="font-size: 0.6562rem; color: var(--text-color); font-weight: 600;">${hourDisplay}</div>
+                    <div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;">${targetDisplay}</div>
+                    <div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;">
+                        ${targetMet === true ? '<span style="color: #10b981; font-weight: 600;">✓</span>' : targetMet === false ? '<span style="color: #ef4444; font-weight: 600;">✗</span>' : ''}${lunchBreakIndicator}
+                    </div>
+                    ${sortedAuditors.map(email => {
+                        const count = hourData[email] || 0;
+                        return `<div style="font-size: 0.6562rem; color: var(--text-color); text-align: center;">${count > 0 ? count : ''}</div>`;
+                    }).join('')}
+                </div>
+            `;
+        });
+        
+        dynamicHourlyTableBody.innerHTML = tableHTML;
+        
+    } catch (error) {
+        console.error('Error rendering dynamic hourly breakdown:', error);
+        console.error('Error stack:', error.stack);
+        const dynamicHourlyTableBody = document.getElementById('dynamicHourlyTableBody');
+        if (dynamicHourlyTableBody) {
+            dynamicHourlyTableBody.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: #ef4444;">Error loading dynamic hourly breakdown: ${error.message || 'Unknown error'}</div>`;
+        }
+        // Clear chart on error
+        if (dynamicHourlyChartInstance) {
+            try {
+                dynamicHourlyChartInstance.destroy();
+                dynamicHourlyChartInstance = null;
+            } catch (chartError) {
+                console.error('Error destroying chart:', chartError);
+            }
+        }
+    }
+}
+
 async function updateStandupView() {
     // Only proceed if we're still on Standup View tab
     if (currentTab !== 1) {
@@ -2306,6 +3396,24 @@ function renderStandupViewStructure() {
     if (stat6Card) {
         stat6Card.style.display = 'none';
     }
+    
+    // Hide 7th card (PASSING RATE - only shown in Team Stats)
+    const stat7Card = document.getElementById('stat7Count')?.closest('div[style*="background-color: var(--dark-forest)"]');
+    if (stat7Card) {
+        stat7Card.style.display = 'none';
+    }
+    
+    // Hide hourly breakdown in standup view
+    const hourlyBreakdownTable = document.getElementById('hourlyBreakdownTable');
+    if (hourlyBreakdownTable) {
+        hourlyBreakdownTable.style.display = 'none';
+    }
+    
+    // Hide dynamic hourly breakdown in standup view
+    const dynamicHourlyBreakdownTable = document.getElementById('dynamicHourlyBreakdownTable');
+    if (dynamicHourlyBreakdownTable) {
+        dynamicHourlyBreakdownTable.style.display = 'none';
+    }
 }
 
 // Render standup view data (called with cached or fresh data)
@@ -2316,6 +3424,8 @@ function renderStandupViewData(standupData) {
         percentage,
         coveragePercent,
         passingRate,
+        passingCount,
+        notPassingCount,
         standupReversalCount,
         channelStats
     } = standupData;
@@ -2329,6 +3439,17 @@ function renderStandupViewData(standupData) {
     if (hourlyChartInstance) {
         hourlyChartInstance.destroy();
         hourlyChartInstance = null;
+    }
+    
+    // Hide dynamic hourly breakdown table and chart in standup view
+    const dynamicHourlyTableBody = document.getElementById('dynamicHourlyTableBody');
+    if (dynamicHourlyTableBody) {
+        dynamicHourlyTableBody.innerHTML = '';
+    }
+    // Clear dynamic chart
+    if (dynamicHourlyChartInstance) {
+        dynamicHourlyChartInstance.destroy();
+        dynamicHourlyChartInstance = null;
     }
     
     // Update stat cards
@@ -2379,16 +3500,45 @@ function renderStandupViewData(standupData) {
             countDiv.style.fontSize = '2.625rem';
             countDiv.textContent = (passingRate || 0) + '%';
             
-            const subtitle = stat4Card.querySelector('#stat4Subtitle');
-            if (subtitle) subtitle.textContent = '';
+            // Show chips container and update chips with passing and not passing counts
+            const chipsContainer = document.getElementById('stat4ChipsContainer');
+            const passCount = passingCount || 0;
+            const notPassCount = notPassingCount || 0;
             
-            // Add/update progress bar
+            if (chipsContainer) {
+                chipsContainer.style.display = 'flex';
+            }
+            
+            const stat4PassingCount = document.getElementById('stat4PassingCount');
+            const stat4NotPassingCount = document.getElementById('stat4NotPassingCount');
+            
+            if (stat4PassingCount) {
+                const span = stat4PassingCount.querySelector('span');
+                if (span) span.textContent = `${passCount} Passed`;
+            }
+            if (stat4NotPassingCount) {
+                const span = stat4NotPassingCount.querySelector('span');
+                if (span) span.textContent = `${notPassCount} Not Passed`;
+            }
+            
+            // Clear subtitle (chips now show the counts)
+            const subtitle = stat4Card.querySelector('#stat4Subtitle');
+            if (subtitle) {
+                subtitle.textContent = '';
+            }
+            
+            // Add/update progress bar at the bottom of the card (before subtitle)
             let progressContainer = stat4Card.querySelector('.progress-bar-container');
             if (!progressContainer) {
                 progressContainer = document.createElement('div');
                 progressContainer.className = 'progress-bar-container';
                 progressContainer.style.cssText = 'width: 100%; height: 0.375rem; background-color: rgba(255,255,255,0.2); border-radius: 0.1875rem; overflow: hidden; margin-top: 0.375rem;';
-                countDiv.parentElement.appendChild(progressContainer);
+                // Insert before subtitle to place it at the bottom of the card
+                if (subtitle && subtitle.parentElement) {
+                    subtitle.parentElement.insertBefore(progressContainer, subtitle);
+                } else {
+                    stat4Card.appendChild(progressContainer);
+                }
             }
             progressContainer.innerHTML = `<div style="height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 0.1875rem; transition: width 0.3s ease; width: ${passingRate || 0}%;"></div>`;
         }
@@ -2400,6 +3550,16 @@ function renderStandupViewData(standupData) {
     
     const stat5Subtitle = document.getElementById('stat5Subtitle');
     if (stat5Subtitle) stat5Subtitle.textContent = '';
+    
+    // Change card background to red if reversal count > 0
+    const stat5Card = document.getElementById('stat5Card');
+    if (stat5Card) {
+        if (standupReversalCount > 0) {
+            stat5Card.style.backgroundColor = '#dc2626'; // Darker red color
+        } else {
+            stat5Card.style.backgroundColor = 'var(--dark-forest)'; // Default dark forest color
+        }
+    }
     
     // Update table with channel statistics
     const tableBody = document.getElementById('performanceTableBody');
@@ -2438,6 +3598,9 @@ async function fetchAndCacheStandupView(period) {
         return;
     }
     
+    // Capture the current fetch ID at the start of this fetch
+    const fetchId = currentFetchId;
+    
     try {
         // Load all audit assignments with date filtering
         // Filter to only Quality Analysts (auditors) to match Team Stats calculation
@@ -2457,6 +3620,12 @@ async function fetchAndCacheStandupView(period) {
         }
         
         let { data, error } = await assignmentsQuery;
+        
+        // Check if this fetch is still the current one
+        if (fetchId !== currentFetchId) {
+            console.log('Standup view fetch cancelled - newer fetch in progress');
+            return;
+        }
         
         // If server-side date filter fails, try without date filter and filter client-side
         if (error && period && (period.start || period.end)) {
@@ -2480,6 +3649,12 @@ async function fetchAndCacheStandupView(period) {
             }
             data = retryResult.data;
             error = retryResult.error;
+        }
+        
+        // Check again after retry
+        if (fetchId !== currentFetchId) {
+            console.log('Standup view fetch cancelled - newer fetch in progress');
+            return;
         }
         
         if (error) throw error;
@@ -2510,6 +3685,8 @@ async function fetchAndCacheStandupView(period) {
         
         // Calculate passing rate, reversal count, completed count, and duration in parallel
         let passingRate = 0;
+        let passingCount = 0;
+        let notPassingCount = 0;
         let standupReversalCount = 0;
         let completed = 0; // Will be calculated from scorecard tables
         // Store completed audits by channel for channel stats
@@ -2768,6 +3945,8 @@ async function fetchAndCacheStandupView(period) {
                 // Calculate pass rate
                 if (totalAudits > 0) {
                     passingRate = Math.round((passedAudits / totalAudits) * 100);
+                    passingCount = passedAudits;
+                    notPassingCount = totalAudits - passedAudits;
                 }
             }
         } catch (error) {
@@ -3054,9 +4233,17 @@ async function fetchAndCacheStandupView(period) {
             percentage,
             coveragePercent,
             passingRate,
+            passingCount,
+            notPassingCount,
             standupReversalCount,
             channelStats
         };
+        
+        // Check if this fetch is still the current one before updating UI
+        if (fetchId !== currentFetchId) {
+            console.log('Standup view fetch cancelled - newer fetch in progress');
+            return;
+        }
         
         // Update UI with fresh data (only if still on Standup View tab)
         if (currentTab === 1) {
@@ -3100,6 +4287,30 @@ async function fetchAndCacheStandupView(period) {
         slider.style.left = `${sliderLeft}px`;
         slider.style.width = `${tabWidth}px`;
         
+    // Show/hide hourly breakdown based on tab
+    const hourlyBreakdownTable = document.getElementById('hourlyBreakdownTable');
+    if (hourlyBreakdownTable) {
+        if (index === 0) {
+            // Team Stats - show hourly breakdown
+            hourlyBreakdownTable.style.display = 'block';
+        } else {
+            // Standup View - hide hourly breakdown
+            hourlyBreakdownTable.style.display = 'none';
+        }
+    }
+    
+    // Show/hide dynamic hourly breakdown based on tab
+    const dynamicHourlyBreakdownTable = document.getElementById('dynamicHourlyBreakdownTable');
+    if (dynamicHourlyBreakdownTable) {
+        if (index === 0) {
+            // Team Stats - show dynamic hourly breakdown
+            dynamicHourlyBreakdownTable.style.display = 'block';
+        } else {
+            // Standup View - hide dynamic hourly breakdown
+            dynamicHourlyBreakdownTable.style.display = 'none';
+        }
+    }
+    
     // Show loading state when switching tabs
     showLoadingState();
     
@@ -3326,22 +4537,6 @@ async function clearFilters() {
 // ============================================================================
 // Week and Date Filter Functions
 // ============================================================================
-function getWeekNumber(date = null) {
-    if (!date) date = getDhakaNow();
-    return getDhakaWeekNumber(date);
-}
-
-function getWeekDates(weekNumber, year) {
-    return getDhakaWeekDates(weekNumber, year);
-}
-
-function initializeWeekFilter() {
-    const today = getDhakaNow();
-    currentWeek = getDhakaWeekNumber(today);
-    currentWeekYear = today.getFullYear();
-    updateWeekDisplay();
-}
-
 function initializeTodayFilter() {
     const today = getDhakaNow();
     const startOfDay = getDhakaStartOfDay(today);
@@ -3375,45 +4570,6 @@ function initializeTodayFilter() {
     const todayBtn = document.getElementById('todayBtn');
     if (todayBtn) {
         todayBtn.classList.add('active');
-    }
-    
-    // Update week display to show it's disabled
-    updateWeekDisplay();
-}
-
-function initializeMonthFilter() {
-    const today = getDhakaNow();
-    const firstDay = getDhakaFirstDayOfMonth(today);
-    const lastDay = getDhakaLastDayOfMonth(today);
-    const firstDayStr = formatDhakaDateForInput(firstDay);
-    const lastDayStr = formatDhakaDateForInput(lastDay);
-    
-    // Set date filter to current month
-    dateFilter.start = firstDayStr;
-    dateFilter.end = lastDayStr;
-    useWeekFilter = false;
-    
-    // Update date input fields
-    const startDateEl = document.getElementById('startDate');
-    const endDateEl = document.getElementById('endDate');
-    const dateBtnTextEl = document.getElementById('dateBtnText');
-    
-    if (startDateEl) startDateEl.value = firstDayStr;
-    if (endDateEl) endDateEl.value = lastDayStr;
-    
-    // Update date button text to show current month
-    if (dateBtnTextEl) {
-        const start = formatDhakaDate(firstDay, { month: 'short', day: 'numeric' });
-        const end = formatDhakaDate(lastDay, { month: 'short', day: 'numeric' });
-        dateBtnTextEl.textContent = `${start} - ${end}`;
-    }
-    
-    // Activate "This Month" button
-    const quickDateButtons = document.querySelectorAll('.quick-date-btn');
-    quickDateButtons.forEach(btn => btn.classList.remove('active'));
-    const thisMonthBtn = document.getElementById('thisMonthBtn');
-    if (thisMonthBtn) {
-        thisMonthBtn.classList.add('active');
     }
     
     // Update week display to show it's disabled
@@ -3472,6 +4628,13 @@ function updateWeekDisplay() {
 }
 
 function navigateWeek(direction) {
+    // Cancel any ongoing fetches by incrementing the fetch ID
+    currentFetchId++;
+    
+    // Reset loading and render states to allow new fetch to start
+    isLoading = false;
+    renderInProgress = false;
+    
     // Show loading state when navigating weeks
     showLoadingState();
     
@@ -3517,6 +4680,13 @@ function navigateWeek(direction) {
 
 // Function to switch to week view when week display is clicked
 function switchToWeekView() {
+    // Cancel any ongoing fetches by incrementing the fetch ID
+    currentFetchId++;
+    
+    // Reset loading and render states to allow new fetch to start
+    isLoading = false;
+    renderInProgress = false;
+    
     // Show loading state when switching to week view
     showLoadingState();
     
@@ -3626,6 +4796,13 @@ function setupEventListeners() {
 }
 
 window.applyDateFilter = function() {
+    // Cancel any ongoing fetches by incrementing the fetch ID
+    currentFetchId++;
+    
+    // Reset loading and render states to allow new fetch to start
+    isLoading = false;
+    renderInProgress = false;
+    
     // Show loading state when date filter changes
     showLoadingState();
     
@@ -3634,7 +4811,7 @@ window.applyDateFilter = function() {
     const startDate = startDateEl?.value || '';
     const endDate = endDateEl?.value || '';
     
-    // Store as date strings to match initializeMonthFilter() and employee-performance.html
+    // Store as date strings to match employee-performance.html
     if (startDate) {
         dateFilter.start = startDate;
     } else {
@@ -3679,6 +4856,13 @@ window.applyDateFilter = function() {
 };
 
 window.clearDateFilter = function() {
+    // Cancel any ongoing fetches by incrementing the fetch ID
+    currentFetchId++;
+    
+    // Reset loading and render states to allow new fetch to start
+    isLoading = false;
+    renderInProgress = false;
+    
     // Show loading state when clearing date filter
     showLoadingState();
     
@@ -3695,18 +4879,28 @@ window.clearDateFilter = function() {
 // Use shared date filter utility - wrap to provide page-specific callbacks
 const originalApplyQuickDateFilter = window.applyQuickDateFilter;
 window.applyQuickDateFilter = function(period) {
+    // Cancel any ongoing fetches by incrementing the fetch ID
+    currentFetchId++;
+    
+    // Reset loading and render states to allow new fetch to start
+    isLoading = false;
+    renderInProgress = false;
+    
     // Show loading state when quick date filter changes
     showLoadingState();
     
+    // Call the original function to update the date filter state
     originalApplyQuickDateFilter(period, {
         dateFilter: dateFilter,
         setUseWeekFilter: () => { useWeekFilter = false; },
         onUpdate: updateWeekDisplay,
         onRefresh: () => {
-            // Reload assignments with new date filter
-            loadAssignments();
+            // This callback might be called asynchronously, so we also call loadAssignments directly below
         }
     });
+    
+    // Call loadAssignments() directly to ensure it starts immediately and synchronously
+    loadAssignments();
 };
 
 // Helper function to normalize passing status (handles both old and new values)
@@ -3729,25 +4923,6 @@ function normalizePassingStatus(status) {
     
     // Return as-is if already normalized or unknown
     return statusStr;
-}
-
-// Helper function to check if date is within filter range
-function isDateInRange(date, filterStart, filterEnd) {
-    if (!filterStart && !filterEnd) {
-        // If no date filter, check against current week or today
-        if (useWeekFilter && currentWeek !== null) {
-            const weekDates = getDhakaWeekDates(currentWeek, currentWeekYear);
-            filterStart = weekDates.start;
-            filterEnd = weekDates.end;
-        } else {
-            // Default to today (matching getCurrentPeriodDates)
-            const today = getDhakaNow();
-            filterStart = getDhakaStartOfDay(today);
-            filterEnd = getDhakaEndOfDay(today);
-        }
-    }
-    
-    return isDhakaDateInRange(date, filterStart, filterEnd);
 }
 
 // ============================================================================
@@ -3975,25 +5150,6 @@ function hideLoadingState() {
     statCards.forEach(card => {
         card.style.opacity = '1';
     });
-}
-
-async function renderTeamStatsWithFade(statsData) {
-    // Fade out, update, fade in
-    const tableBody = document.getElementById('performanceTableBody');
-    if (tableBody) {
-        tableBody.style.opacity = '0.5';
-        tableBody.style.transition = 'opacity 0.2s ease';
-        
-        setTimeout(async () => {
-            await renderTeamStats(statsData);
-            setTimeout(() => {
-                tableBody.style.opacity = '1';
-                setTimeout(() => updateOnlineStatusIndicators(), 100);
-            }, 50);
-        }, 200);
-    } else {
-        await renderTeamStats(statsData);
-    }
 }
 
 // ============================================================================
