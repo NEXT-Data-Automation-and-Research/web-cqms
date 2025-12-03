@@ -3086,6 +3086,32 @@ async function loadConversationFromIntercom(conversationId) {
     }
 }
 
+// Debug flag for showing part types (default: false - hidden from users)
+function shouldShowPartTypes() {
+    const debugFlag = localStorage.getItem('debug_show_part_types');
+    return debugFlag === 'true';
+}
+
+// Get human-readable action label for part type
+function getActionLabel(partType) {
+    if (!partType) return '';
+    const actionLabels = {
+        'comment': 'Comment',
+        'assignment': 'Assignment',
+        'open': 'Opened',
+        'close': 'Closed',
+        'note': 'Note',
+        'conversation_summary': 'Summary',
+        'conversation_rating_changed': 'Rating Changed',
+        'conversation_rating_remark_added': 'Rating Remark',
+        'user_became_idle': 'User Idle',
+        'fin_guidance_applied': 'Guidance Applied',
+        'conversation_attribute_updated_by_admin': 'Attribute Updated',
+        'attribute_collected': 'Attribute Collected'
+    };
+    return actionLabels[partType] || partType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
 // Display conversation messages in chat interface
 function displayConversationMessages(conversation) {
     const chatMessagesContainer = document.getElementById('chatMessagesContainer');
@@ -3675,12 +3701,12 @@ function displayConversationMessages(conversation) {
         const hasAttachments = attachments.length > 0;
         
         // Build content info badge to show in UI what this part contains
-        // Always show part_type for all parts
+        // Show part_type only if debug flag is enabled
         let contentInfoBadge = '';
         const contentTypes = [];
         
-        // Always include part_type first
-        if (partType) {
+        // Include part_type first (only if debug mode is enabled)
+        if (shouldShowPartTypes() && partType) {
             contentTypes.push(`Type: ${partType}`);
         }
         
@@ -3691,7 +3717,7 @@ function displayConversationMessages(conversation) {
         if (isEmail) contentTypes.push('Email');
         
         // Always show badge if we have part_type or any content
-        if (contentTypes.length > 0 || partType) {
+        if (contentTypes.length > 0 || (shouldShowPartTypes() && partType)) {
             contentInfoBadge = `<div style="
                 font-size: 0.3639rem;
                 color: ${isUser ? cachedTextSecondary : 'rgba(255,255,255,0.7)'};
@@ -3701,7 +3727,7 @@ function displayConversationMessages(conversation) {
                 border-radius: 0.1617rem;
                 display: inline-block;
             ">
-                ${contentTypes.length > 0 ? contentTypes.join(' • ') : (partType ? `Part Type: ${partType}` : 'Empty Part')}
+                ${contentTypes.length > 0 ? contentTypes.join(' • ') : (shouldShowPartTypes() && partType ? `Part Type: ${partType}` : 'Empty Part')}
             </div>`;
         }
 
@@ -3962,19 +3988,24 @@ function displayConversationMessages(conversation) {
                 ${formattedHtml ? renderMessageWithInlineImages(formattedHtml, images, imageStartIndex, part.id, isUser) : 
                   (hasText ? 
                     `<div class="message-text-content" data-original-text="${escapeHtml(formattedText.replace(/"/g, '&quot;'))}" data-message-id="${part.id}" style="font-size: 0.5257rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; margin-top: ${isEmail ? '0.2426rem' : '0'}; margin-bottom: ${(allImages.length > 0 || attachments.length > 0) ? '0.3234rem' : '0'}; color: ${isUser ? '#374151' : 'white'};">${formattedText}</div>` : 
-                    (partType && partType.trim() !== '' ? 
+                    (shouldShowPartTypes() && partType && partType.trim() !== '' ? 
                         `<div class="message-text-content" data-message-id="${part.id}" style="font-size: 0.5257rem; line-height: 1.5; margin-top: ${isEmail ? '0.2426rem' : '0'}; margin-bottom: ${(allImages.length > 0 || attachments.length > 0) ? '0.3234rem' : '0'}; color: ${isUser ? '#6b7280' : 'rgba(255,255,255,0.8)'}; font-style: italic;">
                             <span style="text-transform: uppercase; font-weight: 600; letter-spacing: 0.0405rem; font-size: 0.4447rem; opacity: 0.8;">${escapeHtml(partType)}</span>
                             ${hasBody ? '<span style="margin-left: 0.2426rem; font-size: 0.4043rem; opacity: 0.6;">(body exists but no displayable content)</span>' : ''}
                         </div>` : 
-                        (hasBody || hasImages || hasAttachments || isEmail ? 
+                        (isAI && !hasBody && partType && partType.trim() !== '' ? 
                             `<div class="message-text-content" data-message-id="${part.id}" style="font-size: 0.5257rem; line-height: 1.5; margin-top: ${isEmail ? '0.2426rem' : '0'}; margin-bottom: ${(allImages.length > 0 || attachments.length > 0) ? '0.3234rem' : '0'}; color: ${isUser ? '#6b7280' : 'rgba(255,255,255,0.8)'}; font-style: italic;">
-                                <span style="opacity: 0.7;">Part ID: ${part.id}</span>
-                                ${hasBody ? '<span style="margin-left: 0.2426rem;">• Has body (no displayable text)</span>' : ''}
+                                <span style="font-weight: 500; opacity: 0.9;">${escapeHtml(getActionLabel(partType))}</span>
                             </div>` : 
-                            `<div class="message-text-content" data-message-id="${part.id}" style="font-size: 0.5257rem; line-height: 1.5; margin-top: ${isEmail ? '0.2426rem' : '0'}; margin-bottom: ${(allImages.length > 0 || attachments.length > 0) ? '0.3234rem' : '0'}; color: ${isUser ? '#9ca3af' : 'rgba(255,255,255,0.5)'}; font-style: italic;">
-                                <span style="opacity: 0.6;">Empty part (ID: ${part.id})</span>
-                            </div>`
+                            (hasBody || hasImages || hasAttachments || isEmail ? 
+                                `<div class="message-text-content" data-message-id="${part.id}" style="font-size: 0.5257rem; line-height: 1.5; margin-top: ${isEmail ? '0.2426rem' : '0'}; margin-bottom: ${(allImages.length > 0 || attachments.length > 0) ? '0.3234rem' : '0'}; color: ${isUser ? '#6b7280' : 'rgba(255,255,255,0.8)'}; font-style: italic;">
+                                    <span style="opacity: 0.7;">Part ID: ${part.id}</span>
+                                    ${hasBody ? '<span style="margin-left: 0.2426rem;">• Has body (no displayable text)</span>' : ''}
+                                </div>` : 
+                                `<div class="message-text-content" data-message-id="${part.id}" style="font-size: 0.5257rem; line-height: 1.5; margin-top: ${isEmail ? '0.2426rem' : '0'}; margin-bottom: ${(allImages.length > 0 || attachments.length > 0) ? '0.3234rem' : '0'}; color: ${isUser ? '#9ca3af' : 'rgba(255,255,255,0.5)'}; font-style: italic;">
+                                    <span style="opacity: 0.6;">Empty part (ID: ${part.id})</span>
+                                </div>`
+                            )
                         )
                     )
                 )}
