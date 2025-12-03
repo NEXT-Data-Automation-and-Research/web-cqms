@@ -8045,6 +8045,76 @@ async function displayPullConversationsList(conversations) {
     // Update processing indicator with specific conversation IDs
     updateAIAuditProcessingIndicator(aiAuditStatusMap, conversations);
     
+    // Helper function to calculate agent's message count from conversation
+    // Only counts actual messages (comments/notes with content), not system activities
+    function getAgentMessageCount(conversation) {
+        if (!conversation.conversation_parts?.conversation_parts || !pullConversationsAdminId) {
+            // Fallback: return total length if no admin ID
+            return conversation.conversation_parts?.conversation_parts?.length || 0;
+        }
+        
+        const parts = conversation.conversation_parts.conversation_parts;
+        const adminIdStr = String(pullConversationsAdminId);
+        const adminIdNum = parseInt(pullConversationsAdminId, 10);
+        
+        // System activity types to exclude
+        const systemActivityTypes = [
+            'assignment',
+            'default_assignment',
+            'user_became_idle',
+            'close',
+            'open',
+            'fin_guidance_applied',
+            'conversation_attribute_updated_by_admin',
+            'attribute_collected'
+        ];
+        
+        // Filter to only count actual messages from the specific agent
+        return parts.filter(part => {
+            const author = part.author || {};
+            const authorType = author.type;
+            const authorId = author.id ? String(author.id) : null;
+            
+            if (!authorId) return false;
+            
+            // Check if this is an admin message from the target agent
+            const isAdmin = authorType === 'admin' || authorType === 'team';
+            const authorIdNum = parseInt(authorId, 10);
+            const isTargetAdmin = authorId === adminIdStr || 
+                                 (!isNaN(adminIdNum) && !isNaN(adminIdNum) && authorIdNum === adminIdNum);
+            
+            if (!isAdmin || !isTargetAdmin) return false;
+            
+            // Get part type
+            const partType = part.part_type || '';
+            
+            // Exclude system activities
+            if (systemActivityTypes.includes(partType)) {
+                return false;
+            }
+            
+            // Check if it's an email interaction (has email metadata)
+            const isEmail = !!part.email_message_metadata;
+            
+            // Get message body
+            const body = part.body || '';
+            const bodyText = typeof body === 'string' ? body.trim() : '';
+            
+            // Check for attachments
+            const attachments = part.attachments || [];
+            const hasAttachments = attachments.length > 0;
+            
+            // Only count if:
+            // 1. It's a comment or note type, OR
+            // 2. It's an email interaction, AND
+            // 3. It has actual content (body text, or attachments)
+            const isMessageType = partType === 'comment' || partType === 'note';
+            const hasContent = bodyText !== '' && bodyText !== '{}' || hasAttachments;
+            
+            return (isMessageType || isEmail) && hasContent;
+        }).length;
+    }
+    
     // Sort conversations with priority: Error Count (when AI audit completed) > Lowest Rating > Lowest CX Score > Longest Length
     const sortedConversations = [...conversations].sort((a, b) => {
         const conversationIdA = (a.id || 'N/A').toString();
@@ -8083,9 +8153,9 @@ async function displayPullConversationsList(conversations) {
         const cxScoreAValue = (cxScoreA !== null && cxScoreA !== undefined) ? parseInt(cxScoreA) : 999;
         const cxScoreBValue = (cxScoreB !== null && cxScoreB !== undefined) ? parseInt(cxScoreB) : 999;
         
-        // Extract conversation length
-        const lengthA = a.conversation_parts?.conversation_parts?.length || 0;
-        const lengthB = b.conversation_parts?.conversation_parts?.length || 0;
+        // Extract conversation length - only count agent's messages
+        const lengthA = getAgentMessageCount(a);
+        const lengthB = getAgentMessageCount(b);
         
         // Secondary sort: Lowest Rating (ascending)
         if (ratingAValue !== ratingBValue) {
@@ -8250,8 +8320,9 @@ async function displayPullConversationsList(conversations) {
             }
         }
         
-        // Calculate conversation length
-        const conversationLength = conversation.conversation_parts?.conversation_parts?.length || 0;
+        // Calculate conversation length - only count agent's messages
+        // Use the same helper function as sorting for consistency
+        const conversationLength = getAgentMessageCount(conversation);
         const lengthDisplay = conversationLength > 0 
             ? `<span style="font-size: 0.6069rem; color: #374151; font-weight: 500;">${conversationLength}</span>`
             : '<span style="color: #9ca3af; font-size: 0.5252rem;">-</span>';
