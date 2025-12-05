@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="sidebar.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
     <script src="env-config.js"></script>
     <script src="supabase-config.js"></script>
     <script src="intercom-config.js"></script>
@@ -1840,9 +1841,30 @@ function generateErrorDetails(audit, errorFields) {
             // Display each feedback in a light colored container box
             feedbackHtml = feedbackArray.map((feedbackText, index) => {
                 const label = feedbackArray.length > 1 ? `<div style="font-size: 0.4043rem; color: #000000; font-weight: 600; margin-bottom: 0.3234rem; font-family: 'Poppins', sans-serif;">Feedback ${index + 1}:</div>` : '';
-                const feedbackWithLinks = convertUrlsToLinks(feedbackText);
+                
+                // Check if feedback is HTML (contains tags) or plain text
+                let renderedFeedback = '';
+                if (feedbackText.trim().startsWith('<') && feedbackText.includes('>')) {
+                    // It's HTML - sanitize and render, preserving color styles
+                    if (typeof DOMPurify !== 'undefined') {
+                        // Sanitize with style attribute allowed - DOMPurify should preserve color CSS properties
+                        const sanitized = DOMPurify.sanitize(feedbackText, {
+                            ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a', 'span'],
+                            ALLOWED_ATTR: ['href', 'target', 'rel', 'style'],
+                            ALLOW_DATA_ATTR: false
+                        });
+                        renderedFeedback = sanitized;
+                    } else {
+                        // Fallback: escape HTML if DOMPurify not available
+                        renderedFeedback = escapeHtml(feedbackText);
+                    }
+                } else {
+                    // It's plain text - convert URLs to links and preserve line breaks
+                    renderedFeedback = convertUrlsToLinks(feedbackText);
+                }
+                
                 return `<div style="background: ${containerBg}; border: 0.0304rem solid ${containerBorder}; border-radius: 0.3234rem; padding: 0.4852rem 0.6469rem; margin-bottom: ${index < feedbackArray.length - 1 ? '0.6469rem' : '0'};">
-                    ${label}<div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; white-space: pre-wrap; line-height: 1.6;">${feedbackWithLinks}</div>
+                    ${label}<div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; line-height: 1.6; ${feedbackText.trim().startsWith('<') ? '' : 'white-space: pre-wrap;'}">${renderedFeedback}</div>
                 </div>`;
             }).join('');
         }

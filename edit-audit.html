@@ -27,6 +27,9 @@
     <script src="search.js"></script>
     <script src="audit-template.js"></script>
     <script src="keyboard-shortcuts.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2/dist/purify.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -131,6 +134,149 @@
             opacity: 0.5;
         }
 
+        /* Quill Editor Custom Styling */
+        .quill-editor-container {
+            width: 100%;
+            min-width: 0;
+            position: relative;
+        }
+        
+        .quill-editor-container .ql-container {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.5659rem;
+            line-height: 1.2;
+            border: 0.0304rem solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 0.1617rem 0.1617rem;
+            min-height: 1rem;
+            max-height: 50rem;
+            overflow-y: auto;
+            background-color: white;
+        }
+        
+        .quill-editor-container .ql-editor {
+            padding: 0.2425rem 0.3234rem;
+            min-height: 1rem;
+        }
+        
+        .quill-editor-container .ql-editor.ql-blank::before {
+            font-style: normal;
+            color: #9ca3af;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.5659rem;
+        }
+        
+        .quill-editor-container .ql-toolbar {
+            border: 0.0304rem solid #d1d5db;
+            border-bottom: none;
+            border-radius: 0.1617rem 0.1617rem 0 0;
+            padding: 0.0809rem 0.1213rem;
+            background: #f9fafb;
+            display: flex !important; /* Always visible and stable */
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+            gap: 0.0404rem;
+            margin-bottom: 0;
+            min-height: 1.6169rem;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-formats {
+            margin-right: 0.0809rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .quill-editor-container .ql-toolbar button {
+            width: 1.1315rem;
+            height: 1.1315rem;
+            padding: 0.0404rem;
+            margin: 0;
+            border-radius: 0.0404rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .quill-editor-container .ql-toolbar button svg {
+            width: 0.6469rem;
+            height: 0.6469rem;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-stroke {
+            stroke: #9ca3af;
+            stroke-width: 1.2;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-fill {
+            fill: #9ca3af;
+        }
+        
+        .quill-editor-container .ql-toolbar button:hover,
+        .quill-editor-container .ql-toolbar button.ql-active {
+            background-color: #e5e7eb;
+            color: #1A733E;
+        }
+        
+        .quill-editor-container .ql-toolbar button:hover .ql-stroke,
+        .quill-editor-container .ql-toolbar button.ql-active .ql-stroke {
+            stroke: #1A733E;
+            stroke-width: 1.5;
+        }
+        
+        .quill-editor-container .ql-toolbar button:hover .ql-fill,
+        .quill-editor-container .ql-toolbar button.ql-active .ql-fill {
+            fill: #1A733E;
+        }
+        
+        /* Make color picker more compact */
+        .quill-editor-container .ql-toolbar .ql-picker {
+            height: 1.1315rem;
+            font-size: 0.4852rem;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-picker-label {
+            padding: 0.0404rem 0.0809rem;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-picker-options {
+            padding: 0.1617rem;
+            border-radius: 0.0809rem;
+        }
+        
+        /* Dark mode support for Quill */
+        [data-theme="dark"] .quill-editor-container .ql-container {
+            background-color: var(--background-white) !important;
+            color: #ffffff !important;
+            border-color: var(--border-light) !important;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-editor {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar {
+            background: var(--background-white) !important;
+            border-color: var(--border-light) !important;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar .ql-stroke {
+            stroke: #d1d5db;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar .ql-fill {
+            fill: #d1d5db;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar button:hover .ql-stroke,
+        [data-theme="dark"] .quill-editor-container .ql-toolbar button.ql-active .ql-stroke {
+            stroke: #1A733E !important;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar button:hover .ql-fill,
+        [data-theme="dark"] .quill-editor-container .ql-toolbar button.ql-active .ql-fill {
+            fill: #1A733E !important;
+        }
         
     </style>
     <script>
@@ -307,6 +453,7 @@
 <script>
 // Global audit data
 let currentAudit = null;
+const quillInstances = new Map();
 let currentScorecardId = null;
 let currentTableName = null;
 let currentErrorFields = [];
@@ -1230,10 +1377,11 @@ function generateErrorDetails(audit, errorFields, mode = 'view') {
         }
         
         // Build grid columns - must match header columns for proper alignment
+        // Feedback column gets maximum width since it contains the most text content
         // For audited employees, always show comment column (persistent)
         const gridColumns = showCommentsColumn 
-            ? '2fr 1fr 1fr 1fr 2fr 2.5fr' 
-            : '2fr 1fr 1fr 1fr 2fr';
+            ? '1.5fr 0.8fr 0.8fr 0.8fr 4fr 2fr' 
+            : '1.5fr 0.8fr 0.8fr 0.8fr 4fr';
         
         return `
             <div style="display: grid; grid-template-columns: ${gridColumns}; gap: 0.6469rem; align-items: start; padding: 0.3234rem 0; border-bottom: 0.0405rem solid ${dividerColor}; opacity: ${dividerOpacity}; width: 100%; min-width: 0;">
@@ -1278,26 +1426,8 @@ function generateErrorDetails(audit, errorFields, mode = 'view') {
                 </div>
                 <div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
                     ${isEditMode ? `
-                        <div id="feedback_container_${field.key}" style="display: flex; flex-direction: column; gap: 0.3234rem;">
-                            ${feedbackArray.map((feedbackText, index) => `
-                                <textarea 
-                                    id="feedback_${field.key}_${index}" 
-                                    name="feedback_${field.key}_${index}" 
-                                    placeholder="${count > 0 ? 'Enter feedback (required)...' : 'Enter feedback (optional)...'}" 
-                                    rows="2" 
-                                    ${count > 0 ? 'required' : ''}
-                                    style="font-family: 'Poppins', sans-serif; font-size: 0.5659rem; line-height: 1.2; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; padding: 0.2425rem 0.3234rem; width: 100%; resize: vertical; min-height: 2rem;"
-                                >${escapeHtml(feedbackText)}</textarea>
-                            `).join('')}
-                            ${feedbackArray.length === 0 ? `
-                                <textarea 
-                                    id="feedback_${field.key}_0" 
-                                    name="feedback_${field.key}_0" 
-                                    placeholder="Enter feedback (optional)..." 
-                                    rows="2" 
-                                    style="font-family: 'Poppins', sans-serif; font-size: 0.5659rem; line-height: 1.2; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; padding: 0.2425rem 0.3234rem; width: 100%; resize: vertical; min-height: 2rem;"
-                                ></textarea>
-                            ` : ''}
+                        <div id="feedback_container_${field.key}" style="display: flex; flex-direction: column; gap: 0.3234rem; min-width: 0; width: 100%; word-wrap: break-word; overflow-wrap: break-word;">
+                            <!-- Feedback boxes will be dynamically added here based on error count -->
                         </div>
                     ` : feedbackHtml}
                 </div>
@@ -1326,7 +1456,7 @@ function generateErrorDetails(audit, errorFields, mode = 'view') {
             
             <div style="background: var(--background-white); border-radius: 0.4852rem; box-shadow: 0 0.0405rem 0.1213rem 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
                 <div style="background-color: var(--background-white); padding: 0.4852rem 0.6469rem; border-bottom: 0.0405rem solid var(--border-light);">
-                    <div style="display: grid; grid-template-columns: ${showCommentsColumn ? '2fr 1fr 1fr 1fr 2fr 2.5fr' : '2fr 1fr 1fr 1fr 2fr'}; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
+                    <div style="display: grid; grid-template-columns: ${showCommentsColumn ? '1.5fr 0.8fr 0.8fr 0.8fr 4fr 2fr' : '1.5fr 0.8fr 0.8fr 0.8fr 4fr'}; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
                         <div style="min-width: 0;">Error Type</div>
                         <div style="text-align: center; min-width: 0;">Points</div>
                         <div style="text-align: center; min-width: 0;">Severity</div>
@@ -1972,6 +2102,16 @@ function renderAudit(audit, auditScorecard, errorFields, mode = 'view') {
     if (mode === 'edit') {
         setTimeout(() => {
             populateEditFormFields(audit);
+            
+            // Initialize Quill editors for all feedback fields
+            if (errorFields && errorFields.length > 0) {
+                errorFields.forEach(field => {
+                    const fieldType = field.field_type || 'counter';
+                    const paramType = field.parameter_type || 'error';
+                    updateFeedbackBoxesForParameter(field.key, fieldType, paramType);
+                });
+            }
+            
             // Update score display after form is populated
             // This will recalculate based on current form values
             updateAverageScoreDisplay();
@@ -5750,46 +5890,186 @@ function updateFeedbackBoxesForParameter(fieldId, fieldType, paramType) {
         errorCount = field ? (parseInt(field.value) || 0) : 0;
     }
     
-    // Always show at least 1 feedback box, but limit to max 10 based on error count
+    // Show feedback boxes based on error count
     // If errorCount is 0, show 1 box (optional)
-    // If errorCount > 0, show up to errorCount boxes (max 10), all required
+    // If errorCount > 0, show exactly errorCount boxes (max 10), all required
     const feedbackCount = errorCount === 0 ? 1 : Math.min(errorCount, 10);
     const isRequired = errorCount > 0;
     
-    // Get existing feedback values (preserve user input)
+    // Get existing feedback values (if loading from saved audit)
+    // Check both Quill editors, textareas, and audit data for backward compatibility
     const existingFeedbacks = [];
+    
+    // First, check currentAudit for existing feedback data
+    if (currentAudit) {
+        const feedbackKey = `feedback_${fieldId}`;
+        const feedbackData = currentAudit[feedbackKey];
+        if (feedbackData) {
+            let feedbackArray = [];
+            if (typeof feedbackData === 'string') {
+                try {
+                    const parsed = JSON.parse(feedbackData);
+                    feedbackArray = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+                } catch {
+                    feedbackArray = feedbackData.trim() ? [feedbackData] : [];
+                }
+            } else if (Array.isArray(feedbackData)) {
+                feedbackArray = feedbackData;
+            } else {
+                feedbackArray = feedbackData ? [feedbackData] : [];
+            }
+            feedbackArray.forEach((feedback, index) => {
+                if (feedback && feedback.trim()) {
+                    // Check if it's HTML or plain text
+                    if (feedback.trim().startsWith('<')) {
+                        existingFeedbacks[index] = feedback;
+                    } else {
+                        // Convert plain text to HTML
+                        const htmlText = feedback.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                        existingFeedbacks[index] = htmlText || '';
+                    }
+                }
+            });
+        }
+    }
+    
+    // Check for Quill editors (if they exist)
+    const existingQuillEditors = feedbackContainer.querySelectorAll(`.quill-editor-container`);
+    existingQuillEditors.forEach((editorContainer) => {
+        const quillDiv = editorContainer.querySelector('[id^="quill_"]');
+        if (quillDiv) {
+            const editorId = quillDiv.id.replace('quill_', '');
+            if (quillInstances.has(editorId)) {
+                const quill = quillInstances.get(editorId);
+                const content = quill.root.innerHTML;
+                // Check if it's HTML or plain text
+                if (content && content.trim() && content !== '<p><br></p>') {
+                    const index = parseInt(editorId.split('_').pop()) || 0;
+                    existingFeedbacks[index] = content;
+                }
+            }
+        }
+    });
+    
+    // Fallback to textareas for backward compatibility
     const existingTextareas = feedbackContainer.querySelectorAll(`textarea[id^="feedback_${fieldId}_"]`);
     existingTextareas.forEach(textarea => {
         const index = parseInt(textarea.id.split('_').pop()) || 0;
-        existingFeedbacks[index] = textarea.value;
+        if (!existingFeedbacks[index] && textarea.value) {
+            // Convert plain text to HTML (preserve line breaks)
+            const plainText = textarea.value;
+            const htmlText = plainText.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+            existingFeedbacks[index] = htmlText || '';
+        }
     });
     
-    // Clear container
+    // Clear container and destroy existing Quill instances
+    feedbackContainer.querySelectorAll('.quill-editor-container').forEach(container => {
+        const quillDiv = container.querySelector('[id^="quill_"]');
+        if (quillDiv) {
+            const editorId = quillDiv.id.replace('quill_', '');
+            if (quillInstances.has(editorId)) {
+                const quillInstance = quillInstances.get(editorId);
+                // Check if instance exists and has destroy method before calling it
+                if (quillInstance && typeof quillInstance.destroy === 'function') {
+                    try {
+                        quillInstance.destroy();
+                    } catch (e) {
+                        console.warn('Error destroying Quill instance:', e);
+                    }
+                }
+                quillInstances.delete(editorId);
+            }
+        }
+    });
     feedbackContainer.innerHTML = '';
     
-    // Create feedback boxes
+    // Create feedback boxes with Quill editors
     for (let i = 0; i < feedbackCount; i++) {
         const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'quill-editor-container';
+        feedbackDiv.style.cssText = 'width: 100%; min-width: 0;';
         const feedbackId = `feedback_${fieldId}_${i}`;
+        const quillContainerId = `quill_${feedbackId}`;
+        
         // Make required if errorCount > 0, otherwise optional
-        const requiredAttr = isRequired ? 'required' : '';
         const placeholder = errorCount === 0 
             ? 'Enter feedback (optional)...' 
             : (feedbackCount === 1 
                 ? 'Enter feedback (required)...' 
                 : `Feedback ${i + 1} of ${feedbackCount} (required)...`);
         
-        feedbackDiv.innerHTML = `
-            <textarea 
-                id="${feedbackId}" 
-                name="${feedbackId}" 
-                ${requiredAttr}
-                placeholder="${placeholder}" 
-                rows="2" 
-                style="font-family: 'Poppins', sans-serif; font-size: 0.5659rem; line-height: 1.2; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; padding: 0.2425rem 0.3234rem; width: 100%; resize: vertical; min-height: 2rem;"
-            >${existingFeedbacks[i] || ''}</textarea>
-        `;
+        // Create container for Quill
+        const quillContainer = document.createElement('div');
+        quillContainer.id = quillContainerId;
+        feedbackDiv.appendChild(quillContainer);
         feedbackContainer.appendChild(feedbackDiv);
+        
+        // Initialize Quill editor (check if Quill is available)
+        if (typeof Quill === 'undefined') {
+            console.error('Quill.js is not loaded. Please check the CDN link.');
+            // Fallback to textarea if Quill is not available
+            const fallbackTextarea = document.createElement('textarea');
+            fallbackTextarea.id = feedbackId;
+            fallbackTextarea.name = feedbackId;
+            fallbackTextarea.placeholder = placeholder;
+            fallbackTextarea.style.cssText = 'font-family: Poppins, sans-serif; font-size: 0.5659rem; line-height: 1.2; min-height: 1rem; max-height: 50rem; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; padding: 0.2425rem 0.3234rem; width: 100%; box-sizing: border-box;';
+            if (existingFeedbacks[i]) {
+                fallbackTextarea.value = existingFeedbacks[i].replace(/<[^>]*>/g, ''); // Strip HTML tags
+            }
+            quillContainer.replaceWith(fallbackTextarea);
+            continue;
+        }
+        
+        const quill = new Quill(quillContainer, {
+            theme: 'snow',
+            placeholder: placeholder,
+            modules: {
+                toolbar: [
+                    ['bold', 'italic'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+        
+        // Set existing content (HTML or convert plain text)
+        const existingContent = existingFeedbacks[i];
+        if (existingContent) {
+            // Check if it's already HTML (contains tags) or plain text
+            if (existingContent.trim().startsWith('<')) {
+                // It's HTML, set directly
+                quill.root.innerHTML = existingContent;
+            } else {
+                // It's plain text, convert to HTML
+                const htmlContent = existingContent.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                quill.root.innerHTML = htmlContent;
+            }
+        }
+        
+        // Store Quill instance
+        quillInstances.set(feedbackId, quill);
+        
+        // Add validation on blur for required fields
+        if (isRequired) {
+            quill.root.setAttribute('data-required', 'true');
+            quill.on('text-change', function() {
+                const content = quill.root.innerHTML;
+                const isEmpty = !content || content.trim() === '' || content === '<p><br></p>';
+                const container = quill.root.closest('.quill-editor-container');
+                if (container) {
+                    const qlContainer = container.querySelector('.ql-container');
+                    if (qlContainer) {
+                        if (isEmpty) {
+                            qlContainer.style.borderColor = '#ef4444';
+                        } else {
+                            qlContainer.style.borderColor = '#10b981';
+                        }
+                    }
+                }
+            });
+        }
     }
 }
 
@@ -6905,24 +7185,51 @@ async function saveAuditChanges() {
             }
         });
         
-        // Collect feedback values - only include non-empty feedbacks
-        const feedbackTextareas = document.querySelectorAll('textarea[id^="feedback_"]');
+        // Collect feedback values from Quill editors - only include non-empty feedbacks
         const feedbackByField = {};
-        feedbackTextareas.forEach(textarea => {
-            const fieldId = textarea.id.replace(/^feedback_/, '').replace(/_\d+$/, '');
-            if (!feedbackByField[fieldId]) {
-                feedbackByField[fieldId] = [];
-            }
-            if (textarea.value && textarea.value.trim()) {
-                feedbackByField[fieldId].push(textarea.value.trim());
-            }
-        });
-        
-        // Add feedback to auditData, and set to null if empty
-        Object.keys(feedbackByField).forEach(fieldId => {
-            const feedbacks = feedbackByField[fieldId];
-            auditData[`feedback_${fieldId}`] = feedbacks.length > 0 ? feedbacks : null;
-        });
+        if (currentErrorFields && currentErrorFields.length > 0) {
+            currentErrorFields.forEach(field => {
+                const feedbackContainer = document.getElementById(`feedback_container_${field.key}`);
+                if (feedbackContainer) {
+                    const feedbacks = [];
+                    
+                    // Get feedback from Quill editors
+                    const quillContainers = feedbackContainer.querySelectorAll('.quill-editor-container');
+                    quillContainers.forEach((container, index) => {
+                        const feedbackId = `feedback_${field.key}_${index}`;
+                        if (quillInstances.has(feedbackId)) {
+                            const quill = quillInstances.get(feedbackId);
+                            const htmlContent = quill.root.innerHTML;
+                            // Check if content is not empty (Quill returns '<p><br></p>' for empty)
+                            if (htmlContent && htmlContent.trim() && htmlContent !== '<p><br></p>') {
+                                // Sanitize HTML before storing
+                                const sanitized = DOMPurify.sanitize(htmlContent, {
+                                    ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a', 'span'],
+                                    ALLOWED_ATTR: ['href', 'target', 'rel', 'style'],
+                                    ALLOW_DATA_ATTR: false
+                                });
+                                if (sanitized && sanitized.trim() && sanitized !== '<p><br></p>') {
+                                    feedbacks.push(sanitized.trim());
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Fallback to textareas for backward compatibility
+                    if (feedbacks.length === 0) {
+                        const feedbackTextareas = feedbackContainer.querySelectorAll(`textarea[id^="feedback_${field.key}_"]`);
+                        feedbackTextareas.forEach(textarea => {
+                            if (textarea.value && textarea.value.trim()) {
+                                feedbacks.push(textarea.value.trim());
+                            }
+                        });
+                    }
+                    
+                    // Add feedback to auditData, and set to null if empty
+                    auditData[`feedback_${field.key}`] = feedbacks.length > 0 ? feedbacks : null;
+                }
+            });
+        }
         
         // Collect recommendations field
         const recommendationsTextarea = document.getElementById('recommendations');

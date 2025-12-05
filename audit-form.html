@@ -11,7 +11,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="sidebar.css">
     <style>
@@ -111,69 +110,6 @@
             100% {
                 left: 100%;
             }
-        }
-
-        /* Smart Loader Styles */
-        #auditSubmitLoader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        #auditSubmitLoader.show {
-            display: flex;
-            opacity: 1;
-        }
-
-        .loader-content {
-            background: white;
-            border-radius: 0.6469rem;
-            padding: 2.425rem 3.234rem;
-            box-shadow: 0 0.8086rem 2.425rem rgba(0, 0, 0, 0.3);
-            text-align: center;
-            max-width: 20rem;
-            animation: modalSlideIn 0.3s ease;
-        }
-
-        .loader-spinner {
-            width: 3.234rem;
-            height: 3.234rem;
-            border: 0.2425rem solid #e5e7eb;
-            border-top-color: #1A733E;
-            border-radius: 50%;
-            animation: loaderSpin 0.8s linear infinite;
-            margin: 0 auto 1.2937rem;
-        }
-
-        @keyframes loaderSpin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .loader-text {
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.6469rem;
-            font-weight: 600;
-            color: #374151;
-            margin: 0;
-        }
-
-        .loader-subtext {
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.4852rem;
-            color: #000000;
-            margin: 0.3234rem 0 0 0;
         }
 
         /* Parts tooltip hover effect */
@@ -355,8 +291,7 @@
         }
 
         /* Fix dropdown option colors - ensure options are visible */
-        #employeeName option,
-        #countryOfEmployee option {
+        #employeeName option {
             background-color: #ffffff !important;
             color: #374151 !important;
         }
@@ -451,8 +386,7 @@
             border-color: var(--border-light) !important;
         }
 
-        [data-theme="dark"] #employeeName option,
-        [data-theme="dark"] #countryOfEmployee option {
+        [data-theme="dark"] #employeeName option {
             background-color: var(--background-white) !important;
             color: #ffffff !important; /* Pure white text for maximum contrast */
         }
@@ -470,6 +404,50 @@
             background-color: var(--background-white) !important;
         }
 
+        /* Transcript Chat View Background - Make dark */
+        [data-theme="dark"] #transcriptChatView {
+            background: var(--background-white) !important;
+        }
+
+        [data-theme="dark"] #transcriptChatView::-webkit-scrollbar-track {
+            background: var(--gray-100) !important;
+        }
+
+        [data-theme="dark"] #transcriptChatView::-webkit-scrollbar-thumb {
+            background: var(--gray-400) !important;
+        }
+
+        [data-theme="dark"] #transcriptChatView::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500) !important;
+        }
+
+        /* Transcript Text View Background - Make dark */
+        [data-theme="dark"] #transcriptTextView {
+            background: var(--background-white) !important;
+        }
+
+        /* Chat Message Bubbles - Adjust for dark mode */
+        [data-theme="dark"] [style*="background: white"][style*="color: #374151"] {
+            background: var(--gray-100) !important;
+            color: #ffffff !important; /* Pure white for maximum contrast */
+            border-color: var(--border-light) !important;
+        }
+
+        /* User message bubbles in dark mode */
+        [data-theme="dark"] .message-bubble-user {
+            background: var(--gray-100) !important;
+            color: #ffffff !important; /* Pure white for maximum contrast */
+            border-color: var(--border-light) !important;
+        }
+
+        /* AI message bubbles - use purplish color in dark mode for better visibility */
+        [data-theme="dark"] [style*="background: #1d1d1d"],
+        [data-theme="dark"] [style*="background: #2d2d2d"],
+        [data-theme="dark"] [style*="background:#1d1d1d"],
+        [data-theme="dark"] [style*="background:#2d2d2d"] {
+            background: #6b46c1 !important; /* Purple-600 for better visibility in dark mode */
+        }
+
         /* Dividers - Reduce contrast */
         [data-theme="dark"] [style*="border-bottom"][style*="#f3f4f6"],
         [data-theme="dark"] [style*="border-bottom"][style*="#e5e7eb"] {
@@ -477,6 +455,156 @@
             opacity: 0.5;
         }
 
+        /* Dividers - Reduce contrast */
+        [data-theme="dark"] [style*="border-bottom"][style*="#f3f4f6"],
+        [data-theme="dark"] [style*="border-bottom"][style*="#e5e7eb"] {
+            border-bottom-color: var(--border-light) !important;
+            opacity: 0.5;
+        }
+
+        /* Quill Editor Custom Styling */
+        .quill-editor-container {
+            width: 100%;
+            min-width: 0;
+            position: relative;
+        }
+        
+        .quill-editor-container .ql-container {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.5659rem;
+            line-height: 1.2;
+            border: 0.0304rem solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 0.1617rem 0.1617rem;
+            min-height: 1rem;
+            max-height: 50rem;
+            overflow-y: auto;
+            background-color: white;
+        }
+        
+        .quill-editor-container .ql-editor {
+            padding: 0.2425rem 0.3234rem;
+            min-height: 1rem;
+        }
+        
+        .quill-editor-container .ql-editor.ql-blank::before {
+            font-style: normal;
+            color: #9ca3af;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.5659rem;
+        }
+        
+        .quill-editor-container .ql-toolbar {
+            border: 0.0304rem solid #d1d5db;
+            border-bottom: none;
+            border-radius: 0.1617rem 0.1617rem 0 0;
+            padding: 0.0809rem 0.1213rem;
+            background: #f9fafb;
+            display: flex !important; /* Always visible and stable */
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+            gap: 0.0404rem;
+            margin-bottom: 0;
+            min-height: 1.6169rem;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-formats {
+            margin-right: 0.0809rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .quill-editor-container .ql-toolbar button {
+            width: 1.1315rem;
+            height: 1.1315rem;
+            padding: 0.0404rem;
+            margin: 0;
+            border-radius: 0.0404rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .quill-editor-container .ql-toolbar button svg {
+            width: 0.6469rem;
+            height: 0.6469rem;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-stroke {
+            stroke: #9ca3af;
+            stroke-width: 1.2;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-fill {
+            fill: #9ca3af;
+        }
+        
+        .quill-editor-container .ql-toolbar button:hover,
+        .quill-editor-container .ql-toolbar button.ql-active {
+            background-color: #e5e7eb;
+            color: #1A733E;
+        }
+        
+        .quill-editor-container .ql-toolbar button:hover .ql-stroke,
+        .quill-editor-container .ql-toolbar button.ql-active .ql-stroke {
+            stroke: #1A733E;
+            stroke-width: 1.5;
+        }
+        
+        .quill-editor-container .ql-toolbar button:hover .ql-fill,
+        .quill-editor-container .ql-toolbar button.ql-active .ql-fill {
+            fill: #1A733E;
+        }
+        
+        /* Make color picker more compact */
+        .quill-editor-container .ql-toolbar .ql-picker {
+            height: 1.1315rem;
+            font-size: 0.4852rem;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-picker-label {
+            padding: 0.0404rem 0.0809rem;
+        }
+        
+        .quill-editor-container .ql-toolbar .ql-picker-options {
+            padding: 0.1617rem;
+            border-radius: 0.0809rem;
+        }
+        
+        /* Dark mode support for Quill */
+        [data-theme="dark"] .quill-editor-container .ql-container {
+            background-color: var(--background-white) !important;
+            color: #ffffff !important;
+            border-color: var(--border-light) !important;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-editor {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar {
+            background: var(--background-white) !important;
+            border-color: var(--border-light) !important;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar .ql-stroke {
+            stroke: #d1d5db;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar .ql-fill {
+            fill: #d1d5db;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar button:hover .ql-stroke,
+        [data-theme="dark"] .quill-editor-container .ql-toolbar button.ql-active .ql-stroke {
+            stroke: #1A733E !important;
+        }
+        
+        [data-theme="dark"] .quill-editor-container .ql-toolbar button:hover .ql-fill,
+        [data-theme="dark"] .quill-editor-container .ql-toolbar button.ql-active .ql-fill {
+            fill: #1A733E !important;
+        }
     </style>
     <script>
     // Update inline styles on theme change - single unified handler
@@ -561,6 +689,9 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    <!-- Quill.js for rich text editing -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="env-config.js"></script>
     <script src="supabase-config.js"></script>
     <script src="auth-check.js"></script>
@@ -595,56 +726,89 @@
     <input type="hidden" id="quarter" name="quarter">
     <input type="hidden" id="week" name="week">
     <input type="hidden" id="errorDescription" name="errorDescription">
+    <!-- Hidden error count fields for form submission -->
+    <input type="hidden" id="totalErrorsCount" name="totalErrorsCount">
+    <input type="hidden" id="criticalErrors" name="criticalErrors">
+    <input type="hidden" id="criticalFailError" name="criticalFailError">
+    <input type="hidden" id="significantError" name="significantError">
+    <!-- Note: majorError and minorError are display-only, not saved to database -->
 
     <!-- Beautiful Header Section (Report-Style) -->
-    <div id="auditFormHeader" style="background: linear-gradient(135deg, #1A733E 0%, #2d9a5a 100%); padding: 0.6469rem 0.9704rem; color: white; box-shadow: 0 0.1213rem 0.1819rem rgba(0,0,0,0.1); margin-bottom: 0.5rem; flex-shrink: 0; transition: background 0.3s ease;">
+    <div id="auditFormHeader" style="position: relative; background: linear-gradient(135deg, #1A733E 0%, #2d9a5a 100%); padding: 0.6469rem 0.9704rem; color: white; box-shadow: 0 0.1213rem 0.1819rem rgba(0,0,0,0.1); margin-bottom: 0.5rem; flex-shrink: 0; transition: background 0.3s ease; overflow: visible;">
+        <!-- Background Score Percentage -->
+        <div id="headerBackgroundScore" style="position: absolute; top: 0; right: 0; height: 100%; display: none; align-items: center; justify-content: flex-end; padding-right: 0.9704rem; pointer-events: none; z-index: 0;">
+            <span style="font-size: 10rem; font-weight: 900; font-family: 'Poppins', sans-serif; color: rgba(10, 50, 30, 0.4); line-height: 1; opacity: 0.6; user-select: none; display: flex; align-items: center; height: 100%;"><span id="headerScoreValue">0</span><span style="font-weight: 400;">%</span></span>
+        </div>
+        <div style="position: relative; z-index: 1;">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.4852rem;">
             <div style="flex: 1;">
                 <h2 style="font-size: 0.7278rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif;">Create New Audit</h2>
             </div>
             <div style="display: flex; align-items: center; gap: 0.3234rem;">
-                <button type="button" onclick="closeAuditForm()" style="background: rgba(255,255,255,0.2); border: 0.0606rem solid white; border-radius: 0.2425rem; width: 1.2937rem; height: 1.2937rem; font-size: 0.8086rem; cursor: pointer; color: white; font-weight: bold; transition: all 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">✕</button>
+                    <button type="button" onclick="closeAuditForm()" style="background: rgba(255,255,255,0.2); border: 0.0606rem solid white; border-radius: 0.2425rem; width: 1.2937rem; height: 1.2937rem; font-size: 0.8086rem; cursor: pointer; color: white; font-weight: bold; transition: all 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'" title="Close (Esc)">×</button>
             </div>
         </div>
         <div>
             
             <!-- Employee Information in Header -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(6.0644rem, 1fr)); gap: 0.3234rem; margin-bottom: 0.4852rem;">
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Employee *</p>
-                    <select id="employeeName" name="employeeName" required style="padding: 0.2425rem 0.3234rem; border: 0.0304rem solid rgba(255,255,255,0.3); border-radius: 0.1617rem; background-color: transparent; color: white; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; width: 100%; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23ffffff\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.3234rem center; background-size: 0.5659rem; padding-right: 1.2937rem;">
+                <div style="display: flex; gap: 0.3234rem; flex-wrap: wrap; margin-bottom: 0.4852rem;">
+                    <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem); position: relative; overflow: visible;">
+                        <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Employee *</p>
+                        <select id="employeeName" name="employeeName" required style="padding: 0; border: none; background-color: transparent; color: white; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; width: 100%; min-height: 1.2em; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23ffffff\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right center; background-size: 0.5659rem; padding-right: 1.2937rem; line-height: 1.2; position: relative; z-index: 10;">
                         <option value="" style="background-color: #ffffff; color: #374151;">Select Employee...</option>
                     </select>
                 </div>
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Email *</p>
-                    <input type="email" id="employeeEmail" name="employeeEmail" required readonly style="padding: 0.3234rem; border: 0.0304rem solid rgba(255,255,255,0.3); border-radius: 0.1617rem; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; background-color: transparent; color: white; width: 100%; word-break: break-all;">
+                    <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                        <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Email *</p>
+                        <input type="email" id="employeeEmail" name="employeeEmail" required readonly style="padding: 0; border: none; background-color: transparent; color: white; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 600; width: 100%; word-break: break-all; line-height: 1.2;">
                 </div>
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Type</p>
-                    <input type="text" id="employeeType" name="employeeType" readonly style="padding: 0.3234rem; border: 0.0304rem solid rgba(255,255,255,0.3); border-radius: 0.1617rem; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; background-color: transparent; color: white; width: 100%;">
+                    <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                        <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Type</p>
+                        <input type="text" id="employeeType" name="employeeType" readonly style="padding: 0; border: none; background-color: transparent; color: white; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; width: 100%; line-height: 1.2;">
                 </div>
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Department</p>
-                    <input type="text" id="employeeDepartment" name="employeeDepartment" readonly style="padding: 0.3234rem; border: 0.0304rem solid rgba(255,255,255,0.3); border-radius: 0.1617rem; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; background-color: transparent; color: white; width: 100%;">
+                    <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                        <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Department</p>
+                        <input type="text" id="employeeDepartment" name="employeeDepartment" readonly style="padding: 0; border: none; background-color: transparent; color: white; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; width: 100%; line-height: 1.2;">
                 </div>
-                <div>
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Country *</p>
-                    <select id="countryOfEmployee" name="countryOfEmployee" required style="padding: 0.2425rem 0.3234rem; border: 0.0304rem solid rgba(255,255,255,0.3); border-radius: 0.1617rem; background-color: transparent; color: white; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; width: 100%; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23ffffff\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.3234rem center; background-size: 0.5659rem; padding-right: 1.2937rem;">
-                        <option value="" style="background-color: #ffffff; color: #374151;">Select Country</option>
-                        <option value="Bangladesh" selected style="background-color: #ffffff; color: #374151;">Bangladesh</option>
-                        <option value="Sri Lanka" style="background-color: #ffffff; color: #374151;">Sri Lanka</option>
-                    </select>
+                    <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                        <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Country *</p>
+                        <input type="text" id="countryOfEmployee" name="countryOfEmployee" required readonly style="padding: 0; border: none; background-color: transparent; color: white; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; width: 100%; line-height: 1.2;">
                 </div>
-                <div id="intercomAliasContainer" style="display: none;">
-                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.7); margin: 0; font-family: 'Poppins', sans-serif; text-transform: uppercase;">Intercom Alias</p>
-                    <input type="text" id="intercomAlias" name="intercomAlias" readonly style="padding: 0.3234rem; border: 0.0304rem solid rgba(255,255,255,0.3); border-radius: 0.1617rem; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; background-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); width: 100%;" placeholder="Intercom alias...">
+                    <div id="intercomAliasContainer" style="display: none; background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                        <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Intercom Alias</p>
+                        <input type="text" id="intercomAlias" name="intercomAlias" readonly style="padding: 0; border: none; background-color: transparent; color: rgba(255,255,255,0.9); font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; width: 100%; line-height: 1.2;" placeholder="Intercom alias...">
                 </div>
             </div>
         </div>
         
         <!-- Audit Metadata Cards -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(4.2451rem, 1fr)); gap: 0.3234rem;">
+            <div id="headerMetadataCards" style="display: flex; gap: 0.3234rem; flex-wrap: wrap;">
+                <!-- Metadata cards will be populated dynamically -->
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Date</p>
+                    <p style="font-size: 0.4852rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">N/A</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Qtr</p>
+                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">N/A</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Week</p>
+                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">N/A</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Errors</p>
+                    <p style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">0</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Status</p>
+                    <p id="headerStatusDisplay" style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">N/A</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Score</p>
+                    <p id="headerScoreDisplay" style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">0%</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -798,6 +962,35 @@
         <!-- RIGHT COLUMN: Error Details & Recommendations -->
         <div id="rightColumn" style="flex: 1; min-width: 9.0967rem; padding-left: 0.3234rem; padding-right: 0.9704rem; display: flex; flex-direction: column; min-height: 0; overflow-y: auto;">
             
+            <!-- Error Counts: Total Errors, Critical Fail, Critical, Significant, Major, Minor -->
+            <div id="errorCountsSection" style="background: #d1fae5; border-radius: 0.3234rem; padding: 0.6469rem; margin-bottom: 0.6469rem; border: 0.0304rem solid #a7f3d0;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.6469rem;">
+                    <div>
+                        <p style="font-size: 0.4447rem; color: #065f46; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Total Errors</p>
+                        <div id="totalErrorsCountDisplay" style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">0</div>
+                    </div>
+                    <div>
+                        <p style="font-size: 0.4447rem; color: #065f46; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Critical Fail</p>
+                        <div id="criticalFailErrorDisplay" style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">0</div>
+                    </div>
+                    <div>
+                        <p style="font-size: 0.4447rem; color: #065f46; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Critical</p>
+                        <div id="criticalErrorsDisplay" style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">0</div>
+                    </div>
+                    <div>
+                        <p style="font-size: 0.4447rem; color: #065f46; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Significant Error</p>
+                        <div id="significantErrorDisplay" style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">0</div>
+                    </div>
+                    <div>
+                        <p style="font-size: 0.4447rem; color: #065f46; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Major</p>
+                        <div id="majorErrorDisplay" style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">0</div>
+                    </div>
+                    <div>
+                        <p style="font-size: 0.4447rem; color: #065f46; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Minor</p>
+                        <div id="minorErrorDisplay" style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; text-align: center;">0</div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Error Details (Report-Style Table) -->
             <div id="errorParametersSection" style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;">
@@ -808,22 +1001,22 @@
                             Error Details
                         </h3>
                         <div style="display: flex; align-items: center; gap: 0.3234rem; flex-wrap: wrap;">
-                            <div style="display: flex; align-items: center; gap: 0.3234rem;">
-                                <label for="scorecardSelect" style="font-size: 0.4852rem; font-weight: 500; color: #000000; font-family: 'Poppins', sans-serif; white-space: nowrap;">Scorecard:</label>
-                                <select id="scorecardSelect" required style="padding: 0.2425rem 0.3234rem; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; background-color: #ffffff; color: #374151; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; min-width: 4.5482rem; cursor: pointer; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23374151\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.3234rem center; background-size: 0.5659rem; padding-right: 1.2937rem;">
-                                    <option value="">Loading scorecards...</option>
-                                </select>
-                            </div>
-                            <div style="width: 0.0304rem; height: 0.6469rem; background: #d1d5db;"></div>
                             <div style="display: flex; align-items: center; gap: 0.1617rem;">
                                 <span style="font-size: 0.4852rem; font-weight: 500; color: #000000; font-family: 'Poppins', sans-serif; white-space: nowrap;">Channel:</span>
                                 <select id="channel" name="channel" required style="padding: 0.2425rem 0.3234rem; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; background-color: #ffffff; color: #374151; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; min-width: 3.6387rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23374151\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.3234rem center; background-size: 0.5659rem; padding-right: 1.2937rem;">
                                     <option value="">Select...</option>
                                 </select>
                             </div>
+                            <div style="width: 0.0304rem; height: 0.6469rem; background: #d1d5db;"></div>
+                            <div style="display: flex; align-items: center; gap: 0.3234rem;">
+                                <label for="scorecardSelect" style="font-size: 0.4852rem; font-weight: 500; color: #000000; font-family: 'Poppins', sans-serif; white-space: nowrap;">Scorecard:</label>
+                                <select id="scorecardSelect" required style="padding: 0.2425rem 0.3234rem; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; background-color: #ffffff; color: #374151; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; min-width: 4.5482rem; cursor: pointer; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23374151\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.3234rem center; background-size: 0.5659rem; padding-right: 1.2937rem;">
+                                    <option value="">Loading scorecards...</option>
+                                </select>
+                            </div>
                         </div>
                         <div style="width: 0.0304rem; height: 0.6469rem; background: #d1d5db;"></div>
-                        <div style="display: flex; align-items: center; gap: 0.3234rem; flex-wrap: wrap;">
+                        <div style="display: none;">
                             <div style="display: flex; align-items: center; gap: 0.1617rem;">
                                 <label style="font-size: 0.4852rem; font-weight: 500; color: #000000; font-family: 'Poppins', sans-serif; white-space: nowrap;">Audit Type:</label>
                                 <select id="auditType" name="auditType" required style="padding: 0.2425rem 0.3234rem; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; background-color: #ffffff; color: #374151; font-size: 0.4852rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23374151\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.3234rem center; background-size: 0.5659rem; padding-right: 1.2937rem; min-width: 8rem;">
@@ -841,20 +1034,20 @@
                 <div style="background: var(--background-white); border-radius: 0.4852rem; box-shadow: 0 0.0405rem 0.1213rem 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
                     <!-- Table Header -->
                     <div style="background-color: var(--background-white); padding: 0.4852rem 0.6469rem; border-bottom: 0.0405rem solid var(--border-light);">
-                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 3fr; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em;">
-                            <div>Error Type</div>
-                            <div style="text-align: center;">Points</div>
-                            <div style="text-align: center;">Severity</div>
-                            <div class="error-details-header-status" style="text-align: center;">Status</div>
-                            <div>Feedback</div>
+                        <div style="display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 4fr; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
+                            <div style="min-width: 0;">Error Type</div>
+                            <div style="text-align: center; min-width: 0;">Points</div>
+                            <div style="text-align: center; min-width: 0;">Severity</div>
+                            <div class="error-details-header-status" style="text-align: center; min-width: 0;">Status</div>
+                            <div style="min-width: 0;">Feedback</div>
                         </div>
                     </div>
                     
                     <!-- Table Body -->
                     <div id="errorParametersContainer" style="padding: 0 0.6469rem 0.6469rem 0.6469rem; box-shadow: 0 -0.0606rem 0.1213rem rgba(0, 0, 0, 0.05);">
                         <!-- Error parameters will be dynamically loaded based on selected scorecard -->
-                        <div style="padding: 1.2937rem; text-align: center; color: #000000; font-size: 0.5659rem;">
-                            <p style="margin: 0 0 0.3234rem 0; font-weight: 500;">All scorecards are available. Please select a scorecard above to load error parameters.</p>
+                        <div id="noScorecardMessage" style="padding: 1.2937rem; text-align: center; color: #000000; font-size: 0.5659rem;">
+                            <p style="margin: 0 0 0.3234rem 0; font-weight: 500;">No scorecard selected. Please select a scorecard first to load error parameters.</p>
                             <p style="margin: 0; color: #6b7280; font-size: 0.4852rem;">💡 Tip: Select an employee first to filter scorecards by channel, or choose any scorecard from the list.</p>
                         </div>
                     </div>
@@ -871,28 +1064,6 @@
                     <div>
                         <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Status</p>
                         <input type="text" id="passingStatus" name="passingStatus" readonly style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; cursor: not-allowed; text-align: center;">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Error Counts: Total Errors, Critical Fail, Critical, Significant -->
-            <div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; margin-bottom: 0.6469rem; border: 0.0304rem solid #e5e7eb;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.6469rem;">
-                    <div>
-                        <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Total Errors</p>
-                        <input type="number" id="totalErrorsCount" name="totalErrorsCount" min="0" required readonly style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; cursor: not-allowed; text-align: center;">
-                    </div>
-                    <div>
-                        <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Critical Fail</p>
-                        <input type="number" id="criticalFailErrorDisplay" name="criticalFailErrorDisplay" min="0" required readonly style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; cursor: not-allowed; text-align: center;" value="0">
-                    </div>
-                    <div>
-                        <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Critical</p>
-                        <input type="number" id="criticalErrors" name="criticalErrors" min="0" required readonly style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; cursor: not-allowed; text-align: center;">
-                    </div>
-                    <div>
-                        <p style="font-size: 0.4447rem; color: #000000; margin: 0 0 0.3234rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; font-weight: 600;">Significant Error</p>
-                        <input type="number" id="significantError" name="significantError" min="0" required readonly style="font-size: 0.6469rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; background: white; border: 0.0304rem solid #d1d5db; border-radius: 0.1617rem; color: #374151; width: 100%; padding: 0.2425rem 0.3234rem; cursor: not-allowed; text-align: center;">
                     </div>
                 </div>
             </div>
@@ -930,15 +1101,6 @@
 </div>
 </main>
 
-<!-- Smart Loader for Form Submission -->
-<div id="auditSubmitLoader">
-    <div class="loader-content">
-        <div class="loader-spinner"></div>
-        <p class="loader-text">Submitting Audit...</p>
-        <p class="loader-subtext">Please wait while we process your submission</p>
-    </div>
-</div>
-
 <script>
 // ============================================================================
 // Dynamic Scorecard System
@@ -948,6 +1110,9 @@ let currentParameters = [];
 
 // Store all available scorecards for filtering
 let allAvailableScorecards = [];
+
+// Store Quill editor instances for feedback fields
+const quillInstances = new Map();
 
 // Load available scorecards
 async function loadScorecards(channelFilter = null, preselectedScorecardId = null, skipAutoSelect = false) {
@@ -1020,54 +1185,40 @@ async function loadScorecards(channelFilter = null, preselectedScorecardId = nul
                 scorecardSelect.appendChild(option);
             });
             
-            // Auto-select scorecard: use preselected ID if provided, otherwise use first available
-            // Only auto-select if skipAutoSelect is false
-            if (filteredScorecards.length > 0 && !skipAutoSelect) {
-                if (preselectedScorecardId) {
-                    // Check if the preselected scorecard exists in the filtered list
-                    const preselectedExists = filteredScorecards.some(sc => sc.id === preselectedScorecardId);
-                    if (preselectedExists) {
-                        scorecardSelect.value = preselectedScorecardId;
-                        await loadScorecardParameters(preselectedScorecardId);
-                    } else {
-                        // If preselected doesn't exist in filtered list, check if it exists in all scorecards
-                        // This can happen when channel filter is applied but preselected scorecard doesn't match
-                        const preselectedInAll = allAvailableScorecards.some(sc => sc.id === preselectedScorecardId);
-                        if (preselectedInAll && !channelFilter) {
-                            // If no channel filter, the scorecard should be in the list - this shouldn't happen
-                            console.warn('⚠️ Preselected scorecard not found in list even without channel filter:', preselectedScorecardId);
-                            scorecardSelect.value = filteredScorecards[0].id;
-                            await loadScorecardParameters(filteredScorecards[0].id);
-                        } else if (preselectedInAll && channelFilter) {
-                            // Scorecard exists but doesn't match channel filter - add it anyway for AI audit
-                            console.log('⚠️ Preselected scorecard doesn\'t match channel filter, but adding it for AI audit:', preselectedScorecardId);
-                            const preselectedScorecard = allAvailableScorecards.find(sc => sc.id === preselectedScorecardId);
-                            if (preselectedScorecard) {
-                                const option = document.createElement('option');
-                                option.value = preselectedScorecard.id;
-                                option.textContent = preselectedScorecard.name + ' (AI Audit)';
-                                option.dataset.threshold = preselectedScorecard.passing_threshold;
-                                option.dataset.tableName = preselectedScorecard.table_name;
-                                option.dataset.channels = preselectedScorecard.channels || '';
-                                scorecardSelect.appendChild(option);
-                                scorecardSelect.value = preselectedScorecardId;
-                                await loadScorecardParameters(preselectedScorecardId);
-                            } else {
-                                scorecardSelect.value = filteredScorecards[0].id;
-                                await loadScorecardParameters(filteredScorecards[0].id);
-                            }
-                        } else {
-                            // Scorecard doesn't exist at all, fall back to first
-                            console.warn('⚠️ Preselected scorecard not found in all scorecards, using first available:', preselectedScorecardId);
-                            scorecardSelect.value = filteredScorecards[0].id;
-                            await loadScorecardParameters(filteredScorecards[0].id);
+            // Auto-select scorecard: only if preselectedScorecardId is explicitly provided
+            // By default, no scorecard should be selected
+            if (filteredScorecards.length > 0 && !skipAutoSelect && preselectedScorecardId) {
+                // Check if the preselected scorecard exists in the filtered list
+                const preselectedExists = filteredScorecards.some(sc => sc.id === preselectedScorecardId);
+                if (preselectedExists) {
+                    scorecardSelect.value = preselectedScorecardId;
+                    await loadScorecardParameters(preselectedScorecardId);
+                } else {
+                    // If preselected doesn't exist in filtered list, check if it exists in all scorecards
+                    // This can happen when channel filter is applied but preselected scorecard doesn't match
+                    const preselectedInAll = allAvailableScorecards.some(sc => sc.id === preselectedScorecardId);
+                    if (preselectedInAll && channelFilter) {
+                        // Scorecard exists but doesn't match channel filter - add it anyway for AI audit
+                        console.log('⚠️ Preselected scorecard doesn\'t match channel filter, but adding it for AI audit:', preselectedScorecardId);
+                        const preselectedScorecard = allAvailableScorecards.find(sc => sc.id === preselectedScorecardId);
+                        if (preselectedScorecard) {
+                            const option = document.createElement('option');
+                            option.value = preselectedScorecard.id;
+                            option.textContent = preselectedScorecard.name + ' (AI Audit)';
+                            option.dataset.threshold = preselectedScorecard.passing_threshold;
+                            option.dataset.tableName = preselectedScorecard.table_name;
+                            option.dataset.channels = preselectedScorecard.channels || '';
+                            scorecardSelect.appendChild(option);
+                            scorecardSelect.value = preselectedScorecardId;
+                            await loadScorecardParameters(preselectedScorecardId);
                         }
                     }
-                } else {
-                    // No preselection, use first scorecard
-                    scorecardSelect.value = filteredScorecards[0].id;
-                    await loadScorecardParameters(filteredScorecards[0].id);
                 }
+            }
+            
+            // Show message if no scorecard is selected
+            if (!scorecardSelect.value || scorecardSelect.value === '') {
+                showNoScorecardMessage();
             }
             // If channel is selected but no matching scorecard, show message
             else if (channelFilter && filteredScorecards.length === 0) {
@@ -1083,27 +1234,30 @@ async function loadScorecards(channelFilter = null, preselectedScorecardId = nul
     } catch (error) {
         console.error('Error loading scorecards:', error);
         scorecardSelect.innerHTML = '<option value="">Error loading scorecards</option>';
+        showNoScorecardMessage();
+    }
+    
+    // Show message if no scorecard is selected after loading
+    if (!scorecardSelect.value || scorecardSelect.value === '') {
+        showNoScorecardMessage();
     }
 }
 
 // Auto-select scorecard based on selected channel
 async function autoSelectScorecardByChannel(channelName) {
     if (!channelName || !channelName.trim()) {
-        // If channel is cleared, reload all scorecards and auto-select first
-        await loadScorecards();
+        // If channel is cleared, reload all scorecards without auto-selecting
+        await loadScorecards(null, null, true); // skipAutoSelect = true
         return;
     }
     
     // Ensure scorecards are loaded first
     if (allAvailableScorecards.length === 0) {
-        await loadScorecards();
+        await loadScorecards(null, null, true); // skipAutoSelect = true
     }
     
-    // Reload scorecards filtered by channel (this will auto-select first matching scorecard)
-    await loadScorecards(channelName.trim());
-    
-    // The loadScorecards function will already auto-select the first scorecard
-    // No additional logic needed here
+    // Reload scorecards filtered by channel (without auto-selecting)
+    await loadScorecards(channelName.trim(), null, true); // skipAutoSelect = true
 }
 
 
@@ -1115,6 +1269,7 @@ async function loadScorecardParameters(scorecardId) {
         currentParameters = [];
         document.getElementById('scorecardInfo').style.display = 'none';
         clearErrorParameters();
+        updateHeaderMetadata(); // Hide background score when scorecard is cleared
         return;
     }
     
@@ -1126,6 +1281,7 @@ async function loadScorecardParameters(scorecardId) {
         currentParameters = [];
         document.getElementById('scorecardInfo').style.display = 'none';
         clearErrorParameters();
+        updateHeaderMetadata(); // Hide background score when scorecard is cleared
         return;
     }
     
@@ -2223,7 +2379,9 @@ window.loadPendingAuditIntoForm = async function(auditId) {
     if (employeeEmail) employeeEmail.value = audit.employee_email || '';
     if (employeeType) employeeType.value = audit.employee_type || '';
     if (employeeDepartment) employeeDepartment.value = audit.employee_department || '';
-    if (countryOfEmployee) countryOfEmployee.value = audit.country_of_employee || '';
+    if (countryOfEmployee) {
+        countryOfEmployee.value = audit.country_of_employee || '';
+    }
     
     // Pre-fill any other existing data
     if (audit.channel) {
@@ -7889,16 +8047,24 @@ function clearAIAuditData() {
                 }
             }
             
-            // Clear feedback fields
+            // Clear feedback fields (Quill editors)
             let feedbackIndex = 0;
             while (true) {
-                const feedbackTextarea = document.getElementById(`feedback_${param.field_id}_${feedbackIndex}`);
+                const feedbackId = `feedback_${param.field_id}_${feedbackIndex}`;
+                if (quillInstances.has(feedbackId)) {
+                    const quill = quillInstances.get(feedbackId);
+                    quill.root.innerHTML = '';
+                    feedbackIndex++;
+                } else {
+                    // Fallback to textarea for backward compatibility
+                    const feedbackTextarea = document.getElementById(feedbackId);
                 if (feedbackTextarea) {
                     feedbackTextarea.value = '';
                     feedbackTextarea.dispatchEvent(new Event('input', { bubbles: true }));
                     feedbackIndex++;
                 } else {
                     break;
+                    }
                 }
             }
         }
@@ -8177,52 +8343,152 @@ function updateFeedbackBoxesForParameter(fieldId, fieldType, paramType) {
         errorCount = field ? (parseInt(field.value) || 0) : 0;
     }
     
-    // Always show at least 1 feedback box, but limit to max 10 based on error count
+    // Show feedback boxes based on error count
     // If errorCount is 0, show 1 box (optional)
-    // If errorCount > 0, show up to errorCount boxes (max 10), all required
+    // If errorCount > 0, show exactly errorCount boxes (max 10), all required
     const feedbackCount = errorCount === 0 ? 1 : Math.min(errorCount, 10);
     const isRequired = errorCount > 0;
     
     // Get existing feedback values (if loading from saved audit)
+    // Check both Quill editors and textareas for backward compatibility
     const existingFeedbacks = [];
+    
+    // Check for Quill editors first (if they exist)
+    const existingQuillEditors = feedbackContainer.querySelectorAll(`.quill-editor-container`);
+    existingQuillEditors.forEach((editorContainer) => {
+        const quillDiv = editorContainer.querySelector('[id^="quill_"]');
+        if (quillDiv) {
+            const editorId = quillDiv.id.replace('quill_', '');
+            if (quillInstances.has(editorId)) {
+                const quill = quillInstances.get(editorId);
+                const content = quill.root.innerHTML;
+                // Check if it's HTML or plain text
+                if (content && content.trim() && content !== '<p><br></p>') {
+                    const index = parseInt(editorId.split('_').pop()) || 0;
+                    existingFeedbacks[index] = content;
+                }
+            }
+        }
+    });
+    
+    // Fallback to textareas for backward compatibility
     const existingTextareas = feedbackContainer.querySelectorAll(`textarea[id^="feedback_${fieldId}_"]`);
     existingTextareas.forEach(textarea => {
         const index = parseInt(textarea.id.split('_').pop()) || 0;
-        existingFeedbacks[index] = textarea.value;
+        if (!existingFeedbacks[index] && textarea.value) {
+            // Convert plain text to HTML (preserve line breaks)
+            const plainText = textarea.value;
+            const htmlText = plainText.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+            existingFeedbacks[index] = htmlText || '';
+        }
     });
     
-    // Clear container
+    // Clear container and destroy existing Quill instances
+    feedbackContainer.querySelectorAll('.quill-editor-container').forEach(container => {
+        const quillDiv = container.querySelector('[id^="quill_"]');
+        if (quillDiv) {
+            const editorId = quillDiv.id.replace('quill_', '');
+            if (quillInstances.has(editorId)) {
+                const quillInstance = quillInstances.get(editorId);
+                // Check if instance exists and has destroy method before calling it
+                if (quillInstance && typeof quillInstance.destroy === 'function') {
+                    try {
+                        quillInstance.destroy();
+                    } catch (e) {
+                        console.warn('Error destroying Quill instance:', e);
+                    }
+                }
+                quillInstances.delete(editorId);
+            }
+        }
+    });
     feedbackContainer.innerHTML = '';
     
-    // Create feedback boxes
+    // Create feedback boxes with Quill editors
     for (let i = 0; i < feedbackCount; i++) {
         const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'quill-editor-container';
+        feedbackDiv.style.cssText = 'width: 100%; min-width: 0;';
         const feedbackId = `feedback_${fieldId}_${i}`;
+        const quillContainerId = `quill_${feedbackId}`;
+        
         // Make required if errorCount > 0, otherwise optional
-        const requiredAttr = isRequired ? 'required' : '';
         const placeholder = errorCount === 0 
             ? 'Enter feedback (optional)...' 
             : (feedbackCount === 1 
                 ? 'Enter feedback (required)...' 
                 : `Feedback ${i + 1} of ${feedbackCount} (required)...`);
         
-        feedbackDiv.innerHTML = `
-            <textarea 
-                id="${feedbackId}" 
-                name="${feedbackId}" 
-                ${requiredAttr}
-                placeholder="${placeholder}" 
-                rows="1" 
-                class="w-full px-2 py-1 bg-white text-sm focus:outline-none resize-none" 
-                style="font-family: 'Poppins', sans-serif; font-size: 0.5659rem; line-height: 1.2; min-height: 1rem; max-height: 50rem; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; padding: 0.2425rem 0.3234rem;"
-            >${existingFeedbacks[i] || ''}</textarea>
-        `;
+        // Create container for Quill
+        const quillContainer = document.createElement('div');
+        quillContainer.id = quillContainerId;
+        feedbackDiv.appendChild(quillContainer);
         feedbackContainer.appendChild(feedbackDiv);
         
-        // Setup auto-expand for this textarea
-        const textarea = feedbackDiv.querySelector('textarea');
-        if (textarea) {
-            setupFeedbackTextareaAutoExpand(feedbackId, textarea);
+        // Initialize Quill editor (check if Quill is available)
+        if (typeof Quill === 'undefined') {
+            console.error('Quill.js is not loaded. Please check the CDN link.');
+            // Fallback to textarea if Quill is not available
+            const fallbackTextarea = document.createElement('textarea');
+            fallbackTextarea.id = feedbackId;
+            fallbackTextarea.name = feedbackId;
+            fallbackTextarea.placeholder = placeholder;
+            fallbackTextarea.style.cssText = 'font-family: Poppins, sans-serif; font-size: 0.5659rem; line-height: 1.2; min-height: 1rem; max-height: 50rem; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; padding: 0.2425rem 0.3234rem; width: 100%; box-sizing: border-box;';
+            if (existingFeedbacks[i]) {
+                fallbackTextarea.value = existingFeedbacks[i].replace(/<[^>]*>/g, ''); // Strip HTML tags
+            }
+            quillContainer.replaceWith(fallbackTextarea);
+            continue;
+        }
+        
+        const quill = new Quill(quillContainer, {
+            theme: 'snow',
+            placeholder: placeholder,
+            modules: {
+                toolbar: [
+                    ['bold', 'italic'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+        
+        // Set existing content (HTML or convert plain text)
+        const existingContent = existingFeedbacks[i];
+        if (existingContent) {
+            // Check if it's already HTML (contains tags) or plain text
+            if (existingContent.trim().startsWith('<')) {
+                // It's HTML, set directly
+                quill.root.innerHTML = existingContent;
+            } else {
+                // It's plain text, convert to HTML
+                const htmlContent = existingContent.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                quill.root.innerHTML = htmlContent;
+            }
+        }
+        
+        // Store Quill instance
+        quillInstances.set(feedbackId, quill);
+        
+        // Add validation on blur for required fields
+        if (isRequired) {
+            quill.root.setAttribute('data-required', 'true');
+            quill.on('text-change', function() {
+                const content = quill.root.innerHTML;
+                const isEmpty = !content || content.trim() === '' || content === '<p><br></p>';
+                const container = quill.root.closest('.quill-editor-container');
+                if (container) {
+                    const qlContainer = container.querySelector('.ql-container');
+                    if (qlContainer) {
+                        if (isEmpty) {
+                            qlContainer.style.borderColor = '#ef4444';
+                        } else {
+                            qlContainer.style.borderColor = '#10b981';
+                        }
+                    }
+                }
+            });
         }
     }
 }
@@ -8272,10 +8538,33 @@ function setupFeedbackTextareaAutoExpand(fieldId, textareaElement = null) {
     setTimeout(autoExpand, 0);
 }
 
+// Show/hide no scorecard message
+function showNoScorecardMessage() {
+    const container = document.getElementById('errorParametersContainer');
+    if (container) {
+        container.innerHTML = `
+            <div id="noScorecardMessage" style="padding: 1.2937rem; text-align: center; color: #000000; font-size: 0.5659rem;">
+                <p style="margin: 0 0 0.3234rem 0; font-weight: 500;">No scorecard selected. Please select a scorecard first to load error parameters.</p>
+                <p style="margin: 0; color: #6b7280; font-size: 0.4852rem;">💡 Tip: Select an employee first to filter scorecards by channel, or choose any scorecard from the list.</p>
+            </div>
+        `;
+    }
+}
+
+function hideNoScorecardMessage() {
+    const message = document.getElementById('noScorecardMessage');
+    if (message) {
+        message.style.display = 'none';
+    }
+}
+
 // Render error parameter fields dynamically
 function renderErrorParameters() {
     const container = document.getElementById('errorParametersContainer');
     container.innerHTML = '';
+    
+    // Hide no scorecard message when rendering parameters
+    hideNoScorecardMessage();
     
     if (currentParameters.length === 0) {
         container.innerHTML = '<div style="padding: 1.2937rem; text-align: center; color: #000000; font-size: 0.5659rem;"><p>No parameters defined for this scorecard.</p></div>';
@@ -8328,24 +8617,7 @@ function renderErrorParameters() {
         const paramType = param.parameter_type || 'error';
         const paramIcon = paramType === 'error' ? '-' : (paramType === 'achievement' || paramType === 'bonus' ? '+' : '');
         
-        // Different colors for different parameter types (matching audit-reports.html exactly)
-        let severityColor = '#3b82f6';
-        let severityBg = '#eff6ff';
-        
-        if (paramType === 'error') {
-            if (param.error_category.includes('Fail')) {
-                severityColor = '#ef4444';
-                severityBg = '#fee2e2';
-            } else if (param.error_category.includes('Critical')) {
-                severityColor = '#f59e0b';
-                severityBg = '#fef3c7';
-            }
-        } else if (paramType === 'achievement' || paramType === 'bonus') {
-            severityColor = '#10b981';
-            severityBg = '#d1fae5';
-        }
-        
-        // Map error category to severity label
+        // Map error category to severity label first
         let mappedSeverity = 'Significant'; // default
         const category = param.error_category || '';
         if (category.includes('Fail')) {
@@ -8358,6 +8630,38 @@ function renderErrorParameters() {
             mappedSeverity = 'Major';
         } else if (category.includes('Minor')) {
             mappedSeverity = 'Minor';
+        }
+        
+        // Different colors for different parameter types (matching audit-view.html exactly)
+        let severityColor = '#3b82f6';
+        let severityBg = '#eff6ff';
+        
+        if (paramType === 'error') {
+            // All error severities use red shades - darker red for higher severity
+            // Text color is white for all to ensure good contrast against red backgrounds
+            if (mappedSeverity === 'Critical Fail') {
+                severityColor = '#ffffff'; // White text
+                severityBg = '#7f1d1d'; // Darkest red background
+            } else if (mappedSeverity === 'Critical') {
+                severityColor = '#ffffff'; // White text
+                severityBg = '#991b1b'; // Dark red background
+            } else if (mappedSeverity === 'Significant') {
+                severityColor = '#ffffff'; // White text
+                severityBg = '#b91c1c'; // Medium-dark red background
+            } else if (mappedSeverity === 'Major') {
+                severityColor = '#ffffff'; // White text
+                severityBg = '#dc2626'; // Medium red background
+            } else if (mappedSeverity === 'Minor') {
+                severityColor = '#ffffff'; // White text
+                severityBg = '#ef4444'; // Light-medium red background
+            } else {
+                // Default for any other error severity
+                severityColor = '#ffffff'; // White text
+                severityBg = '#b91c1c'; // Medium-dark red background
+            }
+        } else if (paramType === 'achievement' || paramType === 'bonus') {
+            severityColor = '#10b981';
+            severityBg = '#d1fae5';
         }
         
         const severityLabel = (paramType === 'achievement' || paramType === 'bonus') && param.field_type !== 'radio' ? 'ACHIEVEMENT' : mappedSeverity;
@@ -8392,22 +8696,22 @@ function renderErrorParameters() {
         
         // Create row matching audit-reports.html exactly (lines 1232-1243)
         const rowDiv = document.createElement('div');
-        rowDiv.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 3fr; gap: 0.6469rem; align-items: center; padding: 0.3234rem 0; border-bottom: 0.0405rem solid #f3f4f6;';
+        rowDiv.style.cssText = 'display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 4fr; gap: 0.6469rem; align-items: start; padding: 0.3234rem 0; border-bottom: 0.0405rem solid #f3f4f6; width: 100%; min-width: 0;';
         
         rowDiv.innerHTML = `
-            <div style="font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif;">
+            <div style="font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; min-width: 0; overflow: hidden;">
                 <span style="font-weight: 700; color: ${paramType === 'error' ? '#dc2626' : '#10b981'};">${paramIcon}</span> ${param.error_name}
             </div>
-            <div style="display: flex; justify-content: center; font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif;">
+            <div style="display: flex; justify-content: center; font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; min-width: 0;">
                 ${param.penalty_points}
             </div>
-            <div style="display: flex; justify-content: center;">
-                <span style="background: ${severityBg}; color: ${severityColor}; padding: 0.1617rem 0.4852rem; border-radius: 0.2425rem; font-size: 0.4852rem; font-weight: 600; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem;">${severityLabel}</span>
+            <div style="display: flex; justify-content: center; min-width: 0;">
+                <span style="background: ${severityBg}; color: ${severityColor}; padding: 0.1617rem 0.4852rem; border-radius: 0.2425rem; font-size: 0.4852rem; font-weight: 600; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; white-space: nowrap;">${severityLabel}</span>
             </div>
-            <div style="display: flex; justify-content: center;">
+            <div style="display: flex; justify-content: center; min-width: 0;">
                 ${inputHtml}
             </div>
-            <div id="feedback_container_${param.field_id}" style="display: flex; flex-direction: column; gap: 0.3234rem;">
+            <div id="feedback_container_${param.field_id}" style="display: flex; flex-direction: column; gap: 0.3234rem; min-width: 0; width: 100%; word-wrap: break-word; overflow-wrap: break-word;">
                 <!-- Feedback boxes will be dynamically added here based on error count -->
             </div>
         `;
@@ -8427,8 +8731,8 @@ function renderErrorParameters() {
 
 // Clear error parameters
 function clearErrorParameters() {
-    const container = document.getElementById('errorParametersContainer');
-    container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 1.2937rem; color: #000000; font-size: 0.5659rem;"><p>Please select a scorecard above to load error parameters.</p></div>';
+    // Show no scorecard message when clearing
+    showNoScorecardMessage();
 }
 
 // ============================================================================
@@ -9142,6 +9446,11 @@ function clearErrorParameters() {
         if (quarterField) {
             quarterField.value = getQuarter(now);
         }
+        
+        // Update header metadata when quarter/week changes
+        if (typeof updateHeaderMetadata === 'function') {
+            updateHeaderMetadata();
+        }
     }
     
     // Get current elapsed time (accounting for running timer)
@@ -9402,27 +9711,47 @@ let allEmployees = []; // Store all employees loaded from Supabase
 // Load employees from Supabase
 async function loadEmployees() {
     try {
+        console.log('loadEmployees called');
         const employeeSelect = document.getElementById('employeeName');
         
-        // Check if Supabase is available
-        if (!window.SupabaseUsers) {
-            console.error('Supabase not initialized');
-            employeeSelect.innerHTML = '<option value="">Error: Supabase not initialized</option>';
+        if (!employeeSelect) {
+            console.warn('Employee select element not found');
             return;
         }
         
+        // Check if Supabase is available
+        if (!window.SupabaseUsers) {
+            console.error('SupabaseUsers not available');
+            employeeSelect.innerHTML = '<option value="">Error: Supabase not initialized</option>';
+            throw new Error('SupabaseUsers not available');
+        }
+        
+        console.log('Loading users from Supabase...');
         // Load users from Supabase
         allEmployees = await window.SupabaseUsers.getAllUsers({
             orderBy: { column: 'name', ascending: true }
         });
         
+        console.log(`Loaded ${allEmployees ? allEmployees.length : 0} employees from Supabase`);
+        
+        if (!allEmployees || allEmployees.length === 0) {
+            console.warn('No employees returned from Supabase');
+            employeeSelect.innerHTML = '<option value="">No employees found</option>';
+            return;
+        }
+        
         // Populate the dropdown
         employeeSelect.innerHTML = '<option value="">Select Employee</option>';
         
+        let addedCount = 0;
         allEmployees.forEach(user => {
+            if (!user || !user.email) {
+                console.warn('Skipping invalid user:', user);
+                return;
+            }
             const option = document.createElement('option');
             option.value = user.email; // Use email as the value
-            option.textContent = user.name;
+            option.textContent = user.name || user.email;
             option.dataset.email = user.email;
             option.dataset.role = user.role || '';
             option.dataset.department = user.department || '';
@@ -9431,14 +9760,46 @@ async function loadEmployees() {
             option.dataset.country = user.country || '';
             option.dataset.channel = user.channel || '';
             employeeSelect.appendChild(option);
+            addedCount++;
         });
+        
+        console.log(`Successfully added ${addedCount} employees to dropdown`);
         
     } catch (error) {
         console.error('Error loading employees:', error);
+        console.error('Error stack:', error.stack);
         const employeeSelect = document.getElementById('employeeName');
-        employeeSelect.innerHTML = '<option value="">Error loading employees</option>';
+        if (employeeSelect) {
+            employeeSelect.innerHTML = `<option value="">Error: ${error.message || 'Failed to load employees'}</option>`;
+        }
     }
 }
+
+// Expose loadEmployees globally
+window.loadEmployees = loadEmployees;
+
+// Also try loading on window load as a final fallback
+window.addEventListener('load', async function() {
+    console.log('Window load event fired, checking employee dropdown...');
+    setTimeout(async () => {
+        const employeeSelect = document.getElementById('employeeName');
+        if (employeeSelect && employeeSelect.options.length <= 1) {
+            console.log('Window load fallback: Employee dropdown empty, attempting load...');
+            if (window.SupabaseUsers && window.SupabaseDB && typeof loadEmployees === 'function') {
+                try {
+                    await loadEmployees();
+                    console.log('Window load fallback succeeded! Options:', document.getElementById('employeeName')?.options.length);
+                } catch (error) {
+                    console.error('Window load fallback error:', error);
+                }
+            } else {
+                console.error('Window load fallback - missing dependencies. SupabaseUsers:', !!window.SupabaseUsers, 'SupabaseDB:', !!window.SupabaseDB);
+            }
+        } else {
+            console.log('Window load fallback - dropdown already populated:', employeeSelect?.options.length);
+        }
+    }, 500);
+});
 
 // Load channels from channels table
 async function loadChannels() {
@@ -9470,22 +9831,8 @@ async function loadChannels() {
             channelSelect.appendChild(option);
         });
         
-        // Set first channel as default if available
-        if (data.length > 0) {
-            channelSelect.value = data[0].name;
-            // Auto-select matching scorecard after a short delay to ensure scorecards are loaded
-            setTimeout(async () => {
-                await autoSelectScorecardByChannel(data[0].name);
-            }, 500);
-        } else {
-            // If no channels available, still auto-select first scorecard
-            setTimeout(async () => {
-                const scorecardSelect = document.getElementById('scorecardSelect');
-                if (scorecardSelect && (!scorecardSelect.value || scorecardSelect.value === '')) {
-                    await loadScorecards();
-                }
-            }, 500);
-        }
+        // Keep channel blank by default - no auto-selection
+        // Scorecards will be loaded without auto-selection when page loads
         
         console.log('Loaded channels from channels table:', data.map(c => c.name));
         
@@ -9733,7 +10080,9 @@ async function populateFormWithAuditData(audit) {
         if (employeeEmail) employeeEmail.value = audit.employee_email || '';
         if (employeeType) employeeType.value = audit.employee_type || '';
         if (employeeDepartment) employeeDepartment.value = audit.employee_department || '';
-        if (countryOfEmployee) countryOfEmployee.value = audit.country_of_employee || '';
+        if (countryOfEmployee) {
+            countryOfEmployee.value = audit.country_of_employee || '';
+        }
         
         // Populate interaction details
         const interactionId = document.getElementById('interactionId');
@@ -10133,11 +10482,6 @@ async function populateFormWithCalibrationSample(sampleAudit) {
 
         if (countryOfEmployee) {
             countryOfEmployee.value = sampleAudit.country_of_employee || '';
-            countryOfEmployee.disabled = true;
-            countryOfEmployee.style.backgroundColor = 'transparent';
-            countryOfEmployee.style.color = 'white';
-            countryOfEmployee.style.cursor = 'not-allowed';
-            countryOfEmployee.style.opacity = '0.9';
         }
 
         // Interaction details (read-only - from sample) - NOT in header, so gray background
@@ -10326,7 +10670,19 @@ async function populateFormWithCalibrationSample(sampleAudit) {
 
 // Audit Form Submission Handler
 
+// Wait for page to be fully ready
+function waitForPageReady() {
+    return new Promise((resolve) => {
+        if (document.readyState === 'complete') {
+            resolve();
+        } else {
+            window.addEventListener('load', resolve);
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOMContentLoaded fired in audit-form.html');
     // Header dropdown functionality
     const headerDropdownBtn = document.getElementById('headerDropdownBtn');
     const headerDropdownMenu = document.getElementById('headerDropdownMenu');
@@ -10399,6 +10755,58 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize form immediately - the submit handler will wait for Supabase
     initializeForm();
     
+    // Also try to load employees directly after a short delay as a backup
+    setTimeout(async () => {
+        console.log('Backup: Attempting to load employees directly...');
+        const employeeSelect = document.getElementById('employeeName');
+        if (employeeSelect) {
+            console.log('Employee select found, current options:', employeeSelect.options.length);
+            if (employeeSelect.options.length <= 1) {
+                console.log('Employee dropdown is empty, trying to load...');
+                if (window.SupabaseUsers && typeof loadEmployees === 'function') {
+                    try {
+                        await loadEmployees();
+                        console.log('Backup loadEmployees completed, options now:', document.getElementById('employeeName')?.options.length);
+                    } catch (error) {
+                        console.error('Backup loadEmployees error:', error);
+                    }
+                } else {
+                    console.error('Backup failed - SupabaseUsers:', !!window.SupabaseUsers, 'loadEmployees:', typeof loadEmployees);
+                }
+            } else {
+                console.log('Employee dropdown already has options:', employeeSelect.options.length);
+            }
+        } else {
+            console.error('Employee select element not found in backup attempt');
+        }
+    }, 1500);
+    
+    // Also try to load employees directly after a short delay as a backup
+    setTimeout(async () => {
+        console.log('Backup: Attempting to load employees directly...');
+        const employeeSelect = document.getElementById('employeeName');
+        if (employeeSelect) {
+            console.log('Employee select found, current options:', employeeSelect.options.length);
+            if (employeeSelect.options.length <= 1) {
+                console.log('Employee dropdown is empty, trying to load...');
+                if (window.SupabaseUsers && typeof loadEmployees === 'function') {
+                    try {
+                        await loadEmployees();
+                        console.log('Backup loadEmployees completed, options now:', document.getElementById('employeeName')?.options.length);
+                    } catch (error) {
+                        console.error('Backup loadEmployees error:', error);
+                    }
+                } else {
+                    console.error('Backup failed - SupabaseUsers:', !!window.SupabaseUsers, 'loadEmployees:', typeof loadEmployees);
+                }
+            } else {
+                console.log('Employee dropdown already has options:', employeeSelect.options.length);
+            }
+        } else {
+            console.error('Employee select element not found in backup attempt');
+        }
+    }, 1500);
+    
     function initializeForm() {
         // Check if user is an Employee and hide create manual audit button
         try {
@@ -10436,8 +10844,82 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Form element found:', auditForm);
         
-        // Load scorecards when page loads
-        loadScorecards();
+        // Load employees when page loads (with retry logic)
+        (async function() {
+            let attempts = 0;
+            const maxAttempts = 20; // Increase attempts
+            while (attempts < maxAttempts) {
+                try {
+                    // Wait for SupabaseUsers and SupabaseDB to be available
+                    if (!window.SupabaseUsers || !window.SupabaseDB) {
+                        console.log(`Waiting for Supabase (attempt ${attempts + 1}/${maxAttempts})... SupabaseUsers: ${!!window.SupabaseUsers}, SupabaseDB: ${!!window.SupabaseDB}`);
+                        attempts++;
+                        if (attempts < maxAttempts) {
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            continue;
+                        }
+                    }
+                    
+                    // Check if loadEmployees function exists
+                    if (typeof loadEmployees === 'function') {
+                        await loadEmployees();
+                        // Check if employees were loaded successfully
+                        const employeeSelect = document.getElementById('employeeName');
+                        if (employeeSelect && employeeSelect.options.length > 1) {
+                            console.log('Employees loaded successfully');
+                            break;
+                        }
+                    } else {
+                        console.warn('loadEmployees function not yet available, waiting...');
+                    }
+                } catch (error) {
+                    console.error('Error loading employees (attempt ' + (attempts + 1) + '):', error);
+                }
+                attempts++;
+                if (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            }
+            
+            // Final check - if still not loaded, show error in dropdown
+            const employeeSelect = document.getElementById('employeeName');
+            if (employeeSelect && employeeSelect.options.length <= 1) {
+                console.error('Failed to load employees after all attempts');
+                console.error('SupabaseUsers available:', !!window.SupabaseUsers);
+                console.error('loadEmployees function available:', typeof loadEmployees);
+                employeeSelect.innerHTML = '<option value="">Failed to load employees. Please refresh the page.</option>';
+            }
+        })();
+        
+        // Also try loading employees after a longer delay as a fallback
+        setTimeout(async () => {
+            const employeeSelect = document.getElementById('employeeName');
+            if (employeeSelect && employeeSelect.options.length <= 1) {
+                console.log('Fallback: Attempting to load employees after delay...');
+                console.log('SupabaseUsers available:', !!window.SupabaseUsers);
+                console.log('SupabaseDB available:', !!window.SupabaseDB);
+                console.log('loadEmployees function available:', typeof loadEmployees);
+                if (window.SupabaseUsers && window.SupabaseDB && typeof loadEmployees === 'function') {
+                    try {
+                        await loadEmployees();
+                        const finalCheck = document.getElementById('employeeName');
+                        if (finalCheck && finalCheck.options.length > 1) {
+                            console.log('Fallback succeeded! Employees loaded.');
+                        } else {
+                            console.error('Fallback failed - employees still not loaded');
+                        }
+                    } catch (error) {
+                        console.error('Fallback loadEmployees error:', error);
+                        console.error('Error stack:', error.stack);
+                    }
+                } else {
+                    console.error('Fallback cannot run - dependencies not available');
+                }
+            }
+        }, 3000);
+        
+        // Load scorecards when page loads (without auto-selecting)
+        loadScorecards(null, null, true); // skipAutoSelect = true
         
         // Initialize sort dropdown
         const sortBy = document.getElementById('auditSortBy');
@@ -10549,9 +11031,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Load your stats when page loads
         updateYourStats();
         
-        // Load employees when page loads
-        loadEmployees();
-        
         // Check if we're editing an existing audit from URL parameters
         // Wait for dependencies to load: Supabase, scorecards, and employees
         setTimeout(async () => {
@@ -10609,12 +11088,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentParameters = [];
                     document.getElementById('scorecardInfo').style.display = 'none';
                     clearErrorParameters();
+                    updateHeaderMetadata(); // Hide background score when scorecard is cleared
+                    showNoScorecardMessage();
                 }
             });
         }
         
         // Load employees when page loads
-        loadEmployees();
+        // Load employees (already handled in initializeForm above)
+        // loadEmployees();
         
         // Load channels from users' teams
         loadChannels();
@@ -10792,21 +11274,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             isSubmitting = true;
             
-            // Show smart loader
-            const loader = document.getElementById('auditSubmitLoader');
-            if (loader) {
-                loader.classList.add('show');
-            }
-            
             console.log('===== FORM SUBMISSION STARTED =====');
             
             // Validate scorecard selection
             if (!currentScorecard || !currentParameters || currentParameters.length === 0) {
-                // Hide loader if validation fails
-                const loader = document.getElementById('auditSubmitLoader');
-                if (loader) {
-                    loader.classList.remove('show');
-                }
                 await window.confirmationDialog.show({
                     title: 'No Scorecard Selected',
                     message: 'Please select a scorecard before submitting the audit.',
@@ -10826,11 +11297,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!window.supabaseClient) {
-                // Hide loader if Supabase client not ready
-                const loader = document.getElementById('auditSubmitLoader');
-                if (loader) {
-                    loader.classList.remove('show');
-                }
                 await window.confirmationDialog.show({
                     title: 'Initialization Error',
                     message: 'Supabase client not initialized. Please refresh the page and try again.',
@@ -10884,11 +11350,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Validate interaction ID is provided
             const interactionIdField = document.getElementById('interactionId');
             if (!interactionIdField || !interactionIdField.value || !interactionIdField.value.trim()) {
-                // Hide loader if validation fails
-                const loader = document.getElementById('auditSubmitLoader');
-                if (loader) {
-                    loader.classList.remove('show');
-                }
                 await window.confirmationDialog.show({
                     title: 'Validation Error',
                     message: 'Interaction ID is required. Please enter an Interaction ID before submitting.',
@@ -10928,13 +11389,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     const feedbackCount = Math.min(errorCount, 10);
                     for (let i = 0; i < feedbackCount; i++) {
                         const feedbackId = `feedback_${param.field_id}_${i}`;
-                        const feedbackField = document.getElementById(feedbackId);
-                        if (!feedbackField || !feedbackField.value || !feedbackField.value.trim()) {
-                            validationErrors.push(`Feedback is required for "${param.error_name}" (Feedback ${i + 1} of ${feedbackCount})`);
-                            if (feedbackField) {
+                        let hasContent = false;
+                        
+                        // Check Quill editor first (if it exists)
+                        if (quillInstances.has(feedbackId)) {
+                            const quill = quillInstances.get(feedbackId);
+                            const htmlContent = quill.root.innerHTML;
+                            // Check if content is not empty (Quill returns '<p><br></p>' for empty)
+                            hasContent = htmlContent && htmlContent.trim() && htmlContent !== '<p><br></p>';
+                            
+                            // Update border color for visual feedback
+                            const container = quill.root.closest('.quill-editor-container');
+                            if (container) {
+                                const qlContainer = container.querySelector('.ql-container');
+                                if (qlContainer) {
+                                    if (!hasContent) {
+                                        qlContainer.style.borderColor = '#ef4444';
+                                    } else {
+                                        qlContainer.style.borderColor = '#10b981';
+                                    }
+                                }
+                            }
+                        } else {
+                            // Fallback to textarea for backward compatibility
+                            const feedbackField = document.getElementById(feedbackId);
+                            hasContent = feedbackField && feedbackField.value && feedbackField.value.trim();
+                            if (feedbackField && !hasContent) {
                                 feedbackField.style.borderColor = '#ef4444';
                                 feedbackField.focus();
                             }
+                        }
+                        
+                        if (!hasContent) {
+                            validationErrors.push(`Feedback is required for "${param.error_name}" (Feedback ${i + 1} of ${feedbackCount})`);
                         }
                     }
                 }
@@ -10942,11 +11429,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // If there are validation errors, show them and stop submission
             if (validationErrors.length > 0) {
-                // Hide loader if validation fails
-                const loader = document.getElementById('auditSubmitLoader');
-                if (loader) {
-                    loader.classList.remove('show');
-                }
                 await window.confirmationDialog.show({
                     title: 'Validation Error',
                     message: 'Please fill in all required feedback fields:\n\n' + validationErrors.slice(0, 5).join('\n') + (validationErrors.length > 5 ? `\n... and ${validationErrors.length - 5} more` : ''),
@@ -10973,12 +11455,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 const feedbacks = [];
                 const feedbackContainer = document.getElementById(`feedback_container_${param.field_id}`);
                 if (feedbackContainer) {
+                    // Get feedback from Quill editors
+                    const quillContainers = feedbackContainer.querySelectorAll('.quill-editor-container');
+                    quillContainers.forEach((container, index) => {
+                        const feedbackId = `feedback_${param.field_id}_${index}`;
+                        if (quillInstances.has(feedbackId)) {
+                            const quill = quillInstances.get(feedbackId);
+                            const htmlContent = quill.root.innerHTML;
+                            // Check if content is not empty (Quill returns '<p><br></p>' for empty)
+                            if (htmlContent && htmlContent.trim() && htmlContent !== '<p><br></p>') {
+                                // Sanitize HTML before storing
+                                const sanitized = DOMPurify.sanitize(htmlContent, {
+                                    ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a'],
+                                    ALLOWED_ATTR: ['href', 'target', 'rel'],
+                                    ALLOW_DATA_ATTR: false
+                                });
+                                if (sanitized && sanitized.trim() && sanitized !== '<p><br></p>') {
+                                    feedbacks.push(sanitized.trim());
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Fallback to textareas for backward compatibility (shouldn't happen with new code)
+                    if (feedbacks.length === 0) {
                     const feedbackTextareas = feedbackContainer.querySelectorAll(`textarea[id^="feedback_${param.field_id}_"]`);
                     feedbackTextareas.forEach(textarea => {
                         if (textarea.value && textarea.value.trim()) {
-                            feedbacks.push(textarea.value.trim());
+                                // Convert plain text to HTML
+                                const plainText = textarea.value.trim();
+                                const htmlText = plainText.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                                feedbacks.push(htmlText);
                         }
                     });
+                    }
                 }
                 auditData[`feedback_${param.field_id}`] = feedbacks.length > 0 ? feedbacks : null;
                 
@@ -11463,12 +11973,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                // Hide loader before showing success message
-                const loader = document.getElementById('auditSubmitLoader');
-                if (loader) {
-                    loader.classList.remove('show');
-                }
-                
                 // Show success message
                 // Clear timer state after successful submission
                 if (window.clearTimerState) {
@@ -11535,12 +12039,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (err) {
                 console.error('Exception saving to Supabase:', err);
                 console.error('Exception stack:', err.stack);
-                
-                // Hide loader on error
-                const loader = document.getElementById('auditSubmitLoader');
-                if (loader) {
-                    loader.classList.remove('show');
-                }
                 
                 await window.confirmationDialog.show({
                     title: 'Error Saving Audit',
@@ -11618,6 +12116,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
+        
+        // Add event listener for interaction date to update header metadata
+        const interactionDateField = document.getElementById('interactionDate');
+        if (interactionDateField) {
+            interactionDateField.addEventListener('change', function() {
+                if (typeof updateHeaderMetadata === 'function') {
+                    updateHeaderMetadata();
+                }
+            });
+        }
+        
+        // Country field is now a readonly input (like department), no hidden field needed
+        
+        // Initialize header metadata on form load (call immediately and also with delay)
+        if (typeof updateHeaderMetadata === 'function') {
+            updateHeaderMetadata();
+        }
+        // Also call after a delay to ensure all fields are initialized
+        setTimeout(function() {
+            if (typeof updateHeaderMetadata === 'function') {
+                updateHeaderMetadata();
+            }
+        }, 500);
     } // End of initializeForm()
     // Check for assignment parameter in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -12136,11 +12657,29 @@ async function loadAssignmentFromURL(assignmentId) {
                             // Set feedback values
                             for (let index = 0; index < feedbackArray.length; index++) {
                                 const feedback = feedbackArray[index];
-                                const feedbackTextarea = document.getElementById(`feedback_${param.field_id}_${index}`);
+                                const feedbackId = `feedback_${param.field_id}_${index}`;
+                                
+                                // Check if Quill editor exists
+                                if (quillInstances.has(feedbackId)) {
+                                    const quill = quillInstances.get(feedbackId);
+                                    // Check if feedback is HTML or plain text
+                                    if (feedback && feedback.trim().startsWith('<') && feedback.includes('>')) {
+                                        // It's HTML, set directly
+                                        quill.root.innerHTML = feedback;
+                                    } else if (feedback) {
+                                        // It's plain text, convert to HTML
+                                        const htmlText = feedback.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                                        quill.root.innerHTML = htmlText;
+                                    }
+                                    console.log(`✅ Set feedback ${param.field_id}_${index} (${param.error_name})`);
+                                } else {
+                                    // Fallback to textarea for backward compatibility
+                                    const feedbackTextarea = document.getElementById(feedbackId);
                                 if (feedbackTextarea && feedback) {
                                     feedbackTextarea.value = feedback;
                                     feedbackTextarea.dispatchEvent(new Event('input', { bubbles: true }));
                                     console.log(`✅ Set feedback ${param.field_id}_${index} (${param.error_name})`);
+                                    }
                                 }
                             }
                         }
@@ -12235,7 +12774,9 @@ function calculateErrorsByCategory() {
     const categoryCounts = {
         'Critical Fail Error': 0,
         'Critical Error': 0,
-        'Significant Error': 0
+        'Significant Error': 0,
+        'Major Error': 0,
+        'Minor Error': 0
     };
     
     const scoringType = currentScorecard ? currentScorecard.scoring_type : 'deductive';
@@ -12273,7 +12814,7 @@ function calculateErrorsByCategory() {
         }
     });
     
-    // Update fields
+    // Update hidden fields for form submission (only fields that exist in database)
     const criticalFailField = document.getElementById('criticalFailError');
     const criticalField = document.getElementById('criticalErrors');
     const significantField = document.getElementById('significantError');
@@ -12281,6 +12822,7 @@ function calculateErrorsByCategory() {
     if (criticalFailField) criticalFailField.value = categoryCounts['Critical Fail Error'];
     if (criticalField) criticalField.value = categoryCounts['Critical Error'];
     if (significantField) significantField.value = categoryCounts['Significant Error'];
+    // Note: Major and Minor errors are tracked for display but not saved to database
     
     return categoryCounts;
 }
@@ -12318,6 +12860,8 @@ function calculateAverageScore() {
     let criticalFailCount = 0;
     let criticalCount = 0;
     let significantCount = 0;
+    let majorCount = 0;
+    let minorCount = 0;
     let totalErrorsCount = 0;
     
     currentParameters.forEach(param => {
@@ -12363,33 +12907,69 @@ function calculateAverageScore() {
                 criticalFailCount += errorCount;
             } else if (severity === 'Critical') {
                 criticalCount += errorCount;
-            } else if (severity === 'Significant' || severity === 'Major' || severity === 'Minor') {
-                // For now, Significant, Major, and Minor all count as significant errors
-                // This maintains backward compatibility with existing error counting
+            } else if (severity === 'Significant') {
                 significantCount += errorCount;
+            } else if (severity === 'Major') {
+                majorCount += errorCount;
+            } else if (severity === 'Minor') {
+                minorCount += errorCount;
             }
             
             totalErrorsCount += errorCount;
         }
     });
     
-    // Update hidden error count fields for form submission
+    // Update hidden error count fields for form submission (only fields that exist in database)
     const criticalErrorsField = document.getElementById('criticalErrors');
     const criticalFailErrorField = document.getElementById('criticalFailError');
     const significantErrorField = document.getElementById('significantError');
     const totalErrorsField = document.getElementById('totalErrorsCount');
     
-    // Update display fields
+    // Update display divs
+    const totalErrorsDisplay = document.getElementById('totalErrorsCountDisplay');
     const criticalFailErrorDisplay = document.getElementById('criticalFailErrorDisplay');
+    const criticalErrorsDisplay = document.getElementById('criticalErrorsDisplay');
+    const significantErrorDisplay = document.getElementById('significantErrorDisplay');
+    const majorErrorDisplay = document.getElementById('majorErrorDisplay');
+    const minorErrorDisplay = document.getElementById('minorErrorDisplay');
     
+    // Update hidden fields for form submission (only fields that exist in database)
     if (criticalErrorsField) criticalErrorsField.value = criticalCount;
     if (criticalFailErrorField) criticalFailErrorField.value = criticalFailCount;
     if (significantErrorField) significantErrorField.value = significantCount;
     if (totalErrorsField) totalErrorsField.value = totalErrorsCount;
-    if (criticalFailErrorDisplay) criticalFailErrorDisplay.value = criticalFailCount;
+    
+    // Update display divs (Major and Minor are display-only, not saved to database)
+    if (totalErrorsDisplay) totalErrorsDisplay.textContent = totalErrorsCount;
+    if (criticalFailErrorDisplay) criticalFailErrorDisplay.textContent = criticalFailCount;
+    if (criticalErrorsDisplay) criticalErrorsDisplay.textContent = criticalCount;
+    if (significantErrorDisplay) significantErrorDisplay.textContent = significantCount;
+    if (majorErrorDisplay) majorErrorDisplay.textContent = majorCount;
+    if (minorErrorDisplay) minorErrorDisplay.textContent = minorCount;
+    
+    // Update Error Counts section background color dynamically
+    const errorCountsSection = document.getElementById('errorCountsSection');
+    if (errorCountsSection) {
+        const hasErrors = totalErrorsCount > 0;
+        const bgColor = hasErrors ? '#fee2e2' : '#d1fae5'; // Light red if errors, light green if no errors
+        const borderColor = hasErrors ? '#fecaca' : '#a7f3d0'; // Light red border or light green border
+        const textColor = hasErrors ? '#991b1b' : '#065f46'; // Dark red text or dark green text
+        
+        errorCountsSection.style.background = bgColor;
+        errorCountsSection.style.borderColor = borderColor;
+        
+        // Update label colors
+        const labels = errorCountsSection.querySelectorAll('p');
+        labels.forEach(label => {
+            label.style.color = textColor;
+        });
+    }
     
     // Update passing status based on score and threshold
     updatePassingStatus(score);
+    
+    // Update header metadata and background score
+    updateHeaderMetadata();
     
     return score;
 }
@@ -12585,6 +13165,186 @@ function updatePassingStatus(score) {
             }
         }
     }
+    
+    // Update header metadata and background score
+    updateHeaderMetadata();
+}
+
+// Update header metadata cards and background score
+function updateHeaderMetadata() {
+    const metadataContainer = document.getElementById('headerMetadataCards');
+    const backgroundScoreContainer = document.getElementById('headerBackgroundScore');
+    const headerScoreValue = document.getElementById('headerScoreValue');
+    const headerElement = document.getElementById('auditFormHeader');
+    
+    if (!metadataContainer) {
+        console.warn('headerMetadataCards container not found');
+        return;
+    }
+    
+    if (!backgroundScoreContainer) {
+        console.warn('headerBackgroundScore container not found');
+    }
+    
+    // Get current values
+    const averageScoreField = document.getElementById('averageScore');
+    const passingStatusField = document.getElementById('passingStatus');
+    const totalErrorsField = document.getElementById('totalErrorsCount');
+    const quarterField = document.getElementById('quarter');
+    const weekField = document.getElementById('week');
+    const interactionDateField = document.getElementById('interactionDate');
+    
+    const averageScore = averageScoreField ? parseFloat(averageScoreField.value) || 0 : 0;
+    const passingStatus = passingStatusField ? passingStatusField.value || '' : '';
+    const totalErrors = totalErrorsField ? parseInt(totalErrorsField.value) || 0 : 0;
+    
+    // Get quarter and week - try hidden fields first, then calculate if needed
+    let quarter = quarterField ? quarterField.value || '' : '';
+    let week = weekField ? weekField.value || '' : '';
+    
+    // If quarter/week are empty, calculate from current date
+    if (!quarter || !week) {
+        const now = new Date();
+        if (!quarter) {
+            const month = now.getMonth() + 1;
+            if (month >= 1 && month <= 3) quarter = 'Q1';
+            else if (month >= 4 && month <= 6) quarter = 'Q2';
+            else if (month >= 7 && month <= 9) quarter = 'Q3';
+            else if (month >= 10 && month <= 12) quarter = 'Q4';
+        }
+        if (!week) {
+            // Calculate week number
+            const startOfYear = new Date(now.getFullYear(), 0, 1);
+            const dayOfWeek = startOfYear.getDay();
+            const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const mondayOfWeek1 = new Date(startOfYear);
+            mondayOfWeek1.setDate(startOfYear.getDate() + daysToMonday);
+            mondayOfWeek1.setHours(0, 0, 0, 0);
+            const dateDay = now.getDay();
+            const dateDaysToMonday = dateDay === 0 ? -6 : 1 - dateDay;
+            const mondayOfDateWeek = new Date(now);
+            mondayOfDateWeek.setDate(now.getDate() + dateDaysToMonday);
+            mondayOfDateWeek.setHours(0, 0, 0, 0);
+            const daysSinceWeek1 = Math.floor((mondayOfDateWeek - mondayOfWeek1) / (24 * 60 * 60 * 1000));
+            week = Math.floor(daysSinceWeek1 / 7) + 1;
+        }
+    }
+    
+    const interactionDate = interactionDateField ? interactionDateField.value : '';
+    
+    // Format date - use current date if interaction date is empty
+    let formattedDate = 'N/A';
+    let dateToFormat = interactionDate;
+    if (!dateToFormat) {
+        // Use current date/time as default
+        const now = new Date();
+        const day = now.getDate();
+        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        const month = months[now.getMonth()];
+        const year = now.getFullYear();
+        let hours = now.getHours();
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        formattedDate = `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+    } else {
+        const date = new Date(dateToFormat);
+        if (!isNaN(date.getTime())) {
+            const day = date.getDate();
+            const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            let hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            formattedDate = `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+        }
+    }
+    
+    // Determine status icon
+    let statusIcon = '';
+    if (passingStatus) {
+        const passingStatusLower = passingStatus.toLowerCase();
+        const isPassing = passingStatusLower.includes('pass') && !passingStatusLower.includes('not');
+        statusIcon = isPassing ? '✓ ' : '✗ ';
+    }
+    
+    // Format quarter (ensure Q prefix)
+    const formattedQuarter = quarter ? (quarter.toString().startsWith('Q') ? quarter : 'Q' + quarter) : 'N/A';
+    
+    // Escape HTML helper
+    function escapeHtml(text) {
+        if (text == null) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Build metadata cards HTML
+    const metadataCardsHtml = `
+        <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+            <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Date</p>
+            <p style="font-size: 0.4852rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(formattedDate)}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+            <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Qtr</p>
+            <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(formattedQuarter)}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+            <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Week</p>
+            <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(week || 'N/A')}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+            <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Errors</p>
+            <p style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(totalErrors.toString())}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+            <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Status</p>
+            <p id="headerStatusDisplay" style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${statusIcon}${escapeHtml(passingStatus || 'N/A')}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+            <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Score</p>
+            <p id="headerScoreDisplay" style="font-size: 0.6064rem; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; line-height: 1.2;">${escapeHtml(averageScore.toFixed(0))}%</p>
+        </div>
+    `;
+    
+    // Always render metadata cards, even if values are empty
+    if (metadataContainer) {
+        metadataContainer.innerHTML = metadataCardsHtml;
+    } else {
+        console.error('Metadata container not found when trying to render cards');
+    }
+    
+    // Update background score (only show when scorecard is loaded)
+    // Check if a scorecard is loaded - only show background score if scorecard exists
+    if (currentScorecard && backgroundScoreContainer) {
+        // Determine score text color based on passing status
+        const passingStatusLower = passingStatus.toLowerCase();
+        const isPassingForScore = passingStatusLower.includes('pass') && !passingStatusLower.includes('not');
+        const scoreTextColor = isPassingForScore 
+            ? 'rgba(10, 50, 30, 0.4)' // Darker green for passing
+            : 'rgba(100, 10, 10, 0.4)'; // Darker red for not passing
+        
+        // Set the score value (including 0 when max deductions are applied)
+        if (headerScoreValue) {
+            headerScoreValue.textContent = averageScore.toFixed(0);
+        }
+        
+        // Update background score color
+        const scoreSpan = backgroundScoreContainer.querySelector('span');
+        if (scoreSpan) {
+            scoreSpan.style.color = scoreTextColor;
+        }
+        
+        // Display the background score (will show 0 if max deductions are applied)
+        backgroundScoreContainer.style.display = 'flex';
+    } else {
+        // Hide background score when no scorecard is loaded
+        if (backgroundScoreContainer) {
+            backgroundScoreContainer.style.display = 'none';
+        }
+    }
 }
 
 // Calculate total errors count (Dynamic)
@@ -12622,10 +13382,34 @@ function calculateTotalErrorsCount() {
         totalCount += count;
     });
     
-    // Update total errors count field
+    // Update total errors count field (hidden input for form submission)
     const totalErrorsField = document.getElementById('totalErrorsCount');
     if (totalErrorsField) {
         totalErrorsField.value = totalCount;
+    }
+    
+    // Update display div
+    const totalErrorsDisplay = document.getElementById('totalErrorsCountDisplay');
+    if (totalErrorsDisplay) {
+        totalErrorsDisplay.textContent = totalCount;
+    }
+    
+    // Update Error Counts section background color dynamically
+    const errorCountsSection = document.getElementById('errorCountsSection');
+    if (errorCountsSection) {
+        const hasErrors = totalCount > 0;
+        const bgColor = hasErrors ? '#fee2e2' : '#d1fae5'; // Light red if errors, light green if no errors
+        const borderColor = hasErrors ? '#fecaca' : '#a7f3d0'; // Light red border or light green border
+        const textColor = hasErrors ? '#991b1b' : '#065f46'; // Dark red text or dark green text
+        
+        errorCountsSection.style.background = bgColor;
+        errorCountsSection.style.borderColor = borderColor;
+        
+        // Update label colors
+        const labels = errorCountsSection.querySelectorAll('p');
+        labels.forEach(label => {
+            label.style.color = textColor;
+        });
     }
     
     return totalCount;
@@ -15213,7 +15997,9 @@ window.submitDummyAudit = async function() {
             if (employeeName && employeeName.tagName === 'INPUT') employeeName.value = 'John Doe';
             if (employeeEmail) employeeEmail.value = 'john.doe@example.com';
             if (employeeType) employeeType.value = 'Employee';
-            if (countryOfEmployee) countryOfEmployee.value = 'Bangladesh';
+            if (countryOfEmployee) {
+                countryOfEmployee.value = 'Bangladesh';
+            }
             console.log('✓ Filled employee info (dummy)');
         }
         
@@ -15608,11 +16394,29 @@ async function loadConversationDataIntoForm(conversationData) {
                             // Set feedback values
                             for (let index = 0; index < feedbackArray.length; index++) {
                                 const feedback = feedbackArray[index];
-                                const feedbackTextarea = document.getElementById(`feedback_${param.field_id}_${index}`);
+                                const feedbackId = `feedback_${param.field_id}_${index}`;
+                                
+                                // Check if Quill editor exists
+                                if (quillInstances.has(feedbackId)) {
+                                    const quill = quillInstances.get(feedbackId);
+                                    // Check if feedback is HTML or plain text
+                                    if (feedback && feedback.trim().startsWith('<') && feedback.includes('>')) {
+                                        // It's HTML, set directly
+                                        quill.root.innerHTML = feedback;
+                                    } else if (feedback) {
+                                        // It's plain text, convert to HTML
+                                        const htmlText = feedback.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                                        quill.root.innerHTML = htmlText;
+                                    }
+                                    console.log(`✅ Set feedback ${param.field_id}_${index}`);
+                                } else {
+                                    // Fallback to textarea for backward compatibility
+                                    const feedbackTextarea = document.getElementById(feedbackId);
                                 if (feedbackTextarea && feedback) {
                                     feedbackTextarea.value = feedback;
                                     feedbackTextarea.dispatchEvent(new Event('input', { bubbles: true }));
                                     console.log(`✅ Set feedback ${param.field_id}_${index}`);
+                                    }
                                 }
                             }
                         }
