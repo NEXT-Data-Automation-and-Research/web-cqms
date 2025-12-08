@@ -152,12 +152,22 @@ class SidebarLoader {
 <nav class="sidebar collapsed" role="navigation" aria-label="Main navigation">
     <!-- Sidebar Header -->
     <div class="sidebar-header">
-        <button class="sidebar-brand-btn" role="button" tabindex="0" aria-label="NEXT QMS">
-            <svg class="brand-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
-                <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm491-80h69v-69l-69 69Zm-457 0h73l120-120h85L452-200h64l120-120h85L541-200h65l120-120h34v-440H200v509l69-69h85L434-200Zm72-200-56-56 177-177 80 80 147-147 56 56-203 204-80-80-121 120Z"/>
-            </svg>
-            <span class="brand-text">NEXT QMS</span>
-        </button>
+        <div class="sidebar-header-top">
+            <button class="sidebar-brand-btn" role="button" tabindex="0" aria-label="NEXT QMS">
+                <div class="brand-content-wrapper">
+                    <svg class="brand-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+                        <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm491-80h69v-69l-69 69Zm-457 0h73l120-120h85L452-200h64l120-120h85L541-200h65l120-120h34v-440H200v509l69-69h85L434-200Zm72-200-56-56 177-177 80 80 147-147 56 56-203 204-80-80-121 120Z"/>
+                    </svg>
+                    <div class="brand-text-row">
+                        <span class="brand-text">NEXT QMS</span>
+                        <span class="beta-chip">beta</span>
+                    </div>
+                </div>
+                <div class="brand-version-container">
+                    <span class="brand-version">v1.0.0</span>
+                </div>
+            </button>
+        </div>
     </div>
     
     <!-- Main Navigation Menu -->

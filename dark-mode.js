@@ -102,11 +102,11 @@ class DarkModeManager {
       return;
     }
 
-    // Find sidebar header
-    const sidebarHeader = document.querySelector('.sidebar-header');
+    // Find sidebar header top row (where brand button is)
+    const sidebarHeaderTop = document.querySelector('.sidebar-header-top');
     
-    if (!sidebarHeader) {
-      // Retry after a short delay if sidebar header not found yet
+    if (!sidebarHeaderTop) {
+      // Retry after a short delay if sidebar header top not found yet
       setTimeout(() => this.addToggleButton(), 100);
       return;
     }
@@ -128,8 +128,8 @@ class DarkModeManager {
       this.toggle();
     });
 
-    // Add button to sidebar header
-    sidebarHeader.appendChild(toggleButton);
+    // Add button to sidebar header top row
+    sidebarHeaderTop.appendChild(toggleButton);
 
     // Update button state
     this.updateToggleButton(currentTheme);
