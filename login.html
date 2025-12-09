@@ -393,22 +393,24 @@
                     <div id="googleError" class="password-error"></div>
                 </div>
                 
-                <div class="divider">
-                    <span>or</span>
+                <div id="emailPasswordSection" style="display: none;">
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+                    
+                    <!-- Email/Password Login (Secondary Method) -->
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" class="form-input" placeholder="Enter your email address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+                        <div id="passwordError" class="password-error"></div>
+                    </div>
+                    <button type="submit" class="btn-primary">Login</button>
+                    <a href="#" class="link-primary" id="forgotPasswordLink">Forgot your password?</a>
                 </div>
-                
-                <!-- Email/Password Login (Secondary Method) -->
-                <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" class="form-input" placeholder="Enter your email address" required>
-                </div>
-                <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
-                    <div id="passwordError" class="password-error"></div>
-                </div>
-                <button type="submit" class="btn-primary">Login</button>
-                <a href="#" class="link-primary" id="forgotPasswordLink">Forgot your password?</a>
             </form>
             
             <!-- Reset Password Form -->
@@ -433,6 +435,15 @@
     <script src="supabase-config.js"></script>
     <script src="confirmation-dialog.js"></script>
     <script>
+        // Check localStorage for is_dev flag
+        const isDev = localStorage.getItem('is_dev') === 'true';
+        const emailPasswordSection = document.getElementById('emailPasswordSection');
+        
+        // Show email/password section only if is_dev is true
+        if (isDev) {
+            emailPasswordSection.style.display = 'block';
+        }
+        
         const form = document.getElementById('loginForm');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
