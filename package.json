@@ -1,5 +1,5 @@
 {
-  "name": "web-qms-v2",
+  "name": "web-CQMS-v2",
   "version": "1.0.0",
   "scripts": {
     "build:config": "node scripts/generate-env-config.js",

@@ -1,6 +1,6 @@
 /**
  * Search Functionality
- * Provides search capabilities across the QMS
+ * Provides search capabilities across the CQMS
  */
 
 class SearchManager {

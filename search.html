@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Search | QMS</title>
+<title>Search | CQMS</title>
 <meta name="description" content="Search Quality Management System">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAtOTYwIDk2MCA5NjAiIHdpZHRoPSIyNHB4IiBmaWxsPSIjMWY5ZTRiIj48cGF0aCBkPSJNMjAwLTEyMHEtMzMgMC01Ni41LTIzLjVUMTIwLTIwMHYtNTYwcTAtMzMgMjMuNS01Ni41VDIwMC04NDBoNTYwcTMzIDAgNTYuNSAyMy41VDg0MC03NjB2NTYwcTAgMzMtMjMuNSA1Ni41VDc2MC0xMjBIMjAwWm00OTEtODBoNjl2LTY5bC02OSA2OVptLTQ1NyAwaDczbDEyMC0xMjBoODVMNDUyLTIwMGg2NGwxMjAtMTIwaDg1TDU0MS0yMDBoNjVsMTIwLTEyMGgzNHYtNDQwSDIwMHY1MDlsNjktNjloODVMNDM0LTIwMFptNzItMjAwLTU2LTU2IDE3Ny0xNzcgODAgODAgMTQ3LTE0NyA1NiA1Ni0yMDMgMjA0LTgwLTgwLTEyMSAxMjBaIi8+PC9zdmc+">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -608,7 +608,7 @@
     <div class="search-page-container">
         <!-- Search Header -->
         <div class="search-header">
-            <h1 class="search-title">Search QMS</h1>
+            <h1 class="search-title">Search CQMS</h1>
             <p class="search-subtitle">Find pages, features, and information across the Quality Management System</p>
             
             <!-- Search Input -->
@@ -1434,7 +1434,7 @@ class SearchPage {
     // Recent Searches
     loadRecentSearches() {
         try {
-            const stored = localStorage.getItem('qms_recent_searches')
+            const stored = localStorage.getItem('CQMS_recent_searches')
             return stored ? JSON.parse(stored) : []
         } catch (e) {
             return []
@@ -1455,7 +1455,7 @@ class SearchPage {
         
         // Save to localStorage
         try {
-            localStorage.setItem('qms_recent_searches', JSON.stringify(this.recentSearches))
+            localStorage.setItem('CQMS_recent_searches', JSON.stringify(this.recentSearches))
         } catch (e) {
             console.error('Failed to save recent searches:', e)
         }
@@ -1490,7 +1490,7 @@ class SearchPage {
     removeRecentSearch(query) {
         this.recentSearches = this.recentSearches.filter(s => s !== query)
         try {
-            localStorage.setItem('qms_recent_searches', JSON.stringify(this.recentSearches))
+            localStorage.setItem('CQMS_recent_searches', JSON.stringify(this.recentSearches))
         } catch (e) {
             console.error('Failed to save recent searches:', e)
         }

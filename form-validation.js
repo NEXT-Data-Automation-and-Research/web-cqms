@@ -1,6 +1,6 @@
 /**
  * Form Validation System
- * Provides comprehensive form validation for the QMS
+ * Provides comprehensive form validation for the CQMS
  */
 
 class FormValidator {

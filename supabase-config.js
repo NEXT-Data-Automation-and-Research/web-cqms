@@ -1,6 +1,6 @@
 /**
  * Supabase Configuration and Client Setup
- * This file initializes the Supabase client for the QMS application
+ * This file initializes the Supabase client for the CQMS application
  * Reads configuration from environment variables via window.env
  * Make sure env-config.js is loaded before this file
  */

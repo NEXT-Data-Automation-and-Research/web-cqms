@@ -13,7 +13,7 @@ const supabaseAnonKey = window.SupabaseConfig?.anonKey || '';
 
 const CONVERSATION_CACHE_PREFIX = 'admin_conversations_cache_';
 const CACHE_EXPIRY_HOURS = 24; // Cache expires after 24 hours
-const INDEXEDDB_DB_NAME = 'QMSConversationCache';
+const INDEXEDDB_DB_NAME = 'CQMSConversationCache';
 const INDEXEDDB_STORE_NAME = 'conversations';
 const INDEXEDDB_VERSION = 1;
 

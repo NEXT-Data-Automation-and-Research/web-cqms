@@ -1,6 +1,6 @@
 /**
  * Keyboard Shortcuts Manager
- * Provides global and page-specific keyboard shortcuts for the QMS application
+ * Provides global and page-specific keyboard shortcuts for the CQMS application
  */
 
 class KeyboardShortcuts {

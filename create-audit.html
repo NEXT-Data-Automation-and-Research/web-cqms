@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Create Audit | QMS</title>
+<title>Create Audit | CQMS</title>
 <meta name="description" content="Quality Management System Dashboard">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAtOTYwIDk2MCA5NjAiIHdpZHRoPSIyNHB4IiBmaWxsPSIjMWY5ZTRiIj48cGF0aCBkPSJNMjAwLTEyMHEtMzMgMC01Ni41LTIzLjVUMTIwLTIwMHYtNTYwcTAtMzMgMjMuNS01Ni41VDIwMC04NDBoNTYwcTMzIDAgNTYuNSAyMy41VDg0MC03NjB2NTYwcTAgMzMtMjMuNSA1Ni41VDc2MC0xMjBIMjAwWm00OTEtODBoNjl2LTY5bC02OSA2OVptLTQ1NyAwaDczbDEyMC0xMjBoODVMNDUyLTIwMGg2NGwxMjAtMTIwaDg1TDU0MS0yMDBoNjVsMTIwLTEyMGgzNHYtNDQwSDIwMHY1MDlsNjktNjloODVMNDM0LTIwMFptNzItMjAwLTU2LTU2IDE3Ny0xNzcgODAgODAgMTQ3LTE0NyA1NiA1Ni0yMDMgMjA0LTgwLTgwLTEyMSAxMjBaIi8+PC9zdmc+">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6909,7 +6909,7 @@ async function findAdminIdForCurrentUser(userEmail) {
 
 const CONVERSATION_CACHE_PREFIX = 'conversations_cache_';
 const CACHE_EXPIRY_HOURS = 24; // Cache expires after 24 hours
-const INDEXEDDB_DB_NAME = 'QMSConversationCache';
+const INDEXEDDB_DB_NAME = 'CQMSConversationCache';
 const INDEXEDDB_STORE_NAME = 'conversations';
 const INDEXEDDB_VERSION = 1;
 
@@ -15844,7 +15844,7 @@ async function loadATAOriginalAudit() {
         }
         
         // Update page title
-        document.title = 'ATA Review | QMS';
+        document.title = 'ATA Review | CQMS';
         const pageHeading = document.querySelector('.page-heading');
         if (pageHeading) {
             pageHeading.textContent = 'Audit The Auditor (ATA) Review';

@@ -3,7 +3,7 @@
 ## File Overview
 - **File**: `create-audit.html`
 - **Size**: ~17,632 lines
-- **Purpose**: Quality Management System (QMS) page for creating and managing audit assignments
+- **Purpose**: Quality Management System (CQMS) page for creating and managing audit assignments
 - **Framework**: Vanilla JavaScript with Supabase backend
 - **UI**: Tailwind CSS with custom styles
 
