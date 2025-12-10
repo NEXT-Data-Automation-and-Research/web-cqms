@@ -70,12 +70,12 @@
             grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
             gap: 0.75rem;
             margin-bottom: 1.125rem;
-            margin-top: 1.5rem;
+            margin-top: 0.5rem;
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
             position: relative;
-            padding-top: 1rem;
+            padding-top: 0.5rem;
         }
         
         @media (min-width: 1200px) {
@@ -485,6 +485,12 @@
             cursor: not-allowed;
         }
 
+        /* Loading Spinner Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
     </style>
 
 </head>
@@ -496,7 +502,7 @@
     <div style="margin-bottom: 1.125rem; width: 100%;"></div>
 
     <!-- Action Buttons -->
-    <div class="header-actions" style="margin-top: 2rem; margin-bottom: 1.125rem;">
+    <div class="header-actions" style="margin-top: 2rem; margin-bottom: 0.5rem;">
         <!-- Week Navigation -->
         <div style="display: flex; align-items: center; gap: 0.5625rem;">
             <button class="action-btn" id="prevWeekBtn" style="padding: 0.4688rem 0.5625rem;" title="Previous Week">
@@ -922,8 +928,14 @@
             </div>
         </div>
 
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; width: 100%;">
+        <div style="width: 2.5rem; height: 2.5rem; border: 0.25rem solid #e5e7eb; border-top-color: #1A733E; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
+        <p style="font-size: 0.75rem; color: #6b7280; font-family: 'Poppins', sans-serif; margin: 0;">Loading audits...</p>
+    </div>
+
     <!-- Audit List -->
-    <div id="auditList" style="display: flex; flex-direction: column; gap: 0.5625rem; width: 100%;">
+    <div id="auditList" style="display: none; flex-direction: column; gap: 0.5625rem; width: 100%;">
         <!-- Audits will be dynamically loaded here -->
     </div>
 
@@ -1318,8 +1330,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!window.supabaseClient) {
             console.error('Supabase client not available after waiting');
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
             // Show error message to user
             if (auditList) {
+                auditList.style.display = 'flex';
                 auditList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #ef4444;">Error: Could not connect to database. Please refresh the page.</div>';
             }
             return;
@@ -1331,7 +1347,11 @@ document.addEventListener('DOMContentLoaded', function() {
             await loadScorecards();
         } catch (error) {
             console.error('Error during initialization:', error);
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
             if (auditList) {
+                auditList.style.display = 'flex';
                 auditList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #ef4444;">Error loading audits. Please check the console for details.</div>';
             }
         }
@@ -1340,13 +1360,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start initialization
     initializePage();
     
+    // Safety timeout: Hide loading indicator after 30 seconds if still showing
+    // This prevents the loading indicator from showing forever if something goes wrong
+    setTimeout(() => {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator && loadingIndicator.style.display !== 'none') {
+            console.warn('Loading indicator still visible after 30 seconds, hiding it as safety measure');
+            loadingIndicator.style.display = 'none';
+            const auditList = document.getElementById('auditList');
+            if (auditList && auditList.style.display === 'none') {
+                auditList.style.display = 'flex';
+            }
+        }
+    }, 30000);
+    
     // Load audits from Supabase
     async function loadAudits(forceRefresh = false) {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const auditList = document.getElementById('auditList');
+        
         try {
             if (!window.supabaseClient) {
                 console.error('Supabase client not initialized');
+                // Hide loading indicator on error
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
+                if (auditList) auditList.style.display = 'flex';
                 return;
             }
+            
+            // Show loading indicator
+            if (loadingIndicator) loadingIndicator.style.display = 'flex';
+            if (auditList) auditList.style.display = 'none';
             
             // Check cache first (unless force refresh)
             if (!forceRefresh) {
@@ -1354,10 +1398,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (cachedAudits && Array.isArray(cachedAudits) && cachedAudits.length >= 0) {
                     console.log('Loading audits from cache...');
                     allAudits = cachedAudits;
+                    // Don't hide loading indicator here - let renderAudits() handle it
                     // Ensure filters are applied after loading from cache
                     // Use setTimeout to ensure DOM is ready and filters are initialized
-                    setTimeout(() => {
-                        filterAudits();
+                    setTimeout(async () => {
+                        try {
+                            await filterAudits();
+                        } catch (error) {
+                            console.error('Error in filterAudits:', error);
+                            // Hide loading indicator on error
+                            if (loadingIndicator) loadingIndicator.style.display = 'none';
+                            if (auditList) auditList.style.display = 'flex';
+                        }
                     }, 0);
                     return;
                 }
@@ -1661,8 +1713,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.updateAcknowledgmentBadgeCount();
             }
             
+            // Don't hide loading indicator here - let renderAudits() handle it
             // Apply filters (which will update statistics and render)
-            filterAudits();
+            await filterAudits();
         } catch (error) {
             console.error('Error loading audits:', error);
             console.error('Stack trace:', error.stack);
@@ -1672,8 +1725,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Clear cache on error
             clearCache();
             
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            
             // Show error in UI
             if (auditList) {
+                auditList.style.display = 'flex';
                 auditList.innerHTML = `<div style="padding: 2rem; text-align: center; color: #ef4444;">
                     <p>Error loading audits: ${error.message}</p>
                     <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">Please check the console for more details.</p>
@@ -2366,9 +2424,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render audits
     async function renderAudits() {
+        // Hide loading indicator first (always hide it, even if there's an error)
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
         
-        await updateStatistics();
-        calculatePagination();
+        try {
+            await updateStatistics();
+            calculatePagination();
         
         // Update audits count display
         if (auditsCount) {
@@ -2393,6 +2455,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update pagination UI
         updatePaginationUI();
+        } catch (error) {
+            console.error('Error in renderAudits:', error);
+            // Loading indicator is already hidden at the start of the function
+            // Show error message
+            if (auditList) {
+                auditList.style.display = 'flex';
+                auditList.innerHTML = `<div style="padding: 2rem; text-align: center; color: #ef4444;">
+                    <p>Error rendering audits: ${error.message}</p>
+                </div>`;
+            }
+        }
     }
     
     // Helper function to normalize passing status (handles both old and new values)
