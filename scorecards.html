@@ -1372,29 +1372,25 @@ async function loadDeductiveScorecardTemplate() {
     // Define all error parameters based on the scoring system
     const errorParameters = [
         // Critical Fail Error (50)
-        { error_name: 'Error Leading to a Loss of Business', penalty_points: 50, parameter_type: 'error', error_category: 'Critical Fail Error', field_type: 'counter', field_id: 'error_loss_business', description: 'Error that directly results in customer leaving or cancelling service', is_fail_all: true },
-        { error_name: 'Zero Tolerance', penalty_points: 50, parameter_type: 'error', error_category: 'Critical Fail Error', field_type: 'counter', field_id: 'zero_tolerance', description: 'Violation of zero tolerance policy or major compliance breach', is_fail_all: true },
+        { error_name: 'Revenue or Policy Violation', penalty_points: 50, parameter_type: 'error', error_category: 'Critical Fail Error', field_type: 'counter', field_id: 'revenue_or_policy_violation', description: 'Any action, statement, or omission that causes (or could cause) financial loss, misleads clients about payment structure, or violates the latest FundedNext pricing/policy documentation', is_fail_all: true },
+        { error_name: 'Confidentiality Breach', penalty_points: 50, parameter_type: 'error', error_category: 'Critical Fail Error', field_type: 'counter', field_id: 'confidentiality_breach', description: 'Any instance where restricted information (as per FundedNext\'s Data Classification Policy) is exposed externally — intentionally or not', is_fail_all: true },
+        { error_name: 'Unprofessional Conduct', penalty_points: 50, parameter_type: 'error', error_category: 'Critical Fail Error', field_type: 'counter', field_id: 'unprofessional_conduct', description: 'Any written or implied disrespect, mockery, bias, or emotional outburst directed toward the client', is_fail_all: true },
         
-        // Critical Error (10)
-        { error_name: 'Incorrect Information', penalty_points: 10, parameter_type: 'error', error_category: 'Critical Error', field_type: 'counter', field_id: 'incorrect_information', description: 'Providing wrong information to customer that could cause confusion or issues', is_fail_all: false },
-        { error_name: 'Lack of Professionalism', penalty_points: 10, parameter_type: 'error', error_category: 'Critical Error', field_type: 'counter', field_id: 'lack_professionalism', description: 'Unprofessional behavior, language, or tone during interaction', is_fail_all: false },
-        { error_name: 'Lack of Escalation/Unnecessary Escalation', penalty_points: 10, parameter_type: 'error', error_category: 'Critical Error', field_type: 'counter', field_id: 'escalation_issue', description: 'Failed to escalate when needed, or escalated unnecessarily', is_fail_all: false },
-        { error_name: 'Lack of Investigation', penalty_points: 10, parameter_type: 'error', error_category: 'Critical Error', field_type: 'counter', field_id: 'lack_investigation', description: 'Insufficient investigation into customer issue or concern', is_fail_all: false },
+        // Critical Error (30)
+        { error_name: 'Incomplete Resolution Before Closure', penalty_points: 30, parameter_type: 'error', error_category: 'Critical Error', field_type: 'counter', field_id: 'complete_resolution_before_closure', description: 'Deduct if chat was closed prematurely or the client indicates unresolved concern post-closure', is_fail_all: true },
+        { error_name: 'Incorrect / Misleading Information (non-revenue)', penalty_points: 30, parameter_type: 'error', error_category: 'Critical Error', field_type: 'counter', field_id: 'incorrect_misleading_information_non_revenue', description: 'Any factual inaccuracy unrelated to revenue (rules, procedures, features, timing, or verification) that contradicts official resources', is_fail_all: true },
+        { error_name: 'Operational Diligence', penalty_points: 30, parameter_type: 'error', error_category: 'Critical Error', field_type: 'counter', field_id: 'operational_diligence', description: 'When the agent fails to investigate a client concern using internal systems or mismanages escalation workflow', is_fail_all: true },
         
-        // Significant Error (10)
-        { error_name: 'Lack of Empathy', penalty_points: 10, parameter_type: 'error', error_category: 'Significant Error', field_type: 'counter', field_id: 'lack_empathy', description: 'Not showing appropriate understanding or concern for customer situation', is_fail_all: false },
-        { error_name: 'Lack of Knowledge', penalty_points: 10, parameter_type: 'error', error_category: 'Significant Error', field_type: 'counter', field_id: 'lack_knowledge', description: 'Lacking necessary product or service knowledge to assist customer', is_fail_all: false },
-        { error_name: 'Lack of Information about Internal Communications', penalty_points: 10, parameter_type: 'error', error_category: 'Significant Error', field_type: 'counter', field_id: 'lack_internal_comms', description: 'Not properly communicating or following up internally as required', is_fail_all: false },
+        // Major Error
+        { error_name: 'Professional & Empathetic Tone', penalty_points: 15, parameter_type: 'error', error_category: 'Significant Error', field_type: 'counter', field_id: 'professional_and_empathetic_tone', description: 'Agent fails to emotionally mirror or acknowledge the client\'s state. Deduction applies when tone lacks warmth, patience, or personalization', is_fail_all: false },
+        { error_name: 'Ownership & Resolution Clarity', penalty_points: 15, parameter_type: 'error', error_category: 'Significant Error', field_type: 'counter', field_id: 'ownership_and_resolutionclarity', description: 'Deduct when the agent doesn\'t communicate ownership — e.g., "That\'s handled by another team" without guidance', is_fail_all: false },
+        { error_name: 'Clear & Logical Communication', penalty_points: 10, parameter_type: 'error', error_category: 'Significant Error', field_type: 'counter', field_id: 'clear_logical_communication', description: 'Agent\'s response lacks flow or coherence. Deduct when the conversation confuses the client due to poor ordering, excessive verbosity, or combining multiple subjects without clarity', is_fail_all: false },
+        { error_name: 'Brand Tone & Etiquette', penalty_points: 10, parameter_type: 'error', error_category: 'Significant Error', field_type: 'counter', field_id: 'brand_tone_and_etiquette', description: 'Deduct when chat lacks agreed upon opening or incorrect branding of the FundedNext name', is_fail_all: false },
         
-        // Major Error (5)
-        { error_name: 'Missing Information', penalty_points: 5, parameter_type: 'error', error_category: 'Major Error', field_type: 'counter', field_id: 'missing_information', description: 'Important information missing from interaction or documentation', is_fail_all: false },
-        { error_name: 'Outdated Macro Usage', penalty_points: 5, parameter_type: 'error', error_category: 'Major Error', field_type: 'counter', field_id: 'outdated_macro', description: 'Using outdated templates, macros, or scripts', is_fail_all: false },
-        { error_name: 'Information Overload', penalty_points: 5, parameter_type: 'error', error_category: 'Major Error', field_type: 'counter', field_id: 'information_overload', description: 'Providing too much information at once, overwhelming the customer', is_fail_all: false },
-        { error_name: 'Grammatical Errors', penalty_points: 5, parameter_type: 'error', error_category: 'Major Error', field_type: 'counter', field_id: 'grammatical_errors', description: 'Spelling or grammar mistakes in written communication', is_fail_all: false },
-        
-        // Minor Error (2.5)
-        { error_name: 'Inadequate engagement/excessive engagement', penalty_points: 2.5, parameter_type: 'error', error_category: 'Minor Error', field_type: 'counter', field_id: 'engagement_issue', description: 'Too little or too much customer engagement during interaction', is_fail_all: false },
-        { error_name: 'Missing Minimal information', penalty_points: 2.5, parameter_type: 'error', error_category: 'Minor Error', field_type: 'counter', field_id: 'missing_minimal_info', description: 'Minor information gaps that do not significantly impact service delivery', is_fail_all: false }
+        // Minor Error (5)
+        { error_name: 'Review Link / Sales Approach Post-Positive Interaction', penalty_points: 5, parameter_type: 'error', error_category: 'Minor Error', field_type: 'counter', field_id: 'reviewlink_sales_approach_post_positive_interaction', description: 'Failing to send a public review link when client expresses satisfaction', is_fail_all: false },
+        { error_name: 'Grammar', penalty_points: 5, parameter_type: 'error', error_category: 'Minor Error', field_type: 'counter', field_id: 'grammar_deduction', description: 'Deduct for noticeable grammar issues that reduce professionalism', is_fail_all: false },
+        { error_name: 'Celebrate Achievements', penalty_points: 5, parameter_type: 'error', error_category: 'Minor Error', field_type: 'counter', field_id: 'celebrate_achievements', description: 'Deduct when agent overlooks opportunities to celebrate client success (e.g., "passed challenge," "got payout")', is_fail_all: false },
     ];
     
     // Add all parameters to the form
@@ -2814,18 +2810,27 @@ function downloadCSVTemplate() {
     
     if (scoringType === 'deductive') {
         csvContent += 'Loss of Business,50,error,Critical Fail Error,counter,error_loss_business,"Error that directly results in customer leaving","Check if the conversation resulted in customer cancellation or service termination",true,true\n';
-        csvContent += 'Zero Tolerance,50,error,Critical Fail Error,counter,zero_tolerance,"Violation of zero tolerance policy","Identify any violations of company zero tolerance policies",true,true\n';
-        csvContent += 'Incorrect Information,10,error,Critical Error,counter,incorrect_info,"Providing wrong information to customer","Detect instances where incorrect information was provided",true,false\n';
-        csvContent += 'Lack of Professionalism,10,error,Critical Error,counter,lack_professionalism,"Unprofessional behavior or language","Identify unprofessional language or behavior",true,false\n';
-        csvContent += 'Grammatical Errors,5,error,Major Error,counter,grammatical_errors,"Spelling or grammar mistakes in communication","Find spelling or grammar errors in the conversation",false,false\n';
+        csvContent += 'Revenue or Policy Violation,50,error,Critical Fail Error,counter,revenue_or_policy_violation,"Any action that causes financial loss or violates pricing/policy","Identify revenue or policy violations",true,true\n';
+        csvContent += 'Confidentiality Breach,50,error,Critical Fail Error,counter,confidentiality_breach,"Exposure of restricted information externally","Identify confidentiality breaches",true,true\n';
+        csvContent += 'Unprofessional Conduct,50,error,Critical Fail Error,counter,unprofessional_conduct,"Disrespect, mockery, bias, or emotional outburst","Identify unprofessional conduct",true,true\n';
+        csvContent += 'Incomplete Resolution Before Closure,30,error,Critical Error,counter,complete_resolution_before_closure,"Chat closed prematurely with unresolved concerns","Detect incomplete resolution before closure",true,true\n';
+        csvContent += 'Incorrect / Misleading Information (non-revenue),30,error,Critical Error,counter,incorrect_misleading_information_non_revenue,"Factual inaccuracy unrelated to revenue","Detect incorrect non-revenue information",true,true\n';
+        csvContent += 'Operational Diligence,30,error,Critical Error,counter,operational_diligence,"Failure to investigate or mismanage escalation","Identify operational diligence issues",true,true\n';
+        csvContent += 'Professional & Empathetic Tone,15,error,Significant Error,counter,professional_and_empathetic_tone,"Lack of emotional mirroring or acknowledgment","Assess professional and empathetic tone",true,false\n';
+        csvContent += 'Ownership & Resolution Clarity,15,error,Significant Error,counter,ownership_and_resolutionclarity,"Lack of ownership communication","Evaluate ownership and resolution clarity",true,false\n';
+        csvContent += 'Clear & Logical Communication,10,error,Significant Error,counter,clear_logical_communication,"Lack of flow or coherence in response","Assess communication clarity and logic",true,false\n';
+        csvContent += 'Brand Tone & Etiquette,10,error,Significant Error,counter,brand_tone_and_etiquette,"Missing greeting/closing or incorrect branding","Check brand tone and etiquette",true,false\n';
+        csvContent += 'Review Link / Sales Approach Post-Positive Interaction,5,error,Minor Error,counter,reviewlink_sales_approach_post_positive_interaction,"Failing to send review link when client satisfied","Check for missed review link opportunities",true,false\n';
+        csvContent += 'Grammar,5,error,Minor Error,counter,grammar_deduction,"Noticeable grammar issues","Find grammar or spelling mistakes",false,false\n';
+        csvContent += 'Celebrate Achievements,5,error,Minor Error,counter,celebrate_achievements,"Overlooking opportunities to celebrate client success","Check for missed celebration opportunities",false,false\n';
     } else if (scoringType === 'additive') {
         csvContent += 'Excellent Empathy,10,achievement,Critical,radio,excellent_empathy,"Demonstrating exceptional understanding and care","Assess if the agent showed exceptional empathy and understanding",true,false\n';
         csvContent += 'Proactive Solution,10,achievement,Critical,radio,proactive_solution,"Offering solutions before customer asks","Check if solutions were offered proactively",true,false\n';
         csvContent += 'Clear Communication,5,achievement,Major,radio,clear_communication,"Clear and concise explanations","Evaluate if communication was clear and concise",false,false\n';
         csvContent += 'Good Engagement,5,achievement,Major,radio,good_engagement,"Active listening and appropriate engagement","Assess level of engagement and active listening",false,false\n';
     } else {
-        csvContent += 'Loss of Business,50,error,Critical Fail Error,counter,error_loss_business,"Error that directly results in customer leaving","Check if the conversation resulted in customer cancellation",true,true\n';
-        csvContent += 'Incorrect Information,10,error,Critical Error,counter,incorrect_info,"Providing wrong information to customer","Detect instances where incorrect information was provided",true,false\n';
+        csvContent += 'Revenue or Policy Violation,50,error,Critical Fail Error,counter,revenue_or_policy_violation,"Any action that causes financial loss or violates pricing/policy","Identify revenue or policy violations",true,true\n';
+        csvContent += 'Incomplete Resolution Before Closure,30,error,Critical Error,counter,complete_resolution_before_closure,"Chat closed prematurely with unresolved concerns","Detect incomplete resolution before closure",true,true\n';
         csvContent += 'Excellent Empathy,10,achievement,Critical,radio,excellent_empathy,"Demonstrating exceptional understanding and care","Assess if the agent showed exceptional empathy",true,false\n';
         csvContent += 'Exceptional Service,15,bonus,Major,radio,exceptional_service,"Going above and beyond expectations","Evaluate if service exceeded expectations",false,false\n';
     }
