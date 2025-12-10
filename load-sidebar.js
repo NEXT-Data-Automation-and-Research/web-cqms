@@ -248,11 +248,11 @@ class SidebarLoader {
         </li>
 
         <li role="none">
-            <button class="menu-item" role="menuitem" tabindex="0" aria-label="Reversal">
+            <button class="menu-item" role="menuitem" tabindex="0" aria-label="Reversal Management">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
-                <span>Reversal</span>
+                <span>Reversal Management</span>
                 <span class="notification-badge" id="reversalNotificationBadge" style="display: none;">0</span>
                 <span class="notification-badge" id="employeeReversalNotificationBadge" style="display: none;">0</span>
             </button>
@@ -740,7 +740,7 @@ class SidebarLoader {
       "Audit Reports": "audit-reports.html",
       Performance: "employee-performance.html",
       "Coaching & Remediation": "coaching-remediation.html",
-      Reversal: "reversal.html",
+      "Reversal Management": "reversal.html",
       "Improvement Corner": "improvement-corner.html",
       Calibration: "calibration.html",
       ATA: "ata.html",
@@ -775,7 +775,7 @@ class SidebarLoader {
       "scorecards.html": "Scorecards",
       "employee-performance.html": "Performance",
       "coaching-remediation.html": "Coaching & Remediation",
-      "reversal.html": "Reversal",
+      "reversal.html": "Reversal Management",
       "improvement-corner.html": "Improvement Corner",
       "calibration.html": "Calibration",
       "ata.html": "ATA",
