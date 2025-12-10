@@ -632,10 +632,10 @@ function updateCreateButtonText() {
   
   const buttonTexts = {
     'all': 'Create Event',
-    'session': 'Schedule Session',
-    'meeting': 'Schedule Meeting',
-    'feedback': 'Schedule Feedback Session',
-    'training': 'Schedule Training Session'
+    'session': 'Create Session',
+    'meeting': 'Create Meeting',
+    'feedback': 'Create Feedback Session',
+    'training': 'Create Training Session'
   };
   
   buttonText.textContent = buttonTexts[currentFilter] || 'Create Event';
@@ -1539,10 +1539,10 @@ function renderEvents() {
   if (filteredEvents.length === 0) {
     const buttonTexts = {
       'all': 'Create Event',
-      'session': 'Schedule Session',
-      'meeting': 'Schedule Meeting',
-      'feedback': 'Schedule Feedback Session',
-      'training': 'Schedule Training Session'
+      'session': 'Create Session',
+      'meeting': 'Create Meeting',
+      'feedback': 'Create Feedback Session',
+      'training': 'Create Training Session'
     };
     const emptyStateButtonText = buttonTexts[currentFilter] || 'Create Event';
     
