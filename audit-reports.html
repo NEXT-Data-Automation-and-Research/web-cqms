@@ -3448,20 +3448,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Fallback to default fields if no parameters loaded
         if (errorFields.length === 0) {
             errorFields = [
-                { key: 'error_loss_business', label: 'Loss of Business', feedback: 'feedback_error_loss_business', severity: 'Critical Fail' },
-                { key: 'zero_tolerance', label: 'Zero Tolerance', feedback: 'feedback_zero_tolerance', severity: 'Critical Fail' },
-                { key: 'incorrect_info', label: 'Incorrect Information', feedback: 'feedback_incorrect_info', severity: 'Critical' },
-                { key: 'lack_professionalism', label: 'Lack of Professionalism', feedback: 'feedback_lack_professionalism', severity: 'Critical' },
-                { key: 'lack_escalation', label: 'Lack of Escalation', feedback: 'feedback_lack_escalation', severity: 'Critical' },
-                { key: 'lack_investigation', label: 'Lack of Investigation', feedback: 'feedback_lack_investigation', severity: 'Critical' },
-                { key: 'lack_empathy', label: 'Lack of Empathy', feedback: 'feedback_lack_empathy', severity: 'Significant' },
-                { key: 'lack_knowledge', label: 'Lack of Knowledge', feedback: 'feedback_lack_knowledge', severity: 'Significant' },
-                { key: 'lack_internal_comm', label: 'Lack of Internal Communication', feedback: 'feedback_lack_internal_comm', severity: 'Significant' },
-                { key: 'missing_info', label: 'Missing Information', feedback: 'feedback_missing_info', severity: 'Significant' },
-                { key: 'outdated_macro', label: 'Outdated Macro', feedback: 'feedback_outdated_macro', severity: 'Significant' },
-                { key: 'grammatical_errors', label: 'Grammatical Errors', feedback: 'feedback_grammatical_errors', severity: 'Significant' },
-                { key: 'info_overload', label: 'Information Overload', feedback: 'feedback_info_overload', severity: 'Significant' },
-                { key: 'inadequate_engagement', label: 'Inadequate Engagement', feedback: 'feedback_inadequate_engagement', severity: 'Significant' },
+                { key: 'revenue_or_policy_violation', label: 'Revenue or Policy Violation', feedback: 'feedback_revenue_or_policy_violation', severity: 'Critical Fail' },
+                { key: 'confidentiality_breach', label: 'Confidentiality Breach', feedback: 'feedback_confidentiality_breach', severity: 'Critical Fail' },
+                { key: 'unprofessional_conduct', label: 'Unprofessional Conduct', feedback: 'feedback_unprofessional_conduct', severity: 'Critical Fail' },
+                { key: 'complete_resolution_before_closure', label: 'Incomplete Resolution Before Closure', feedback: 'feedback_complete_resolution_before_closure', severity: 'Critical' },
+                { key: 'incorrect_misleading_information_non_revenue', label: 'Incorrect / Misleading Information (non-revenue)', feedback: 'feedback_incorrect_misleading_information_non_revenue', severity: 'Critical' },
+                { key: 'operational_diligence', label: 'Operational Diligence', feedback: 'feedback_operational_diligence', severity: 'Critical' },
+                { key: 'professional_and_empathetic_tone', label: 'Professional & Empathetic Tone', feedback: 'feedback_professional_and_empathetic_tone', severity: 'Significant' },
+                { key: 'ownership_and_resolutionclarity', label: 'Ownership & Resolution Clarity', feedback: 'feedback_ownership_and_resolutionclarity', severity: 'Significant' },
+                { key: 'clear_logical_communication', label: 'Clear & Logical Communication', feedback: 'feedback_clear_logical_communication', severity: 'Significant' },
+                { key: 'brand_tone_and_etiquette', label: 'Brand Tone & Etiquette', feedback: 'feedback_brand_tone_and_etiquette', severity: 'Significant' },
+                { key: 'reviewlink_sales_approach_post_positive_interaction', label: 'Review Link / Sales Approach Post-Positive Interaction', feedback: 'feedback_reviewlink_sales_approach_post_positive_interaction', severity: 'Minor' },
+                { key: 'grammar_deduction', label: 'Grammar', feedback: 'feedback_grammar_deduction', severity: 'Minor' },
+                { key: 'celebrate_achievements', label: 'Celebrate Achievements', feedback: 'feedback_celebrate_achievements', severity: 'Minor' },
                 { key: 'missing_minimal_info', label: 'Missing Minimal Information', feedback: 'feedback_missing_minimal_info', severity: 'Significant' }
             ];
         }
