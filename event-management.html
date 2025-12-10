@@ -1546,12 +1546,21 @@ function renderEvents() {
     };
     const emptyStateButtonText = buttonTexts[currentFilter] || 'Create Event';
     
+    const emptyStateMessages = {
+      'all': 'No events scheduled',
+      'session': 'No sessions scheduled',
+      'meeting': 'No meetings scheduled',
+      'feedback': 'No feedback sessions scheduled',
+      'training': 'No training events scheduled'
+    };
+    const emptyStateMessage = emptyStateMessages[currentFilter] || 'No events scheduled';
+    
     eventsList.innerHTML = `
       <div class="px-4 py-12 text-center">
         <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
         </svg>
-        <p class="text-sm font-semibold text-gray-700 mb-1">No ${currentFilter === 'all' ? '' : currentFilter} events scheduled</p>
+        <p class="text-sm font-semibold text-gray-700 mb-1">${emptyStateMessage}</p>
         <p class="text-xs text-gray-500 mb-4">Create your first event to get started</p>
         <button onclick="document.getElementById('createEventBtn').click()" class="px-4 py-2 bg-primary text-white text-xs font-semibold rounded hover:bg-primary-dark transition-colors">
           ${emptyStateButtonText}
