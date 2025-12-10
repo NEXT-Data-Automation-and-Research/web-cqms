@@ -132,27 +132,30 @@
                 
                 <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
                     <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Error Leading to a Loss of Business</span>
+                        <span class="font-semibold text-gray-800">Revenue or Policy Violation</span>
                         <span class="px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded">-50 pts</span>
                     </button>
                     <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                         <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Error that directly results in customer leaving or cancelling service.</p>
+                            <p><strong>Description:</strong> Any action, statement, or omission that causes (or could cause) financial loss, misleads clients about payment structure, or violates the latest FundedNext pricing/policy documentation. This includes using old macros or failing to check updates in pricing, payout, or promo eligibility.</p>
                             <div class="bg-red-50 p-3 rounded-lg">
                                 <p class="font-semibold text-red-900 mb-2">When to Apply:</p>
                                 <ul class="list-disc list-inside space-y-1 text-red-800 text-sm">
-                                    <li>Customer explicitly states they are cancelling due to the agent's error</li>
-                                    <li>Customer threatens to leave and follows through</li>
-                                    <li>Agent provides information that causes customer to cancel subscription/service</li>
-                                    <li>Critical data breach or privacy violation that leads to customer churn</li>
+                                    <li>Wrong challenge pricing / payout shared</li>
+                                    <li>Incorrect reward, bonus, or discount code information</li>
+                                    <li>Misapplied payment policy or fee</li>
+                                    <li>Shared outdated offer or incorrect challenge rule impacting revenue</li>
+                                    <li>Sharing incorrect information leading to a potential loss of client</li>
+                                    <li>Using outdated macros or failing to check updates in pricing, payout, or promo eligibility</li>
                                 </ul>
                             </div>
                             <div class="bg-yellow-50 p-3 rounded-lg">
                                 <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
                                 <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Agent incorrectly tells customer their account will be charged incorrectly, leading to cancellation</li>
-                                    <li>Agent accidentally deletes customer data that results in customer leaving</li>
-                                    <li>Agent is rude/disrespectful to a point where customer cancels</li>
+                                    <li>Agent shares incorrect challenge pricing that could lead to financial loss</li>
+                                    <li>Agent provides outdated bonus information that misleads the client</li>
+                                    <li>Agent uses old macros with outdated pricing information</li>
+                                    <li>Agent fails to verify current promo eligibility before responding</li>
                                 </ul>
                             </div>
                             <div class="bg-gray-50 p-3 rounded-lg">
@@ -165,72 +168,104 @@
 
                 <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
                     <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Zero Tolerance</span>
+                        <span class="font-semibold text-gray-800">Confidentiality Breach</span>
                         <span class="px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded">-50 pts</span>
                     </button>
                     <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                         <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Violation of zero tolerance policy or major compliance breach.</p>
+                            <p><strong>Description:</strong> Any instance where restricted information (as per FundedNext's Data Classification Policy) is exposed externally — intentionally or not. Includes screenshots of dashboards, revealing back-end tool names, process logic, internal communications, or private data.</p>
                             <div class="bg-red-50 p-3 rounded-lg">
                                 <p class="font-semibold text-red-900 mb-2">When to Apply:</p>
                                 <ul class="list-disc list-inside space-y-1 text-red-800 text-sm">
-                                    <li>Violation of company's zero tolerance policies (check your organization's specific policies)</li>
-                                    <li>Major compliance violations (GDPR, HIPAA, PCI-DSS, etc.)</li>
-                                    <li>Discriminatory language or behavior</li>
-                                    <li>Sharing confidential customer information inappropriately</li>
-                                    <li>Fraudulent activity or intentional misrepresentation</li>
+                                    <li>Sharing internal dashboards, screenshots, or tools</li>
+                                    <li>Revealing personal info (own, client, or colleague)</li>
+                                    <li>Copying internal messages or system outputs</li>
+                                    <li>Using unapproved attachments, text, or links</li>
                                 </ul>
                             </div>
                             <div class="bg-yellow-50 p-3 rounded-lg">
                                 <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
                                 <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Agent shares customer payment information with unauthorized party</li>
-                                    <li>Agent uses discriminatory language based on race, gender, religion, etc.</li>
-                                    <li>Agent intentionally misleads customer for personal gain</li>
-                                    <li>Violation of regulatory requirements that could result in legal action</li>
+                                    <li>Agent shares a screenshot of an internal dashboard with a client</li>
+                                    <li>Agent reveals back-end tool names or process logic to external parties</li>
+                                    <li>Agent copies internal messages or system outputs and shares them</li>
+                                    <li>Agent reveals personal information of themselves, a client, or colleague</li>
                                 </ul>
                             </div>
                             <div class="bg-gray-50 p-3 rounded-lg">
                                 <p class="font-semibold text-gray-900 mb-2">Important Notes:</p>
-                                <p class="text-gray-700 text-sm">This is an auto-fail error. Review your organization's zero tolerance policy document for specific violations.</p>
+                                <p class="text-gray-700 text-sm">This is an auto-fail error. Review FundedNext's Data Classification Policy for specific violations.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
+                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-gray-800">Unprofessional Conduct</span>
+                        <span class="px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded">-50 pts</span>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
+                        <div class="text-gray-700 space-y-3 w-full box-border">
+                            <p><strong>Description:</strong> Any written or implied disrespect, mockery, bias, or emotional outburst directed toward the client. Includes tone that damages trust, violates professional decorum, or fails FundedNext's brand of empathy and courtesy.</p>
+                            <div class="bg-red-50 p-3 rounded-lg">
+                                <p class="font-semibold text-red-900 mb-2">When to Apply:</p>
+                                <ul class="list-disc list-inside space-y-1 text-red-800 text-sm">
+                                    <li>Rude or sarcastic tone</li>
+                                    <li>Condescending or dismissive language</li>
+                                    <li>Cultural or discriminatory remark</li>
+                                    <li>Emotionally reactive or hostile behavior</li>
+                                </ul>
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Agent uses sarcastic or condescending language toward the client</li>
+                                    <li>Agent makes discriminatory remarks based on culture, race, gender, etc.</li>
+                                    <li>Agent displays emotionally reactive or hostile behavior</li>
+                                    <li>Agent's tone damages trust or violates professional decorum</li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="font-semibold text-gray-900 mb-2">Important Notes:</p>
+                                <p class="text-gray-700 text-sm">This is an auto-fail error. This error violates FundedNext's brand standards for empathy and courtesy.</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Critical Errors (10 points) -->
+            <!-- Critical Errors (30 points) -->
             <div class="mb-6">
-                <h3 class="text-xl font-semibold text-orange-700 mb-3 bg-orange-50 px-4 py-2 rounded-lg">Critical Errors (10 points)</h3>
+                <h3 class="text-xl font-semibold text-orange-700 mb-3 bg-orange-50 px-4 py-2 rounded-lg">Critical Errors (30 points)</h3>
                 
                 <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
                     <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Incorrect Information</span>
-                        <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">-10 pts</span>
+                        <span class="font-semibold text-gray-800">Incomplete Resolution Before Closure</span>
+                        <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">-30 pts</span>
                     </button>
                     <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                         <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Providing wrong information to customer that could cause confusion or issues.</p>
+                            <p><strong>Description:</strong> Deduct if chat was closed prematurely or the client indicates unresolved concern post-closure. Focus: ensuring full completion of the client's agenda.</p>
                             <div class="bg-orange-50 p-3 rounded-lg">
                                 <p class="font-semibold text-orange-900 mb-2">When to Apply:</p>
                                 <ul class="list-disc list-inside space-y-1 text-orange-800 text-sm">
-                                    <li>Agent provides factually incorrect information about products/services</li>
-                                    <li>Agent gives wrong pricing, dates, or deadlines</li>
-                                    <li>Agent misinforms customer about policies or procedures</li>
-                                    <li>Information provided could lead to customer taking incorrect action</li>
+                                    <li>Chat ended with unanswered queries</li>
+                                    <li>Chat Closed Intentionally</li>
+                                    <li>Chat closed due to Conversation Status</li>
+                                    <li>No confirmation before closing</li>
+                                    <li>Ignoring follow-up question right before exit</li>
+                                    <li>Communication of transferring chats, without assigning agent</li>
                                 </ul>
                             </div>
                             <div class="bg-yellow-50 p-3 rounded-lg">
                                 <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
                                 <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Agent says product costs $99 when it actually costs $149</li>
-                                    <li>Agent tells customer refund will process in 3 days when it takes 7-10 days</li>
-                                    <li>Agent provides incorrect account information</li>
+                                    <li>Agent closes chat while client still has pending questions</li>
+                                    <li>Agent closes chat without confirming resolution with the client</li>
+                                    <li>Agent tells client they will transfer the chat but doesn't actually assign an agent</li>
+                                    <li>Client indicates unresolved concern after chat closure</li>
                                 </ul>
-                            </div>
-                            <div class="bg-blue-50 p-3 rounded-lg">
-                                <p class="font-semibold text-blue-900 mb-2">Count Multiple Instances:</p>
-                                <p class="text-blue-800 text-sm">If agent provides multiple incorrect pieces of information, count each instance separately.</p>
                             </div>
                         </div>
                     </div>
@@ -238,149 +273,34 @@
 
                 <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
                     <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Lack of Professionalism</span>
-                        <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">-10 pts</span>
+                        <span class="font-semibold text-gray-800">Incorrect / Misleading Information (non-revenue)</span>
+                        <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">-30 pts</span>
                     </button>
                     <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                         <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Unprofessional behavior, language, or tone during interaction.</p>
+                            <p><strong>Description:</strong> Any factual inaccuracy unrelated to revenue (rules, procedures, features, timing, or verification) that contradicts official resources (FAQs, internal sheets, or SOPs). Applies when the agent fails to verify before responding.</p>
                             <div class="bg-orange-50 p-3 rounded-lg">
                                 <p class="font-semibold text-orange-900 mb-2">When to Apply:</p>
                                 <ul class="list-disc list-inside space-y-1 text-orange-800 text-sm">
-                                    <li>Using inappropriate language (profanity, slang, overly casual)</li>
-                                    <li>Sarcastic, condescending, or dismissive tone</li>
-                                    <li>Interrupting customer repeatedly</li>
-                                    <li>Making personal comments unrelated to the issue</li>
-                                    <li>Arguing with customer instead of de-escalating</li>
+                                    <li>Incorrect rule, feature, or challenge explanation</li>
+                                    <li>Outdated policy info</li>
+                                    <li>Incorrect information provided</li>
+                                    <li>Misinterpretation of FAQ or internal doc</li>
+                                    <li>Incorrect eligibility criteria</li>
                                 </ul>
                             </div>
                             <div class="bg-yellow-50 p-3 rounded-lg">
                                 <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
                                 <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>"Well, you should have read the terms..." (condescending)</li>
-                                    <li>Using profanity or inappropriate language</li>
-                                    <li>Rolling eyes or making dismissive gestures (in video calls)</li>
-                                    <li>Talking over the customer</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
-                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Lack of Escalation/Unnecessary Escalation</span>
-                        <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">-10 pts</span>
-                    </button>
-                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
-                        <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Failed to escalate when needed, or escalated unnecessarily.</p>
-                            <div class="bg-orange-50 p-3 rounded-lg">
-                                <p class="font-semibold text-orange-900 mb-2">When to Apply - Lack of Escalation:</p>
-                                <ul class="list-disc list-inside space-y-1 text-orange-800 text-sm">
-                                    <li>Customer requests supervisor/manager and agent refuses</li>
-                                    <li>Issue clearly requires higher authority (refunds over limit, policy exceptions)</li>
-                                    <li>Customer is extremely upset and escalation protocol requires it</li>
-                                    <li>Technical issue beyond agent's scope</li>
-                                </ul>
-                            </div>
-                            <div class="bg-orange-50 p-3 rounded-lg">
-                                <p class="font-semibold text-orange-900 mb-2">When to Apply - Unnecessary Escalation:</p>
-                                <ul class="list-disc list-inside space-y-1 text-orange-800 text-sm">
-                                    <li>Agent escalates simple issues they could handle themselves</li>
-                                    <li>Escalating without attempting to resolve first</li>
-                                    <li>Escalating issues that are clearly within agent's authority</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
-                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Lack of Investigation</span>
-                        <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">-10 pts</span>
-                    </button>
-                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
-                        <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Insufficient investigation into customer issue or concern.</p>
-                            <div class="bg-orange-50 p-3 rounded-lg">
-                                <p class="font-semibold text-orange-900 mb-2">When to Apply:</p>
-                                <ul class="list-disc list-inside space-y-1 text-orange-800 text-sm">
-                                    <li>Agent makes assumptions without checking account details</li>
-                                    <li>Doesn't review customer history before responding</li>
-                                    <li>Gives generic response without understanding specific issue</li>
-                                    <li>Doesn't ask clarifying questions when issue is unclear</li>
-                                    <li>Fails to check multiple systems/tools that might contain relevant information</li>
-                                </ul>
-                            </div>
-                            <div class="bg-yellow-50 p-3 rounded-lg">
-                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
-                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Customer says "I was charged twice" - agent doesn't check transaction history</li>
-                                    <li>Agent provides solution without understanding the root cause</li>
-                                    <li>Agent doesn't review notes from previous interactions</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Significant Errors (10 points) -->
-            <div class="mb-6">
-                <h3 class="text-xl font-semibold text-amber-700 mb-3 bg-amber-50 px-4 py-2 rounded-lg">Significant Errors (10 points)</h3>
-                
-                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
-                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Lack of Empathy</span>
-                        <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded">-10 pts</span>
-                    </button>
-                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
-                        <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Not showing appropriate understanding or concern for customer situation.</p>
-                            <div class="bg-amber-50 p-3 rounded-lg">
-                                <p class="font-semibold text-amber-900 mb-2">When to Apply:</p>
-                                <ul class="list-disc list-inside space-y-1 text-amber-800 text-sm">
-                                    <li>Customer expresses frustration/upset and agent responds mechanically</li>
-                                    <li>No acknowledgment of customer's emotional state</li>
-                                    <li>Using scripted responses without personalization</li>
-                                    <li>Minimizing customer's concerns</li>
-                                    <li>Not apologizing when company/agent error is evident</li>
-                                </ul>
-                            </div>
-                            <div class="bg-yellow-50 p-3 rounded-lg">
-                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
-                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Customer: "I've been waiting 3 hours!" Agent: "I understand. How can I help?" (too mechanical)</li>
-                                    <li>Customer: "This ruined my day" - Agent doesn't acknowledge the impact</li>
-                                    <li>Agent says "I understand" but tone and words don't show genuine concern</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
-                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Lack of Knowledge</span>
-                        <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded">-10 pts</span>
-                    </button>
-                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
-                        <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Lacking necessary product or service knowledge to assist customer.</p>
-                            <div class="bg-amber-50 p-3 rounded-lg">
-                                <p class="font-semibold text-amber-900 mb-2">When to Apply:</p>
-                                <ul class="list-disc list-inside space-y-1 text-amber-800 text-sm">
-                                    <li>Agent doesn't know basic product/service features</li>
-                                    <li>Unable to answer common questions about offerings</li>
-                                    <li>Doesn't use available resources (knowledge base, documentation) to find answers</li>
-                                    <li>Provides "I don't know" without offering to find out</li>
+                                    <li>Agent provides incorrect challenge rules that contradict official documentation</li>
+                                    <li>Agent shares outdated policy information</li>
+                                    <li>Agent misinterprets FAQ or internal documentation</li>
+                                    <li>Agent provides incorrect eligibility criteria for features or services</li>
                                 </ul>
                             </div>
                             <div class="bg-blue-50 p-3 rounded-lg">
                                 <p class="font-semibold text-blue-900 mb-2">Note:</p>
-                                <p class="text-blue-800 text-sm">This is different from "Incorrect Information" - here the agent admits they don't know, while "Incorrect Information" means they gave wrong information.</p>
+                                <p class="text-blue-800 text-sm">This applies to non-revenue related information. For revenue-related incorrect information, use "Revenue or Policy Violation" (50 points).</p>
                             </div>
                         </div>
                     </div>
@@ -388,20 +308,155 @@
 
                 <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
                     <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Lack of Information about Internal Communications</span>
+                        <span class="font-semibold text-gray-800">Operational Diligence</span>
+                        <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">-30 pts</span>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
+                        <div class="text-gray-700 space-y-3 w-full box-border">
+                            <p><strong>Description:</strong> When the agent fails to investigate a client concern using internal systems (APIs, dashboards, or databases) or mismanages escalation workflow — e.g., incomplete notes, wrong channel, missing context, or duplicate submission.</p>
+                            <div class="bg-orange-50 p-3 rounded-lg">
+                                <p class="font-semibold text-orange-900 mb-2">When to Apply:</p>
+                                <ul class="list-disc list-inside space-y-1 text-orange-800 text-sm">
+                                    <li>Missed or incomplete escalation</li>
+                                    <li>Skipped investigation or tool check</li>
+                                    <li>Duplicate escalation due to lack of verification</li>
+                                    <li>Incorrect routing or missing evidence</li>
+                                </ul>
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Agent doesn't check internal dashboards or APIs before responding</li>
+                                    <li>Agent escalates without proper investigation or verification</li>
+                                    <li>Agent creates duplicate escalations due to lack of verification</li>
+                                    <li>Agent escalates to wrong channel or with incomplete notes/context</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Major Errors -->
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-amber-700 mb-3 bg-amber-50 px-4 py-2 rounded-lg">Major Errors</h3>
+                
+                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
+                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-gray-800">Professional & Empathetic Tone</span>
+                        <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded">-15 pts</span>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
+                        <div class="text-gray-700 space-y-3 w-full box-border">
+                            <p><strong>Description:</strong> Agent fails to emotionally mirror or acknowledge the client's state. Deduction applies when tone lacks warmth, patience, or personalization — e.g., ignoring frustration, using templates without relevance, or making over-casual remarks.</p>
+                            <div class="bg-amber-50 p-3 rounded-lg">
+                                <p class="font-semibold text-amber-900 mb-2">When to Apply:</p>
+                                <ul class="list-disc list-inside space-y-1 text-amber-800 text-sm">
+                                    <li>Robotic or copy-pasted empathy line</li>
+                                    <li>Ignoring client emotion or frustration</li>
+                                    <li>Abrupt or cold phrasing</li>
+                                    <li>Tone mismatch (too formal or too casual)</li>
+                                    <li>Lack of Apology</li>
+                                    <li>Overuse of Macros, and Template</li>
+                                </ul>
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Agent uses generic empathy line without personalization: "I understand. How can I help?" when client is clearly frustrated</li>
+                                    <li>Agent ignores client's expressed frustration or emotional state</li>
+                                    <li>Agent uses abrupt or cold phrasing that lacks warmth</li>
+                                    <li>Agent overuses macros and templates without relevance to the situation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
+                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-gray-800">Ownership & Resolution Clarity</span>
+                        <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded">-15 pts</span>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
+                        <div class="text-gray-700 space-y-3 w-full box-border">
+                            <p><strong>Description:</strong> Deduct when the agent doesn't communicate ownership — e.g., "That's handled by another team" without guidance. A compliant response shows responsibility, clear next step, and follow-up expectation.</p>
+                            <div class="bg-amber-50 p-3 rounded-lg">
+                                <p class="font-semibold text-amber-900 mb-2">When to Apply:</p>
+                                <ul class="list-disc list-inside space-y-1 text-amber-800 text-sm">
+                                    <li>No clear next step given</li>
+                                    <li>Shifting responsibility to other teams</li>
+                                    <li>No follow-up promise or timeframe</li>
+                                    <li>Passive or incomplete closure statements</li>
+                                </ul>
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Agent says "That's handled by another team" without providing guidance or next steps</li>
+                                    <li>Agent doesn't provide clear follow-up timeframe or promise</li>
+                                    <li>Agent uses passive closure statements without taking ownership</li>
+                                    <li>Agent shifts responsibility without showing accountability</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
+                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-gray-800">Clear & Logical Communication</span>
                         <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded">-10 pts</span>
                     </button>
                     <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                         <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Not properly communicating or following up internally as required.</p>
+                            <p><strong>Description:</strong> Agent's response lacks flow or coherence. Deduct when the conversation confuses the client due to poor ordering, excessive verbosity, or combining multiple subjects without clarity. Focus: readability and logical sequencing.</p>
                             <div class="bg-amber-50 p-3 rounded-lg">
                                 <p class="font-semibold text-amber-900 mb-2">When to Apply:</p>
                                 <ul class="list-disc list-inside space-y-1 text-amber-800 text-sm">
-                                    <li>Fails to document interaction in required systems</li>
-                                    <li>Doesn't follow up with other departments as promised</li>
-                                    <li>Doesn't create internal tickets when required</li>
-                                    <li>Fails to notify supervisor/team about important issues</li>
-                                    <li>Doesn't update customer records with relevant information</li>
+                                    <li>Disorganized or unclear answers</li>
+                                    <li>Mixed topics / skipping client sequence</li>
+                                    <li>Overloaded paragraphs or irrelevant info</li>
+                                    <li>Circular responses</li>
+                                    <li>Resolution/Escalated without proper note taking on Intercom</li>
+                                </ul>
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Agent provides disorganized response that confuses the client</li>
+                                    <li>Agent mixes multiple topics without clear sequencing</li>
+                                    <li>Agent provides overloaded paragraphs with irrelevant information</li>
+                                    <li>Agent resolves or escalates without proper note-taking on Intercom</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
+                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-gray-800">Brand Tone & Etiquette</span>
+                        <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded">-10 pts</span>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
+                        <div class="text-gray-700 space-y-3 w-full box-border">
+                            <p><strong>Description:</strong> Deduct when chat lacks agreed upon opening or incorrect branding of the FundedNext name.</p>
+                            <div class="bg-amber-50 p-3 rounded-lg">
+                                <p class="font-semibold text-amber-900 mb-2">When to Apply:</p>
+                                <ul class="list-disc list-inside space-y-1 text-amber-800 text-sm">
+                                    <li>Missing greeting or closing</li>
+                                    <li>Incorrect branding of the FundedNext name</li>
+                                    <li>Tone inconsistent with FundedNext voice</li>
+                                </ul>
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Agent starts chat without proper greeting</li>
+                                    <li>Agent closes chat without proper closing statement</li>
+                                    <li>Agent uses incorrect branding or spelling of FundedNext name</li>
+                                    <li>Agent's tone doesn't match FundedNext's brand voice</li>
                                 </ul>
                             </div>
                         </div>
@@ -409,25 +464,31 @@
                 </div>
             </div>
 
-            <!-- Major Errors (5 points) -->
+            <!-- Minor Errors (5 points) -->
             <div class="mb-6">
-                <h3 class="text-xl font-semibold text-yellow-700 mb-3 bg-yellow-50 px-4 py-2 rounded-lg">Major Errors (5 points)</h3>
+                <h3 class="text-xl font-semibold text-yellow-700 mb-3 bg-yellow-50 px-4 py-2 rounded-lg">Minor Errors (5 points)</h3>
                 
                 <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
                     <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Missing Information</span>
+                        <span class="font-semibold text-gray-800">Review Link / Sales Approach Post-Positive Interaction</span>
                         <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">-5 pts</span>
                     </button>
                     <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                         <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Important information missing from interaction or documentation.</p>
+                            <p><strong>Description:</strong> Failing to send a public review link when client expresses satisfaction.</p>
                             <div class="bg-yellow-50 p-3 rounded-lg">
                                 <p class="font-semibold text-yellow-900 mb-2">When to Apply:</p>
                                 <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Agent doesn't collect required customer information</li>
-                                    <li>Missing details in case notes that would be needed for follow-up</li>
-                                    <li>Doesn't confirm important details (account number, order ID, etc.)</li>
-                                    <li>Fails to document resolution steps taken</li>
+                                    <li>Missed review link post-positive feedback</li>
+                                    <li>Missed Opportunity for Sales Approach</li>
+                                </ul>
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Client expresses satisfaction but agent doesn't send review link</li>
+                                    <li>Client shows positive sentiment but agent misses sales opportunity</li>
+                                    <li>Agent doesn't capitalize on positive interaction for review or sales</li>
                                 </ul>
                             </div>
                         </div>
@@ -436,98 +497,30 @@
 
                 <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
                     <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Outdated Macro Usage</span>
+                        <span class="font-semibold text-gray-800">Grammar</span>
                         <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">-5 pts</span>
                     </button>
                     <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                         <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Using outdated templates, macros, or scripts.</p>
+                            <p><strong>Description:</strong> Deduct for noticeable grammar issues that reduce professionalism.</p>
                             <div class="bg-yellow-50 p-3 rounded-lg">
                                 <p class="font-semibold text-yellow-900 mb-2">When to Apply:</p>
                                 <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Using templates that reference old policies or procedures</li>
-                                    <li>Macros containing outdated information</li>
-                                    <li>Using retired scripts or processes</li>
+                                    <li>Grammar or spelling issues</li>
+                                    <li>Awkward phrasing or missing punctuation</li>
                                 </ul>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
-                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Information Overload</span>
-                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">-5 pts</span>
-                    </button>
-                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
-                        <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Providing too much information at once, overwhelming the customer.</p>
                             <div class="bg-yellow-50 p-3 rounded-lg">
-                                <p class="font-semibold text-yellow-900 mb-2">When to Apply:</p>
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
                                 <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Agent provides lengthy explanations when simple answer would suffice</li>
-                                    <li>Dumps too much technical information on customer</li>
-                                    <li>Provides multiple solutions without allowing customer to process</li>
-                                    <li>Information delivery is confusing or hard to follow</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
-                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Grammatical Errors</span>
-                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">-5 pts</span>
-                    </button>
-                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
-                        <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Spelling or grammar mistakes in written communication.</p>
-                            <div class="bg-yellow-50 p-3 rounded-lg">
-                                <p class="font-semibold text-yellow-900 mb-2">When to Apply:</p>
-                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
-                                    <li>Spelling mistakes in emails, chats, or documentation</li>
-                                    <li>Grammar errors that affect clarity</li>
-                                    <li>Poor sentence structure</li>
-                                    <li>Multiple errors in a single message</li>
+                                    <li>Multiple grammar or spelling mistakes in messages</li>
+                                    <li>Awkward phrasing that reduces professionalism</li>
+                                    <li>Missing punctuation that affects clarity</li>
                                 </ul>
                             </div>
                             <div class="bg-blue-50 p-3 rounded-lg">
                                 <p class="font-semibold text-blue-900 mb-2">Count Multiple Instances:</p>
-                                <p class="text-blue-800 text-sm">Count each instance separately. For example, if an email has 3 spelling mistakes, that's 3 instances of this error.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Minor Errors (2.5 points) -->
-            <div class="mb-6">
-                <h3 class="text-xl font-semibold text-gray-700 mb-3 bg-gray-50 px-4 py-2 rounded-lg">Minor Errors (2.5 points)</h3>
-                
-                <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
-                    <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Inadequate engagement/excessive engagement</span>
-                        <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded">-2.5 pts</span>
-                    </button>
-                    <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
-                        <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Too little or too much customer engagement during interaction.</p>
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="font-semibold text-gray-900 mb-2">Inadequate Engagement:</p>
-                                <ul class="list-disc list-inside space-y-1 text-gray-800 text-sm">
-                                    <li>Too brief responses without elaboration</li>
-                                    <li>Not asking follow-up questions when needed</li>
-                                    <li>Being too quiet or unresponsive</li>
-                                </ul>
-                            </div>
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="font-semibold text-gray-900 mb-2">Excessive Engagement:</p>
-                                <ul class="list-disc list-inside space-y-1 text-gray-800 text-sm">
-                                    <li>Over-sharing personal information</li>
-                                    <li>Too chatty when customer wants quick resolution</li>
-                                    <li>Asking too many unnecessary questions</li>
-                                </ul>
+                                <p class="text-blue-800 text-sm">Count each instance separately. For example, if a message has 3 grammar mistakes, that's 3 instances of this error.</p>
                             </div>
                         </div>
                     </div>
@@ -535,23 +528,27 @@
 
                 <div class="faq-item bg-white rounded-lg shadow-md border border-gray-200 mb-3 w-full box-border">
                     <button class="faq-question w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg" onclick="toggleFaq(this)">
-                        <span class="font-semibold text-gray-800">Missing Minimal information</span>
-                        <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded">-2.5 pts</span>
+                        <span class="font-semibold text-gray-800">Celebrate Achievements</span>
+                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">-5 pts</span>
                     </button>
                     <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                         <div class="text-gray-700 space-y-3 w-full box-border">
-                            <p><strong>Description:</strong> Minor information gaps that do not significantly impact service delivery.</p>
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="font-semibold text-gray-900 mb-2">When to Apply:</p>
-                                <ul class="list-disc list-inside space-y-1 text-gray-800 text-sm">
-                                    <li>Minor details missing that don't affect resolution</li>
-                                    <li>Small gaps in documentation that can be easily inferred</li>
-                                    <li>Optional information not collected</li>
+                            <p><strong>Description:</strong> Deduct when agent overlooks opportunities to celebrate client success (e.g., "passed challenge," "got payout")</p>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">When to Apply:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Failing to congratulate on milestone</li>
+                                    <li>Ignoring user's positive update</li>
+                                    <li>Flat or dismissive acknowledgment</li>
                                 </ul>
                             </div>
-                            <div class="bg-blue-50 p-3 rounded-lg">
-                                <p class="font-semibold text-blue-900 mb-2">Note:</p>
-                                <p class="text-blue-800 text-sm">This is for minor gaps. For significant missing information, use "Missing Information" (5 points) instead.</p>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="font-semibold text-yellow-900 mb-2">Examples:</p>
+                                <ul class="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                                    <li>Client announces they passed a challenge - agent doesn't congratulate</li>
+                                    <li>Client shares positive update about getting payout - agent ignores it</li>
+                                    <li>Client achieves milestone - agent gives flat or dismissive acknowledgment</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -657,7 +654,7 @@
                 </button>
                 <div class="faq-answer hidden px-6 pb-4 w-full overflow-hidden box-border">
                     <div class="text-gray-700 space-y-3 w-full box-border">
-                        <p>Use the most severe category. For example, if an agent provides incorrect information that leads to a loss of business, use "Error Leading to a Loss of Business" (50 points) rather than "Incorrect Information" (10 points).</p>
+                        <p>Use the most severe category. For example, if an agent provides incorrect information that leads to a loss of business, use "Revenue or Policy Violation" (50 points) rather than "Incorrect / Misleading Information (non-revenue)" (30 points).</p>
                         <div class="bg-yellow-50 p-4 rounded-lg">
                             <p class="font-semibold text-yellow-900 mb-2">General Rule:</p>
                             <p class="text-yellow-800">Always apply the highest severity error that fits the situation. Do not double-penalize by applying multiple error categories for the same mistake.</p>
