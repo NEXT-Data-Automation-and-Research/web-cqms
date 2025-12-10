@@ -301,7 +301,7 @@
           Feedback Sessions
         </button>
         <button class="event-type-filter px-3 py-1.5 bg-white text-gray-700 text-xs font-semibold rounded border border-gray-200 hover:bg-gray-50 transition-colors" data-type="training">
-          Training
+          Training Session
         </button>
       </div>
 
@@ -409,7 +409,7 @@
             <option value="session">Session</option>
             <option value="meeting">Meeting</option>
             <option value="feedback">Feedback Session</option>
-            <option value="training">Training</option>
+            <option value="training">Training Session</option>
           </select>
         </div>
         <div>
@@ -635,7 +635,7 @@ function updateCreateButtonText() {
     'session': 'Schedule Session',
     'meeting': 'Schedule Meeting',
     'feedback': 'Schedule Feedback Session',
-    'training': 'Schedule Training'
+    'training': 'Schedule Training Session'
   };
   
   buttonText.textContent = buttonTexts[currentFilter] || 'Create Event';
@@ -1312,7 +1312,7 @@ function viewEvent(eventId) {
     session: 'Session',
     meeting: 'Meeting',
     feedback: 'Feedback Session',
-    training: 'Training'
+    training: 'Training Session'
   };
   
   // Parse participants and match with user names
@@ -1542,7 +1542,7 @@ function renderEvents() {
       'session': 'Schedule Session',
       'meeting': 'Schedule Meeting',
       'feedback': 'Schedule Feedback Session',
-      'training': 'Schedule Training'
+      'training': 'Schedule Training Session'
     };
     const emptyStateButtonText = buttonTexts[currentFilter] || 'Create Event';
     
@@ -1582,7 +1582,7 @@ function renderEvents() {
       session: 'Session',
       meeting: 'Meeting',
       feedback: 'Feedback Session',
-      training: 'Training'
+      training: 'Training Session'
     };
 
     // Parse participants - handle both array and string formats
