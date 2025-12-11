@@ -491,6 +491,212 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Multi-Select Dropdown Styles */
+        .multi-select-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .multi-select-trigger {
+            padding: 0.1875rem 0.2812rem;
+            border: 0.0469rem solid #d1d5db;
+            border-radius: 0.1875rem;
+            font-size: 0.5156rem;
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.375rem;
+            min-height: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .multi-select-trigger:hover {
+            border-color: var(--primary-color);
+        }
+
+        .multi-select-trigger.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.1875rem rgba(26, 115, 62, 0.1);
+        }
+
+        .multi-select-placeholder {
+            color: #9ca3af;
+            flex: 1;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .multi-select-count {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.0625rem 0.375rem;
+            border-radius: 0.75rem;
+            font-size: 0.4688rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.1875rem;
+            background: #ffffff;
+            border: 0.0469rem solid #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 12.5rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 100%;
+            width: max-content;
+            max-width: 20rem;
+        }
+
+        .multi-select-search {
+            padding: 0.375rem 0.5625rem;
+            border: none;
+            border-bottom: 0.0469rem solid #e5e7eb;
+            border-radius: 0.375rem 0.375rem 0 0;
+            font-size: 0.5156rem;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f9fafb;
+            color: #374151;
+            outline: none;
+        }
+        
+        .multi-select-search:focus {
+            background-color: #ffffff;
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .multi-select-search:focus-visible {
+            outline: none;
+        }
+
+        .multi-select-search:focus {
+            background-color: #ffffff;
+            border-bottom-color: var(--primary-color);
+        }
+
+        .multi-select-options {
+            max-height: 8.75rem;
+            overflow-y: auto;
+            padding: 0.1875rem 0;
+        }
+
+        .multi-select-option {
+            padding: 0.375rem 0.5625rem;
+            font-size: 0.5156rem;
+            font-family: 'Poppins', sans-serif;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.375rem;
+            transition: background-color 0.15s ease;
+            min-width: 0;
+        }
+
+        .multi-select-option:hover {
+            background-color: #f3f4f6;
+        }
+
+        .multi-select-option.hidden {
+            display: none;
+        }
+
+        .multi-select-option input[type="checkbox"] {
+            width: 0.75rem;
+            height: 0.75rem;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+
+        .multi-select-option label {
+            cursor: pointer;
+            flex: 1;
+            user-select: none;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        .multi-select-actions {
+            display: flex;
+            gap: 0.375rem;
+            padding: 0.375rem;
+            border-top: 0.0469rem solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+
+        .multi-select-action-btn {
+            flex: 1;
+            padding: 0.2812rem 0.5625rem;
+            border: 0.0469rem solid #d1d5db;
+            border-radius: 0.1875rem;
+            background-color: #ffffff;
+            color: #374151;
+            font-size: 0.4688rem;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .multi-select-action-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Dark mode support */
+        [data-theme="dark"] .multi-select-trigger {
+            background-color: var(--background-white);
+            border-color: var(--border-light);
+            color: var(--text-color);
+        }
+
+        [data-theme="dark"] .multi-select-dropdown {
+            background: var(--background-white);
+            border-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-search {
+            background-color: var(--gray-50);
+            color: var(--text-color);
+            border-bottom-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-option {
+            color: var(--text-color);
+        }
+
+        [data-theme="dark"] .multi-select-option:hover {
+            background-color: var(--gray-100);
+        }
+
+        [data-theme="dark"] .multi-select-actions {
+            background-color: var(--gray-50);
+            border-top-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-action-btn {
+            background-color: var(--background-white);
+            border-color: var(--border-light);
+            color: var(--text-color);
+        }
+
     </style>
 
 </head>
@@ -600,85 +806,291 @@
         <!-- Auditor Name -->
         <div id="auditorNameFilterContainer">
             <label for="auditorNameFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Auditor</label>
-            <input type="text" id="auditorNameFilter" placeholder="Auditor name..." style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="auditorNameFilterTrigger" onclick="toggleMultiSelect('auditorNameFilter')">
+                    <span class="multi-select-placeholder" id="auditorNameFilterPlaceholder">Select auditors...</span>
+                    <span class="multi-select-count" id="auditorNameFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="auditorNameFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="auditorNameFilterSearch" placeholder="Search auditors..." oninput="filterMultiSelectOptions('auditorNameFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="auditorNameFilterOptions">
+                        <!-- Options will be populated dynamically -->
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('auditorNameFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('auditorNameFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="auditorNameFilter" value="">
         </div>
         
         <!-- Employee Name -->
         <div>
             <label for="employeeNameFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Employee</label>
-            <input type="text" id="employeeNameFilter" placeholder="Employee name..." style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="employeeNameFilterTrigger" onclick="toggleMultiSelect('employeeNameFilter')">
+                    <span class="multi-select-placeholder" id="employeeNameFilterPlaceholder">Select employees...</span>
+                    <span class="multi-select-count" id="employeeNameFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="employeeNameFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="employeeNameFilterSearch" placeholder="Search employees..." oninput="filterMultiSelectOptions('employeeNameFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="employeeNameFilterOptions">
+                        <!-- Options will be populated dynamically -->
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('employeeNameFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('employeeNameFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="employeeNameFilter" value="">
         </div>
         
         <!-- Audit Type -->
         <div>
             <label for="auditTypeFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Type</label>
-            <select id="auditTypeFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Types</option>
-                <option value="Routine Audit (Recorded)">Routine (Recorded)</option>
-                <option value="Focused Audit (Recorded)">Focused (Recorded)</option>
-                <option value="Focused Audit (Live)">Focused (Live)</option>
-                <option value="Evaluation and Feedback">Evaluation</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="auditTypeFilterTrigger" onclick="toggleMultiSelect('auditTypeFilter')">
+                    <span class="multi-select-placeholder" id="auditTypeFilterPlaceholder">Select types...</span>
+                    <span class="multi-select-count" id="auditTypeFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="auditTypeFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="auditTypeFilterSearch" placeholder="Search types..." oninput="filterMultiSelectOptions('auditTypeFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="auditTypeFilterOptions">
+                        <div class="multi-select-option" data-value="Routine Audit (Recorded)">
+                            <input type="checkbox" id="auditType_Routine Audit (Recorded)" value="Routine Audit (Recorded)" onchange="updateMultiSelect('auditTypeFilter')">
+                            <label for="auditType_Routine Audit (Recorded)">Routine (Recorded)</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Focused Audit (Recorded)">
+                            <input type="checkbox" id="auditType_Focused Audit (Recorded)" value="Focused Audit (Recorded)" onchange="updateMultiSelect('auditTypeFilter')">
+                            <label for="auditType_Focused Audit (Recorded)">Focused (Recorded)</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Focused Audit (Live)">
+                            <input type="checkbox" id="auditType_Focused Audit (Live)" value="Focused Audit (Live)" onchange="updateMultiSelect('auditTypeFilter')">
+                            <label for="auditType_Focused Audit (Live)">Focused (Live)</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Evaluation and Feedback">
+                            <input type="checkbox" id="auditType_Evaluation and Feedback" value="Evaluation and Feedback" onchange="updateMultiSelect('auditTypeFilter')">
+                            <label for="auditType_Evaluation and Feedback">Evaluation</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('auditTypeFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('auditTypeFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="auditTypeFilter" value="">
         </div>
         
         <!-- Status -->
         <div>
             <label for="statusFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Status</label>
-            <select id="statusFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Statuses</option>
-                <option value="Passed">Passed</option>
-                <option value="Not Passed">Not Passed</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="statusFilterTrigger" onclick="toggleMultiSelect('statusFilter')">
+                    <span class="multi-select-placeholder" id="statusFilterPlaceholder">Select statuses...</span>
+                    <span class="multi-select-count" id="statusFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="statusFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="statusFilterSearch" placeholder="Search statuses..." oninput="filterMultiSelectOptions('statusFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="statusFilterOptions">
+                        <div class="multi-select-option" data-value="Passed">
+                            <input type="checkbox" id="status_Passed" value="Passed" onchange="updateMultiSelect('statusFilter')">
+                            <label for="status_Passed">Passed</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Not Passed">
+                            <input type="checkbox" id="status_Not Passed" value="Not Passed" onchange="updateMultiSelect('statusFilter')">
+                            <label for="status_Not Passed">Not Passed</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('statusFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('statusFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="statusFilter" value="">
         </div>
         
         <!-- Quarter -->
         <div>
             <label for="quarterFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Quarter</label>
-            <select id="quarterFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Quarters</option>
-                <option value="Q1">Q1</option>
-                <option value="Q2">Q2</option>
-                <option value="Q3">Q3</option>
-                <option value="Q4">Q4</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="quarterFilterTrigger" onclick="toggleMultiSelect('quarterFilter')">
+                    <span class="multi-select-placeholder" id="quarterFilterPlaceholder">Select quarters...</span>
+                    <span class="multi-select-count" id="quarterFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="quarterFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="quarterFilterSearch" placeholder="Search quarters..." oninput="filterMultiSelectOptions('quarterFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="quarterFilterOptions">
+                        <div class="multi-select-option" data-value="Q1">
+                            <input type="checkbox" id="quarter_Q1" value="Q1" onchange="updateMultiSelect('quarterFilter')">
+                            <label for="quarter_Q1">Q1</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Q2">
+                            <input type="checkbox" id="quarter_Q2" value="Q2" onchange="updateMultiSelect('quarterFilter')">
+                            <label for="quarter_Q2">Q2</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Q3">
+                            <input type="checkbox" id="quarter_Q3" value="Q3" onchange="updateMultiSelect('quarterFilter')">
+                            <label for="quarter_Q3">Q3</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Q4">
+                            <input type="checkbox" id="quarter_Q4" value="Q4" onchange="updateMultiSelect('quarterFilter')">
+                            <label for="quarter_Q4">Q4</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('quarterFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('quarterFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="quarterFilter" value="">
         </div>
         
         <!-- Channel -->
         <div>
             <label for="channelFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Channel</label>
-            <select id="channelFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Channels</option>
-                <option value="FN Chat CFD">FN Chat CFD</option>
-                <option value="FN Chat Futures">FN Chat Futures</option>
-                <option value="FN Email">FN Email</option>
-                <option value="Regular PSTF">Regular PSTF</option>
-                <option value="Advance PSTF">Advance PSTF</option>
-                <option value="PO + Ticket">PO + Ticket</option>
-                <option value="CPM Email">CPM Email</option>
-                <option value="B.Dev Email">B.Dev Email</option>
-                <option value="MKT Social Media Comments">MKT Social Media</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="channelFilterTrigger" onclick="toggleMultiSelect('channelFilter')">
+                    <span class="multi-select-placeholder" id="channelFilterPlaceholder">Select channels...</span>
+                    <span class="multi-select-count" id="channelFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="channelFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="channelFilterSearch" placeholder="Search channels..." oninput="filterMultiSelectOptions('channelFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="channelFilterOptions">
+                        <div class="multi-select-option" data-value="FN Chat CFD">
+                            <input type="checkbox" id="channel_FN Chat CFD" value="FN Chat CFD" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_FN Chat CFD">FN Chat CFD</label>
+                        </div>
+                        <div class="multi-select-option" data-value="FN Chat Futures">
+                            <input type="checkbox" id="channel_FN Chat Futures" value="FN Chat Futures" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_FN Chat Futures">FN Chat Futures</label>
+                        </div>
+                        <div class="multi-select-option" data-value="FN Email">
+                            <input type="checkbox" id="channel_FN Email" value="FN Email" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_FN Email">FN Email</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Regular PSTF">
+                            <input type="checkbox" id="channel_Regular PSTF" value="Regular PSTF" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_Regular PSTF">Regular PSTF</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Advance PSTF">
+                            <input type="checkbox" id="channel_Advance PSTF" value="Advance PSTF" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_Advance PSTF">Advance PSTF</label>
+                        </div>
+                        <div class="multi-select-option" data-value="PO + Ticket">
+                            <input type="checkbox" id="channel_PO + Ticket" value="PO + Ticket" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_PO + Ticket">PO + Ticket</label>
+                        </div>
+                        <div class="multi-select-option" data-value="CPM Email">
+                            <input type="checkbox" id="channel_CPM Email" value="CPM Email" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_CPM Email">CPM Email</label>
+                        </div>
+                        <div class="multi-select-option" data-value="B.Dev Email">
+                            <input type="checkbox" id="channel_B.Dev Email" value="B.Dev Email" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_B.Dev Email">B.Dev Email</label>
+                        </div>
+                        <div class="multi-select-option" data-value="MKT Social Media Comments">
+                            <input type="checkbox" id="channel_MKT Social Media Comments" value="MKT Social Media Comments" onchange="updateMultiSelect('channelFilter')">
+                            <label for="channel_MKT Social Media Comments">MKT Social Media</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('channelFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('channelFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="channelFilter" value="">
         </div>
         
         <!-- Employee Type -->
         <div>
             <label for="employeeTypeFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Emp Type</label>
-            <select id="employeeTypeFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Types</option>
-                <option value="Employee">Employee</option>
-                <option value="Supervisor">Supervisor</option>
-                <option value="Manager">Manager</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="employeeTypeFilterTrigger" onclick="toggleMultiSelect('employeeTypeFilter')">
+                    <span class="multi-select-placeholder" id="employeeTypeFilterPlaceholder">Select types...</span>
+                    <span class="multi-select-count" id="employeeTypeFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="employeeTypeFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="employeeTypeFilterSearch" placeholder="Search types..." oninput="filterMultiSelectOptions('employeeTypeFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="employeeTypeFilterOptions">
+                        <div class="multi-select-option" data-value="Employee">
+                            <input type="checkbox" id="employeeType_Employee" value="Employee" onchange="updateMultiSelect('employeeTypeFilter')">
+                            <label for="employeeType_Employee">Employee</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Supervisor">
+                            <input type="checkbox" id="employeeType_Supervisor" value="Supervisor" onchange="updateMultiSelect('employeeTypeFilter')">
+                            <label for="employeeType_Supervisor">Supervisor</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Manager">
+                            <input type="checkbox" id="employeeType_Manager" value="Manager" onchange="updateMultiSelect('employeeTypeFilter')">
+                            <label for="employeeType_Manager">Manager</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('employeeTypeFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('employeeTypeFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="employeeTypeFilter" value="">
         </div>
         
         <!-- Country -->
         <div>
             <label for="countryFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Country</label>
-            <select id="countryFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Countries</option>
-                <option value="Bangladesh">Bangladesh</option>
-                <option value="Sri Lanka">Sri Lanka</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="countryFilterTrigger" onclick="toggleMultiSelect('countryFilter')">
+                    <span class="multi-select-placeholder" id="countryFilterPlaceholder">Select countries...</span>
+                    <span class="multi-select-count" id="countryFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="countryFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="countryFilterSearch" placeholder="Search countries..." oninput="filterMultiSelectOptions('countryFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="countryFilterOptions">
+                        <div class="multi-select-option" data-value="Bangladesh">
+                            <input type="checkbox" id="country_Bangladesh" value="Bangladesh" onchange="updateMultiSelect('countryFilter')">
+                            <label for="country_Bangladesh">Bangladesh</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Sri Lanka">
+                            <input type="checkbox" id="country_Sri Lanka" value="Sri Lanka" onchange="updateMultiSelect('countryFilter')">
+                            <label for="country_Sri Lanka">Sri Lanka</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('countryFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('countryFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="countryFilter" value="">
         </div>
         
         <!-- Interaction ID -->
@@ -732,50 +1144,165 @@
         <!-- Validation Status -->
         <div>
             <label for="validationStatusFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Validation</label>
-            <select id="validationStatusFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Validation</option>
-                <option value="Validated">Validated</option>
-                <option value="Pending">Pending</option>
-                <option value="Rejected">Rejected</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="validationStatusFilterTrigger" onclick="toggleMultiSelect('validationStatusFilter')">
+                    <span class="multi-select-placeholder" id="validationStatusFilterPlaceholder">Select validation...</span>
+                    <span class="multi-select-count" id="validationStatusFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="validationStatusFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="validationStatusFilterSearch" placeholder="Search validation..." oninput="filterMultiSelectOptions('validationStatusFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="validationStatusFilterOptions">
+                        <div class="multi-select-option" data-value="Validated">
+                            <input type="checkbox" id="validation_Validated" value="Validated" onchange="updateMultiSelect('validationStatusFilter')">
+                            <label for="validation_Validated">Validated</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Pending">
+                            <input type="checkbox" id="validation_Pending" value="Pending" onchange="updateMultiSelect('validationStatusFilter')">
+                            <label for="validation_Pending">Pending</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Rejected">
+                            <input type="checkbox" id="validation_Rejected" value="Rejected" onchange="updateMultiSelect('validationStatusFilter')">
+                            <label for="validation_Rejected">Rejected</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('validationStatusFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('validationStatusFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="validationStatusFilter" value="">
         </div>
         
         <!-- Acknowledgement Status -->
         <div>
             <label for="acknowledgementStatusFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Acknowledgement</label>
-            <select id="acknowledgementStatusFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Status</option>
-                <option value="Acknowledged">Acknowledged</option>
-                <option value="Pending">Pending</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="acknowledgementStatusFilterTrigger" onclick="toggleMultiSelect('acknowledgementStatusFilter')">
+                    <span class="multi-select-placeholder" id="acknowledgementStatusFilterPlaceholder">Select status...</span>
+                    <span class="multi-select-count" id="acknowledgementStatusFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="acknowledgementStatusFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="acknowledgementStatusFilterSearch" placeholder="Search status..." oninput="filterMultiSelectOptions('acknowledgementStatusFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="acknowledgementStatusFilterOptions">
+                        <div class="multi-select-option" data-value="Acknowledged">
+                            <input type="checkbox" id="acknowledgement_Acknowledged" value="Acknowledged" onchange="updateMultiSelect('acknowledgementStatusFilter')">
+                            <label for="acknowledgement_Acknowledged">Acknowledged</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Pending">
+                            <input type="checkbox" id="acknowledgement_Pending" value="Pending" onchange="updateMultiSelect('acknowledgementStatusFilter')">
+                            <label for="acknowledgement_Pending">Pending</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('acknowledgementStatusFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('acknowledgementStatusFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="acknowledgementStatusFilter" value="">
         </div>
         
         <!-- Employee Pre Status -->
         <div>
             <label for="agentPreStatusFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Pre Status</label>
-            <select id="agentPreStatusFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Pre Status</option>
-                <option value="No active quality concerns">No concerns</option>
-                <option value="Pre-Quality">Pre-Quality</option>
-                <option value="Quality Concern">Quality Concern</option>
-                <option value="Performance Improvement Plan (PIP)">PIP</option>
-                <option value="Performance Improvement Plan (PIP) - Alert">PIP Alert</option>
-                <option value="Performance Improvement Plan (PIP) - Priority">PIP Priority</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="agentPreStatusFilterTrigger" onclick="toggleMultiSelect('agentPreStatusFilter')">
+                    <span class="multi-select-placeholder" id="agentPreStatusFilterPlaceholder">Select pre status...</span>
+                    <span class="multi-select-count" id="agentPreStatusFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="multi-select-dropdown" id="agentPreStatusFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="agentPreStatusFilterSearch" placeholder="Search pre status..." oninput="filterMultiSelectOptions('agentPreStatusFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="agentPreStatusFilterOptions">
+                        <div class="multi-select-option" data-value="No active quality concerns">
+                            <input type="checkbox" id="preStatus_No active quality concerns" value="No active quality concerns" onchange="updateMultiSelect('agentPreStatusFilter')">
+                            <label for="preStatus_No active quality concerns">No concerns</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Pre-Quality">
+                            <input type="checkbox" id="preStatus_Pre-Quality" value="Pre-Quality" onchange="updateMultiSelect('agentPreStatusFilter')">
+                            <label for="preStatus_Pre-Quality">Pre-Quality</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Quality Concern">
+                            <input type="checkbox" id="preStatus_Quality Concern" value="Quality Concern" onchange="updateMultiSelect('agentPreStatusFilter')">
+                            <label for="preStatus_Quality Concern">Quality Concern</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Performance Improvement Plan (PIP)">
+                            <input type="checkbox" id="preStatus_Performance Improvement Plan (PIP)" value="Performance Improvement Plan (PIP)" onchange="updateMultiSelect('agentPreStatusFilter')">
+                            <label for="preStatus_Performance Improvement Plan (PIP)">PIP</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Performance Improvement Plan (PIP) - Alert">
+                            <input type="checkbox" id="preStatus_Performance Improvement Plan (PIP) - Alert" value="Performance Improvement Plan (PIP) - Alert" onchange="updateMultiSelect('agentPreStatusFilter')">
+                            <label for="preStatus_Performance Improvement Plan (PIP) - Alert">PIP Alert</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Performance Improvement Plan (PIP) - Priority">
+                            <input type="checkbox" id="preStatus_Performance Improvement Plan (PIP) - Priority" value="Performance Improvement Plan (PIP) - Priority" onchange="updateMultiSelect('agentPreStatusFilter')">
+                            <label for="preStatus_Performance Improvement Plan (PIP) - Priority">PIP Priority</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('agentPreStatusFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('agentPreStatusFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="agentPreStatusFilter" value="">
         </div>
         
         <!-- Employee Post Status -->
         <div>
             <label for="agentPostStatusFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Post Status</label>
-            <select id="agentPostStatusFilter" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
-                <option value="">All Post Status</option>
-                <option value="No active quality concerns">No concerns</option>
-                <option value="Pre-Quality">Pre-Quality</option>
-                <option value="Quality Concern">Quality Concern</option>
-                <option value="Performance Improvement Plan (PIP)">PIP</option>
-                <option value="Performance Improvement Plan (PIP) - Alert">PIP Alert</option>
-                <option value="Performance Improvement Plan (PIP) - Priority">PIP Priority</option>
-            </select>
+            <div class="multi-select-container">
+                <div class="multi-select-trigger" id="agentPostStatusFilterTrigger" onclick="toggleMultiSelect('agentPostStatusFilter')">
+                    <span class="multi-select-placeholder" id="agentPostStatusFilterPlaceholder">Select post status...</span>
+                    <span class="multi-select-count" id="agentPostStatusFilterCount" style="display: none;"></span>
+                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+        </div>
+                <div class="multi-select-dropdown" id="agentPostStatusFilterDropdown" style="display: none;">
+                    <input type="text" class="multi-select-search" id="agentPostStatusFilterSearch" placeholder="Search post status..." oninput="filterMultiSelectOptions('agentPostStatusFilter')" onclick="event.stopPropagation()">
+                    <div class="multi-select-options" id="agentPostStatusFilterOptions">
+                        <div class="multi-select-option" data-value="No active quality concerns">
+                            <input type="checkbox" id="postStatus_No active quality concerns" value="No active quality concerns" onchange="updateMultiSelect('agentPostStatusFilter')">
+                            <label for="postStatus_No active quality concerns">No concerns</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Pre-Quality">
+                            <input type="checkbox" id="postStatus_Pre-Quality" value="Pre-Quality" onchange="updateMultiSelect('agentPostStatusFilter')">
+                            <label for="postStatus_Pre-Quality">Pre-Quality</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Quality Concern">
+                            <input type="checkbox" id="postStatus_Quality Concern" value="Quality Concern" onchange="updateMultiSelect('agentPostStatusFilter')">
+                            <label for="postStatus_Quality Concern">Quality Concern</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Performance Improvement Plan (PIP)">
+                            <input type="checkbox" id="postStatus_Performance Improvement Plan (PIP)" value="Performance Improvement Plan (PIP)" onchange="updateMultiSelect('agentPostStatusFilter')">
+                            <label for="postStatus_Performance Improvement Plan (PIP)">PIP</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Performance Improvement Plan (PIP) - Alert">
+                            <input type="checkbox" id="postStatus_Performance Improvement Plan (PIP) - Alert" value="Performance Improvement Plan (PIP) - Alert" onchange="updateMultiSelect('agentPostStatusFilter')">
+                            <label for="postStatus_Performance Improvement Plan (PIP) - Alert">PIP Alert</label>
+                        </div>
+                        <div class="multi-select-option" data-value="Performance Improvement Plan (PIP) - Priority">
+                            <input type="checkbox" id="postStatus_Performance Improvement Plan (PIP) - Priority" value="Performance Improvement Plan (PIP) - Priority" onchange="updateMultiSelect('agentPostStatusFilter')">
+                            <label for="postStatus_Performance Improvement Plan (PIP) - Priority">PIP Priority</label>
+                        </div>
+                    </div>
+                    <div class="multi-select-actions">
+                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('agentPostStatusFilter')">Select All</button>
+                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('agentPostStatusFilter')">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="agentPostStatusFilter" value="">
         </div>
     </div>
 </div>
@@ -1039,6 +1566,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Chart instances for trend lines
     let trendCharts = {};
+    
+    // Multi-select state
+    let auditorNamesList = [];
+    let employeeNamesList = [];
+    let selectedAuditors = [];
+    let selectedEmployees = [];
     
     // Week and date filter state
     let currentWeek = null;
@@ -1398,6 +1931,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (cachedAudits && Array.isArray(cachedAudits) && cachedAudits.length >= 0) {
                     console.log('Loading audits from cache...');
                     allAudits = cachedAudits;
+                    // Populate multi-select options
+                    populateMultiSelectOptions();
                     // Don't hide loading indicator here - let renderAudits() handle it
                     // Ensure filters are applied after loading from cache
                     // Use setTimeout to ensure DOM is ready and filters are initialized
@@ -1707,6 +2242,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Save to cache
             setCachedAudits(allAudits);
+            
+            // Populate multi-select options after audits are loaded
+            populateMultiSelectOptions();
             
             // Update acknowledgment badge in sidebar
             if (window.updateAcknowledgmentBadgeCount) {
@@ -2571,6 +3109,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const statusTextColor = normalizedStatus === 'Passed' ? '#166534' : '#991b1b';
         const statusIcon = normalizedStatus === 'Passed' ? '✓' : '✗';
         
+        // Calculate average score chip colors based on passing status
+        const scoreBgColor = normalizedStatus === 'Passed' ? '#dcfce7' : '#fee2e2';
+        const scoreTextColor = normalizedStatus === 'Passed' ? '#166534' : '#991b1b';
+        
         // Check if reversal is pending (reversal_requested_at exists but reversal_responded_at is null)
         const reversalRequestedAt = audit.reversalRequestedAt || audit.reversal_requested_at;
         const reversalRespondedAt = audit.reversalRespondedAt || audit.reversal_responded_at;
@@ -2635,15 +3177,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span style="background-color: ${statusBgColor}; color: ${statusTextColor}; padding: 0.0938rem 0.375rem; border-radius: 0.1875rem; font-size: 0.5156rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.1875rem;">
                                 ${statusIcon} ${normalizedStatus || 'Unknown'}
                             </span>
+                            <span style="background-color: ${scoreBgColor}; color: ${scoreTextColor}; padding: 0.0938rem 0.375rem; border-radius: 0.1875rem; font-size: 0.5156rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.1875rem;">
+                                ${audit.averageScore || '0'}%
+                            </span>
+                            <span style="background-color: #f3f4f6; color: #374151; padding: 0.0938rem 0.375rem; border-radius: 0.1875rem; font-size: 0.5156rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.1875rem;">
+                                ${audit.totalErrorsCount || '0'} errors
+                            </span>
                         </div>
                         <p style="margin: 0; font-size: 0.5625rem; color: #6b7280; display: flex; align-items: center; gap: 0.2812rem; flex-wrap: wrap;">
+                            <span>${escapeHtml(audit.id || 'N/A')}</span>
+                            <span style="color: #d1d5db;">•</span>
                             <span>${escapeHtml(audit.interactionId || 'No ID')}</span>
                             <span style="color: #d1d5db;">•</span>
                             <span>${escapeHtml(audit.channel || 'No channel')}</span>
-                            <span style="color: #d1d5db;">•</span>
-                                <span style="font-weight: 500;">${audit.averageScore || '0'}%</span>
-                            <span style="color: #d1d5db;">•</span>
-                            <span>${audit.totalErrorsCount || '0'} errors</span>
                             ${!isAgent ? `<span style="color: #d1d5db;">•</span>
                             <span style="color: #374151; font-weight: 500;">${escapeHtml(audit.auditorName || 'Unknown auditor')}</span>` : ''}
                             <span style="color: #d1d5db;">•</span>
@@ -2908,14 +3454,173 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
+    // Multi-select functions
+    function populateMultiSelectOptions() {
+        // Extract unique auditor names
+        const auditorSet = new Set();
+        const employeeSet = new Set();
+        
+        allAudits.forEach(audit => {
+            if (audit.auditorName && audit.auditorName.trim()) {
+                auditorSet.add(audit.auditorName.trim());
+            }
+            if (audit.employeeName && audit.employeeName.trim()) {
+                employeeSet.add(audit.employeeName.trim());
+            }
+        });
+        
+        auditorNamesList = Array.from(auditorSet).sort();
+        employeeNamesList = Array.from(employeeSet).sort();
+        
+        // Populate auditor dropdown
+        const auditorOptions = document.getElementById('auditorNameFilterOptions');
+        if (auditorOptions) {
+            auditorOptions.innerHTML = auditorNamesList.map(name => `
+                <div class="multi-select-option" data-value="${escapeHtml(name)}">
+                    <input type="checkbox" id="auditor_${escapeHtml(name)}" value="${escapeHtml(name)}" onchange="updateMultiSelect('auditorNameFilter')">
+                    <label for="auditor_${escapeHtml(name)}">${escapeHtml(name)}</label>
+                </div>
+            `).join('');
+        }
+        
+        // Populate employee dropdown
+        const employeeOptions = document.getElementById('employeeNameFilterOptions');
+        if (employeeOptions) {
+            employeeOptions.innerHTML = employeeNamesList.map(name => `
+                <div class="multi-select-option" data-value="${escapeHtml(name)}">
+                    <input type="checkbox" id="employee_${escapeHtml(name)}" value="${escapeHtml(name)}" onchange="updateMultiSelect('employeeNameFilter')">
+                    <label for="employee_${escapeHtml(name)}">${escapeHtml(name)}</label>
+                </div>
+            `).join('');
+        }
+    }
+    
+    window.toggleMultiSelect = function(filterId) {
+        const dropdown = document.getElementById(`${filterId}Dropdown`);
+        const trigger = document.getElementById(`${filterId}Trigger`);
+        
+        if (!dropdown || !trigger) return;
+        
+        // Close all other multi-selects
+        document.querySelectorAll('.multi-select-dropdown').forEach(dd => {
+            if (dd !== dropdown) {
+                dd.style.display = 'none';
+                const otherTrigger = dd.previousElementSibling;
+                if (otherTrigger) otherTrigger.classList.remove('active');
+            }
+        });
+        
+        // Toggle current dropdown
+        const isOpen = dropdown.style.display !== 'none';
+        dropdown.style.display = isOpen ? 'none' : 'flex';
+        trigger.classList.toggle('active', !isOpen);
+    };
+    
+    window.updateMultiSelect = function(filterId) {
+        const options = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+        const selected = Array.from(options)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+        
+        const hiddenInput = document.getElementById(filterId);
+        if (hiddenInput) {
+            hiddenInput.value = JSON.stringify(selected);
+        }
+        
+        // Update UI
+        const placeholder = document.getElementById(`${filterId}Placeholder`);
+        const count = document.getElementById(`${filterId}Count`);
+        
+        // Get placeholder text based on filter type
+        const placeholderTexts = {
+            'auditorNameFilter': 'Select auditors...',
+            'employeeNameFilter': 'Select employees...',
+            'auditTypeFilter': 'Select types...',
+            'statusFilter': 'Select statuses...',
+            'quarterFilter': 'Select quarters...',
+            'channelFilter': 'Select channels...',
+            'employeeTypeFilter': 'Select types...',
+            'countryFilter': 'Select countries...',
+            'validationStatusFilter': 'Select validation...',
+            'acknowledgementStatusFilter': 'Select status...',
+            'agentPreStatusFilter': 'Select pre status...',
+            'agentPostStatusFilter': 'Select post status...'
+        };
+        
+        if (selected.length === 0) {
+            if (placeholder) {
+                placeholder.style.display = 'inline';
+                placeholder.textContent = placeholderTexts[filterId] || 'Select...';
+            }
+            if (count) count.style.display = 'none';
+        } else {
+            if (placeholder) placeholder.style.display = 'none';
+            if (count) {
+                count.style.display = 'inline';
+                count.textContent = selected.length;
+            }
+        }
+        
+        // Store selected values
+        if (filterId === 'auditorNameFilter') {
+            selectedAuditors = selected;
+        } else if (filterId === 'employeeNameFilter') {
+            selectedEmployees = selected;
+        }
+        
+        // Apply filters
+        filterAudits();
+    };
+    
+    window.filterMultiSelectOptions = function(filterId) {
+        const searchInput = document.getElementById(`${filterId}Search`);
+        const options = document.querySelectorAll(`#${filterId}Options .multi-select-option`);
+        const searchTerm = (searchInput?.value || '').toLowerCase();
+        
+        options.forEach(option => {
+            const label = option.querySelector('label');
+            const text = label ? label.textContent.toLowerCase() : '';
+            if (text.includes(searchTerm)) {
+                option.classList.remove('hidden');
+            } else {
+                option.classList.add('hidden');
+            }
+        });
+    };
+    
+    window.selectAllMultiSelect = function(filterId) {
+        const options = document.querySelectorAll(`#${filterId}Options .multi-select-option:not(.hidden) input[type="checkbox"]`);
+        options.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateMultiSelect(filterId);
+    };
+    
+    window.clearMultiSelect = function(filterId) {
+        const options = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+        options.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateMultiSelect(filterId);
+    };
+    
+    // Close multi-select dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.multi-select-container')) {
+            document.querySelectorAll('.multi-select-dropdown').forEach(dropdown => {
+                dropdown.style.display = 'none';
+                const trigger = dropdown.previousElementSibling;
+                if (trigger) trigger.classList.remove('active');
+            });
+        }
+    });
+    
     // Filter audits
     async function filterAudits() {
         // Reset to first page when filters change
         currentPage = 1;
         
         const searchTerm = (searchInput?.value || '').toLowerCase();
-        const statusValue = statusFilter?.value || '';
-        const quarterValue = quarterFilter?.value || '';
         
         // Apply week or date filter first
         let dateFilteredAudits = [...allAudits];
@@ -2957,48 +3662,81 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchesSearch = !searchTerm || 
                 (audit.employeeName && audit.employeeName.toLowerCase().includes(searchTerm)) ||
                 (audit.auditorName && audit.auditorName.toLowerCase().includes(searchTerm)) ||
-                (audit.interactionId && audit.interactionId.toLowerCase().includes(searchTerm));
+                (audit.interactionId && audit.interactionId.toLowerCase().includes(searchTerm)) ||
+                (audit.id && String(audit.id).toLowerCase().includes(searchTerm));
             
-            // Specific filters
-            const normalizedAuditStatus = normalizePassingStatus(audit.passingStatus);
-            const matchesStatus = !statusValue || normalizedAuditStatus === statusValue;
-            const matchesQuarter = !quarterValue || audit.quarter === quarterValue;
+            // Helper function to parse multi-select filter values
+            function parseMultiSelectFilter(filterId) {
+                try {
+                    const filterValue = document.getElementById(filterId)?.value || '';
+                    if (filterValue) {
+                        return JSON.parse(filterValue);
+                    }
+                } catch (e) {
+                    // Fallback to empty array if parsing fails
+                }
+                return [];
+            }
             
-            // Get all other filter values
-            const auditorFilter = (document.getElementById('auditorNameFilter')?.value || '').toLowerCase();
-            const employeeFilter = (document.getElementById('employeeNameFilter')?.value || '').toLowerCase();
-            const auditTypeFilter = document.getElementById('auditTypeFilter')?.value || '';
-            const channelFilter = document.getElementById('channelFilter')?.value || '';
-            const employeeTypeFilter = document.getElementById('employeeTypeFilter')?.value || '';
-            const countryFilter = document.getElementById('countryFilter')?.value || '';
+            // Get all multi-select filter values
+            const auditorFilterArray = parseMultiSelectFilter('auditorNameFilter');
+            const employeeFilterArray = parseMultiSelectFilter('employeeNameFilter');
+            const auditTypeFilterArray = parseMultiSelectFilter('auditTypeFilter');
+            const statusFilterArray = parseMultiSelectFilter('statusFilter');
+            const quarterFilterArray = parseMultiSelectFilter('quarterFilter');
+            const channelFilterArray = parseMultiSelectFilter('channelFilter');
+            const employeeTypeFilterArray = parseMultiSelectFilter('employeeTypeFilter');
+            const countryFilterArray = parseMultiSelectFilter('countryFilter');
+            const validationFilterArray = parseMultiSelectFilter('validationStatusFilter');
+            const acknowledgementFilterArray = parseMultiSelectFilter('acknowledgementStatusFilter');
+            const preStatusFilterArray = parseMultiSelectFilter('agentPreStatusFilter');
+            const postStatusFilterArray = parseMultiSelectFilter('agentPostStatusFilter');
+            
+            // Get text input filters
             const interactionIdFilter = (document.getElementById('interactionIdFilter')?.value || '').toLowerCase();
             const weekFilter = document.getElementById('weekFilter')?.value || '';
-            const validationFilter = document.getElementById('validationStatusFilter')?.value || '';
-            const acknowledgementFilter = document.getElementById('acknowledgementStatusFilter')?.value || '';
-            const preStatusFilter = document.getElementById('agentPreStatusFilter')?.value || '';
-            const postStatusFilter = document.getElementById('agentPostStatusFilter')?.value || '';
             
             // Apply filters
-            const matchesAuditor = !auditorFilter || (audit.auditorName && audit.auditorName.toLowerCase().includes(auditorFilter));
-            const matchesEmployee = !employeeFilter || (audit.employeeName && audit.employeeName.toLowerCase().includes(employeeFilter));
-            const matchesAuditType = !auditTypeFilter || audit.auditType === auditTypeFilter;
-            const matchesChannel = !channelFilter || audit.channel === channelFilter;
-            const matchesEmployeeType = !employeeTypeFilter || audit.employeeType === employeeTypeFilter;
-            const matchesCountry = !countryFilter || audit.countryOfEmployee === countryFilter;
+            const normalizedAuditStatus = normalizePassingStatus(audit.passingStatus);
+            const matchesAuditor = auditorFilterArray.length === 0 || 
+                (audit.auditorName && auditorFilterArray.includes(audit.auditorName.trim()));
+            const matchesEmployee = employeeFilterArray.length === 0 || 
+                (audit.employeeName && employeeFilterArray.includes(audit.employeeName.trim()));
+            const matchesAuditType = auditTypeFilterArray.length === 0 || 
+                (audit.auditType && auditTypeFilterArray.includes(audit.auditType));
+            const matchesStatus = statusFilterArray.length === 0 || 
+                statusFilterArray.includes(normalizedAuditStatus);
+            const matchesQuarter = quarterFilterArray.length === 0 || 
+                (audit.quarter && quarterFilterArray.includes(audit.quarter));
+            const matchesChannel = channelFilterArray.length === 0 || 
+                (audit.channel && channelFilterArray.includes(audit.channel));
+            const matchesEmployeeType = employeeTypeFilterArray.length === 0 || 
+                (audit.employeeType && employeeTypeFilterArray.includes(audit.employeeType));
+            const matchesCountry = countryFilterArray.length === 0 || 
+                (audit.countryOfEmployee && countryFilterArray.includes(audit.countryOfEmployee));
             const matchesInteractionId = !interactionIdFilter || (audit.interactionId && audit.interactionId.toLowerCase().includes(interactionIdFilter));
             const matchesWeek = !weekFilter || audit.week === weekFilter;
-            const matchesValidation = !validationFilter || audit.validationStatus === validationFilter;
-            const matchesAcknowledgement = !acknowledgementFilter || (() => {
+            const matchesValidation = validationFilterArray.length === 0 || 
+                (audit.validationStatus && validationFilterArray.includes(audit.validationStatus));
+            const matchesAcknowledgement = acknowledgementFilterArray.length === 0 || (() => {
                 const status = audit.acknowledgementStatus || audit.acknowledgement_status || '';
-                if (acknowledgementFilter === 'Acknowledged') {
-                    return status && (status.toLowerCase().includes('acknowledged') || status === 'Acknowledged');
-                } else if (acknowledgementFilter === 'Pending') {
-                    return !status || status.trim() === '' || status.toLowerCase() === 'pending' || status === 'Pending';
+                if (acknowledgementFilterArray.length === 0) return true;
+                if (acknowledgementFilterArray.includes('Acknowledged')) {
+                    if (status && (status.toLowerCase().includes('acknowledged') || status === 'Acknowledged')) {
+                        return true;
+                    }
                 }
+                if (acknowledgementFilterArray.includes('Pending')) {
+                    if (!status || status.trim() === '' || status.toLowerCase() === 'pending' || status === 'Pending') {
                 return true;
+                    }
+                }
+                return false;
             })();
-            const matchesPreStatus = !preStatusFilter || audit.agentPreStatus === preStatusFilter;
-            const matchesPostStatus = !postStatusFilter || audit.agentPostStatus === postStatusFilter;
+            const matchesPreStatus = preStatusFilterArray.length === 0 || 
+                (audit.agentPreStatus && preStatusFilterArray.includes(audit.agentPreStatus));
+            const matchesPostStatus = postStatusFilterArray.length === 0 || 
+                (audit.agentPostStatus && postStatusFilterArray.includes(audit.agentPostStatus));
             
             // Score range filters
             const minScoreFilter = document.getElementById('minScoreFilter')?.value || '';
@@ -3157,16 +3895,28 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check search input
         if (searchInput && searchInput.value.trim() !== '') return true;
         
-        // Check status filter
-        if (statusFilter && statusFilter.value !== '') return true;
-        
-        // Check quarter filter
-        if (quarterFilter && quarterFilter.value !== '') return true;
-        
-        // Check all other filter inputs
-        const filterInputs = document.querySelectorAll('input[id$="Filter"], select[id$="Filter"]');
+        // Check all other filter inputs (excluding hidden multi-select inputs)
+        const filterInputs = document.querySelectorAll('input[id$="Filter"]:not([type="hidden"]), select[id$="Filter"]');
         for (const input of filterInputs) {
             if (input.value && input.value.trim() !== '') return true;
+        }
+        
+        // Check all multi-select filters
+        const multiSelectFilters = [
+            'auditorNameFilter', 'employeeNameFilter', 'auditTypeFilter', 
+            'statusFilter', 'quarterFilter', 'channelFilter', 
+            'employeeTypeFilter', 'countryFilter', 'validationStatusFilter',
+            'acknowledgementStatusFilter', 'agentPreStatusFilter', 'agentPostStatusFilter'
+        ];
+        
+        for (const filterId of multiSelectFilters) {
+            try {
+                const filterValue = document.getElementById(filterId)?.value || '';
+                if (filterValue) {
+                    const filterArray = JSON.parse(filterValue);
+                    if (filterArray.length > 0) return true;
+                }
+            } catch (e) {}
         }
         
         // Check date filters
@@ -3191,7 +3941,21 @@ document.addEventListener('DOMContentLoaded', function() {
     async function clearAllFilters() {
             // Clear all filter inputs and selects
             document.querySelectorAll('input[id$="Filter"], select[id$="Filter"], #searchInput').forEach(input => {
+                // Skip hidden inputs (multi-select values)
+                if (input.type !== 'hidden') {
                 input.value = '';
+                }
+            });
+            
+            // Clear all multi-selects
+            const multiSelectFilters = [
+                'auditorNameFilter', 'employeeNameFilter', 'auditTypeFilter', 
+                'statusFilter', 'quarterFilter', 'channelFilter', 
+                'employeeTypeFilter', 'countryFilter', 'validationStatusFilter',
+                'acknowledgementStatusFilter', 'agentPreStatusFilter', 'agentPostStatusFilter'
+            ];
+            multiSelectFilters.forEach(filterId => {
+                clearMultiSelect(filterId);
             });
         
         // Clear KPI filter
@@ -3232,18 +3996,7 @@ document.addEventListener('DOMContentLoaded', function() {
             filterAudits();
         });
     }
-    if (statusFilter) {
-        statusFilter.addEventListener('change', () => {
-            updateClearAllButtonVisibility();
-            filterAudits();
-        });
-    }
-    if (quarterFilter) {
-        quarterFilter.addEventListener('change', () => {
-            updateClearAllButtonVisibility();
-            filterAudits();
-        });
-    }
+    // Note: statusFilter and quarterFilter are now multi-selects, handled by updateMultiSelect()
     
     // Header clear all button
     const clearAllBtn = document.getElementById('clearAllBtn');

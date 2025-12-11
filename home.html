@@ -272,6 +272,22 @@
     color: var(--text-secondary) !important;
   }
 
+  /* Loading spinner dark mode */
+  [data-theme="dark"] .animate-spin circle {
+    stroke: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .animate-spin path {
+    fill: var(--text-color) !important;
+  }
+
+  /* Disabled button states in dark mode */
+  [data-theme="dark"] .action-btn:disabled {
+    background-color: var(--gray-100) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-light) !important;
+  }
+
   [data-theme="dark"] .text-gray-300 {
     color: var(--text-muted) !important;
   }
@@ -929,10 +945,10 @@
           <button class="action-btn quick-date-btn" id="lastMonthBtn" onclick="applyQuickDateFilter('lastMonth')">Last Month</button>
       </div>
       <button class="action-btn" id="filterBtn">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg id="filterBtnIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-4 h-4">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
         </svg>
-        <span>Filter</span>
+        <span id="filterBtnText">Filter</span>
       </button>
     </div>
 
@@ -1355,7 +1371,33 @@ function navigateWeek(direction) {
   const quickDateButtons = document.querySelectorAll('.quick-date-btn');
   quickDateButtons.forEach(btn => btn.classList.remove('active'));
   
+  // Disable week navigation buttons during loading
+  const prevWeekBtn = document.getElementById('prevWeekBtn');
+  const nextWeekBtn = document.getElementById('nextWeekBtn');
+  const weekDisplay = document.getElementById('weekDisplay');
+  if (prevWeekBtn) {
+    prevWeekBtn.disabled = true;
+    prevWeekBtn.style.opacity = '0.6';
+    prevWeekBtn.style.cursor = 'not-allowed';
+  }
+  if (nextWeekBtn) {
+    nextWeekBtn.disabled = true;
+    nextWeekBtn.style.opacity = '0.6';
+    nextWeekBtn.style.cursor = 'not-allowed';
+  }
+  if (weekDisplay) {
+    weekDisplay.style.opacity = '0.6';
+  }
+  
+  // Clear cache when period changes
+  clearCache(`_${currentUserEmail}_`);
+  
   updateWeekDisplay();
+  
+  // Show loaders
+  showLoader('updatesFeed');
+  showLoader('assignedAuditsList');
+  showStatsLoader();
   
   // Reload data with week filter
   Promise.all([
@@ -1363,7 +1405,38 @@ function navigateWeek(direction) {
     updateYourStats(),
     loadAssignedAudits(),
     loadNotifications()
-  ]);
+  ]).then(() => {
+    // Re-enable week navigation buttons
+    if (prevWeekBtn) {
+      prevWeekBtn.disabled = false;
+      prevWeekBtn.style.opacity = '1';
+      prevWeekBtn.style.cursor = 'pointer';
+    }
+    if (nextWeekBtn) {
+      nextWeekBtn.disabled = false;
+      nextWeekBtn.style.opacity = '1';
+      nextWeekBtn.style.cursor = 'pointer';
+    }
+    if (weekDisplay) {
+      weekDisplay.style.opacity = '1';
+    }
+  }).catch(error => {
+    console.error('Error navigating week:', error);
+    // Re-enable buttons even on error
+    if (prevWeekBtn) {
+      prevWeekBtn.disabled = false;
+      prevWeekBtn.style.opacity = '1';
+      prevWeekBtn.style.cursor = 'pointer';
+    }
+    if (nextWeekBtn) {
+      nextWeekBtn.disabled = false;
+      nextWeekBtn.style.opacity = '1';
+      nextWeekBtn.style.cursor = 'pointer';
+    }
+    if (weekDisplay) {
+      weekDisplay.style.opacity = '1';
+    }
+  });
 }
 
 // Function to switch to week view when week display is clicked
@@ -1389,7 +1462,15 @@ function switchToWeekView() {
   const quickDateButtons = document.querySelectorAll('.quick-date-btn');
   quickDateButtons.forEach(btn => btn.classList.remove('active'));
   
+  // Clear cache when switching to week view
+  clearCache(`_${currentUserEmail}_`);
+  
   updateWeekDisplay();
+  
+  // Show loaders
+  showLoader('updatesFeed');
+  showLoader('assignedAuditsList');
+  showStatsLoader();
   
   // Reload data with week filter
   Promise.all([
@@ -1397,7 +1478,9 @@ function switchToWeekView() {
     updateYourStats(),
     loadAssignedAudits(),
     loadNotifications()
-  ]);
+  ]).catch(error => {
+    console.error('Error switching to week view:', error);
+  });
 }
 
 // Initialize date filter (now uses month filter by default)
@@ -1471,6 +1554,8 @@ function getCurrentPeriodDates() {
 function applyDateFilter() {
   const startDateInput = document.getElementById('startDate');
   const endDateInput = document.getElementById('endDate');
+  const dateBtn = document.getElementById('dateBtn');
+  const dateBtnText = document.getElementById('dateBtnText');
   
   if (startDateInput && startDateInput.value) {
     const startDate = getDhakaStartOfDay(parseDhakaDate(startDateInput.value));
@@ -1486,13 +1571,24 @@ function applyDateFilter() {
     dateFilter.end = null;
   }
   
+  // Show loading state on date button
+  if (dateBtn) {
+    dateBtn.disabled = true;
+    dateBtn.style.opacity = '0.6';
+    dateBtn.style.cursor = 'not-allowed';
+  }
+  if (dateBtnText) {
+    const originalText = dateBtnText.textContent;
+    dateBtnText.textContent = 'Loading...';
+    dateBtnText.dataset.originalText = originalText;
+  }
+  
   // Update button text
   if (dateFilter.start || dateFilter.end) {
     const start = dateFilter.start ? formatDhakaDate(dateFilter.start instanceof Date ? dateFilter.start : parseDhakaDate(formatDhakaDateForInput(dateFilter.start)), { month: 'short', day: 'numeric' }) : 'Start';
     const end = dateFilter.end ? formatDhakaDate(dateFilter.end instanceof Date ? dateFilter.end : parseDhakaDate(formatDhakaDateForInput(dateFilter.end)), { month: 'short', day: 'numeric' }) : 'End';
-    const dateBtnText = document.getElementById('dateBtnText');
     if (dateBtnText) {
-      dateBtnText.textContent = `${start} - ${end}`;
+      dateBtnText.dataset.originalText = `${start} - ${end}`;
     }
     useWeekFilter = false; // Date range overrides week filter
     
@@ -1500,14 +1596,26 @@ function applyDateFilter() {
     const quickDateButtons = document.querySelectorAll('.quick-date-btn');
     quickDateButtons.forEach(btn => btn.classList.remove('active'));
     
+    // Clear cache when date filter changes
+    clearCache(`_${currentUserEmail}_`);
+    
     updateWeekDisplay(); // Update week display to show "-"
   } else {
     updateDateButtonText();
     useWeekFilter = true; // Clear date range, go back to week filter
+    
+    // Clear cache when date filter changes
+    clearCache(`_${currentUserEmail}_`);
+    
     updateWeekDisplay(); // Update week display to show week number
   }
   
   document.getElementById('dateDropdown').classList.remove('active');
+  
+  // Show loaders
+  showLoader('updatesFeed');
+  showLoader('assignedAuditsList');
+  showStatsLoader();
   
   // Reload data with filters
   Promise.all([
@@ -1515,7 +1623,34 @@ function applyDateFilter() {
     updateYourStats(),
     loadAssignedAudits(),
     loadNotifications()
-  ]);
+  ]).then(() => {
+    // Reset date button state
+    if (dateBtn) {
+      dateBtn.disabled = false;
+      dateBtn.style.opacity = '1';
+      dateBtn.style.cursor = 'pointer';
+    }
+    if (dateBtnText && dateBtnText.dataset.originalText) {
+      dateBtnText.textContent = dateBtnText.dataset.originalText;
+      delete dateBtnText.dataset.originalText;
+    } else {
+      updateDateButtonText();
+    }
+  }).catch(error => {
+    console.error('Error applying date filter:', error);
+    // Reset button state even on error
+    if (dateBtn) {
+      dateBtn.disabled = false;
+      dateBtn.style.opacity = '1';
+      dateBtn.style.cursor = 'pointer';
+    }
+    if (dateBtnText && dateBtnText.dataset.originalText) {
+      dateBtnText.textContent = dateBtnText.dataset.originalText;
+      delete dateBtnText.dataset.originalText;
+    } else {
+      updateDateButtonText();
+    }
+  });
 }
 
 // Use shared date filter utility - wrap to provide page-specific callbacks
@@ -1524,6 +1659,14 @@ function applyDateFilter() {
 const originalApplyQuickDateFilter = window.applyQuickDateFilter;
 
 window.applyQuickDateFilter = function(period) {
+  // Disable all quick date buttons during loading
+  const quickDateButtons = document.querySelectorAll('.quick-date-btn');
+  quickDateButtons.forEach(btn => {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+  });
+  
   // Check if the utility function is available
   if (typeof originalApplyQuickDateFilter !== 'function') {
     console.error('applyQuickDateFilter utility not loaded yet. Please ensure date-filter-utils.js is loaded.');
@@ -1548,6 +1691,12 @@ window.applyQuickDateFilter = function(period) {
           endDate = getDhakaLastDayOfMonth(today);
           break;
         default:
+          // Re-enable buttons
+          quickDateButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+          });
           return;
       }
       
@@ -1564,10 +1713,14 @@ window.applyQuickDateFilter = function(period) {
       updateWeekDisplay();
       
       // Update active state
-      const quickDateButtons = document.querySelectorAll('.quick-date-btn');
       quickDateButtons.forEach(btn => btn.classList.remove('active'));
       const activeButton = document.getElementById(period + 'Btn');
       if (activeButton) activeButton.classList.add('active');
+      
+      // Show loaders
+      showLoader('updatesFeed');
+      showLoader('assignedAuditsList');
+      showStatsLoader();
       
       // Refresh data
       Promise.all([
@@ -1575,9 +1728,30 @@ window.applyQuickDateFilter = function(period) {
         updateYourStats(),
         loadAssignedAudits(),
         loadNotifications()
-      ]);
+      ]).then(() => {
+        // Re-enable buttons
+        quickDateButtons.forEach(btn => {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+        });
+      }).catch(error => {
+        console.error('Error applying quick date filter:', error);
+        // Re-enable buttons even on error
+        quickDateButtons.forEach(btn => {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+        });
+      });
     } catch (error) {
       console.error('Error applying quick date filter:', error);
+      // Re-enable buttons on error
+      quickDateButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      });
     }
     return;
   }
@@ -1589,12 +1763,35 @@ window.applyQuickDateFilter = function(period) {
     formatDateForInput: formatDateForInput,
     onUpdate: updateWeekDisplay,
     onRefresh: () => {
+      // Clear cache when quick date filter changes
+      clearCache(`_${currentUserEmail}_`);
+      
+      // Show loaders
+      showLoader('updatesFeed');
+      showLoader('assignedAuditsList');
+      showStatsLoader();
+      
       Promise.all([
         loadRecentUpdates(),
         updateYourStats(),
         loadAssignedAudits(),
         loadNotifications()
-      ]);
+      ]).then(() => {
+        // Re-enable buttons
+        quickDateButtons.forEach(btn => {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+        });
+      }).catch(error => {
+        console.error('Error applying quick date filter:', error);
+        // Re-enable buttons even on error
+        quickDateButtons.forEach(btn => {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+        });
+      });
     }
   });
 };
@@ -1605,8 +1802,22 @@ function clearDateFilter() {
   dateFilter.end = null;
   const startDateInput = document.getElementById('startDate');
   const endDateInput = document.getElementById('endDate');
+  const dateBtn = document.getElementById('dateBtn');
+  const dateBtnText = document.getElementById('dateBtnText');
+  
   if (startDateInput) startDateInput.value = '';
   if (endDateInput) endDateInput.value = '';
+  
+  // Show loading state on date button
+  if (dateBtn) {
+    dateBtn.disabled = true;
+    dateBtn.style.opacity = '0.6';
+    dateBtn.style.cursor = 'not-allowed';
+  }
+  if (dateBtnText) {
+    dateBtnText.textContent = 'Loading...';
+  }
+  
   updateDateButtonText();
   document.getElementById('dateDropdown').classList.remove('active');
   useWeekFilter = true; // Go back to week filter
@@ -1615,7 +1826,15 @@ function clearDateFilter() {
   const quickDateButtons = document.querySelectorAll('.quick-date-btn');
   quickDateButtons.forEach(btn => btn.classList.remove('active'));
   
+  // Clear cache when date filter is cleared
+  clearCache(`_${currentUserEmail}_`);
+  
   updateWeekDisplay(); // Update week display to show week number
+  
+  // Show loaders
+  showLoader('updatesFeed');
+  showLoader('assignedAuditsList');
+  showStatsLoader();
   
   // Reload data with week filter
   Promise.all([
@@ -1623,7 +1842,28 @@ function clearDateFilter() {
     updateYourStats(),
     loadAssignedAudits(),
     loadNotifications()
-  ]);
+  ]).then(() => {
+    // Reset date button state
+    if (dateBtn) {
+      dateBtn.disabled = false;
+      dateBtn.style.opacity = '1';
+      dateBtn.style.cursor = 'pointer';
+    }
+    if (dateBtnText) {
+      updateDateButtonText();
+    }
+  }).catch(error => {
+    console.error('Error clearing date filter:', error);
+    // Reset button state even on error
+    if (dateBtn) {
+      dateBtn.disabled = false;
+      dateBtn.style.opacity = '1';
+      dateBtn.style.cursor = 'pointer';
+    }
+    if (dateBtnText) {
+      updateDateButtonText();
+    }
+  });
 }
 
 // Apply filters
@@ -1631,10 +1871,36 @@ function applyFilters() {
   const channelSelect = document.getElementById('filterChannel');
   const statusSelect = document.getElementById('filterStatus');
   const agentSelect = document.getElementById('filterAgent');
+  const filterBtn = document.getElementById('filterBtn');
+  const filterBtnIcon = document.getElementById('filterBtnIcon');
+  const filterBtnText = document.getElementById('filterBtnText');
   
   currentFilters.channel = channelSelect ? channelSelect.value : '';
   currentFilters.status = statusSelect ? statusSelect.value : '';
   currentFilters.agent = agentSelect ? agentSelect.value : '';
+  
+  // Show loading state on filter button
+  if (filterBtn) {
+    filterBtn.disabled = true;
+    filterBtn.style.opacity = '0.6';
+    filterBtn.style.cursor = 'not-allowed';
+  }
+  if (filterBtnIcon) {
+    filterBtnIcon.classList.add('animate-spin');
+    filterBtnIcon.setAttribute('viewBox', '0 0 24 24');
+    filterBtnIcon.innerHTML = '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>';
+  }
+  if (filterBtnText) {
+    filterBtnText.textContent = 'Applying...';
+  }
+  
+  // Clear cache when filters change
+  clearCache(`_${currentUserEmail}_`);
+  
+  // Show loaders
+  showLoader('updatesFeed');
+  showLoader('assignedAuditsList');
+  showStatsLoader();
   
   // Reload data with filters
   Promise.all([
@@ -1642,16 +1908,87 @@ function applyFilters() {
     updateYourStats(),
     loadAssignedAudits(),
     loadNotifications()
-  ]);
+  ]).then(() => {
+    // Reset filter button state
+    if (filterBtn) {
+      filterBtn.disabled = false;
+      filterBtn.style.opacity = '1';
+      filterBtn.style.cursor = 'pointer';
+    }
+    if (filterBtnIcon) {
+      filterBtnIcon.classList.remove('animate-spin');
+      filterBtnIcon.setAttribute('viewBox', '0 0 24 24');
+      filterBtnIcon.setAttribute('fill', 'none');
+      filterBtnIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>';
+    }
+    if (filterBtnText) {
+      filterBtnText.textContent = 'Filter';
+    }
+  }).catch(error => {
+    console.error('Error applying filters:', error);
+    // Reset filter button state even on error
+    if (filterBtn) {
+      filterBtn.disabled = false;
+      filterBtn.style.opacity = '1';
+      filterBtn.style.cursor = 'pointer';
+    }
+    if (filterBtnIcon) {
+      filterBtnIcon.classList.remove('animate-spin');
+      filterBtnIcon.setAttribute('viewBox', '0 0 24 24');
+      filterBtnIcon.setAttribute('fill', 'none');
+      filterBtnIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>';
+    }
+    if (filterBtnText) {
+      filterBtnText.textContent = 'Filter';
+    }
+  });
 }
 
 // Populate filter options
 async function populateFilters() {
   try {
-    // Always fetch fresh data
+    // Check cache first
+    const cacheKey = `filters_${currentUserEmail}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    const cachedTime = sessionStorage.getItem(cacheKey + '_time');
+    const cacheAge = cachedTime ? Date.now() - parseInt(cachedTime) : Infinity;
+    
+    if (cachedData && cacheAge < 120000) { // 2 minutes cache (filters change less frequently)
+      console.log('Loading filters from cache');
+      const filtersData = JSON.parse(cachedData);
+      renderFiltersFromData(filtersData);
+      return;
+    }
+    
+    // Show loader in filter selects (optional, since filters load quickly)
+    const channelSelect = document.getElementById('filterChannel');
+    const agentSelect = document.getElementById('filterAgent');
+    if (channelSelect) {
+      channelSelect.disabled = true;
+      channelSelect.innerHTML = '<option value="">Loading channels...</option>';
+    }
+    if (agentSelect) {
+      agentSelect.disabled = true;
+      agentSelect.innerHTML = '<option value="">Loading agents...</option>';
+    }
+    
     await fetchAndCacheFilters();
+    
+    // Re-enable selects after loading
+    if (channelSelect) channelSelect.disabled = false;
+    if (agentSelect) agentSelect.disabled = false;
   } catch (error) {
     console.error('Error populating filters:', error);
+    const channelSelect = document.getElementById('filterChannel');
+    const agentSelect = document.getElementById('filterAgent');
+    if (channelSelect) {
+      channelSelect.disabled = false;
+      channelSelect.innerHTML = '<option value="">Error loading channels</option>';
+    }
+    if (agentSelect) {
+      agentSelect.disabled = false;
+      agentSelect.innerHTML = '<option value="">Error loading agents</option>';
+    }
   }
 }
 
@@ -1724,8 +2061,13 @@ async function fetchAndCacheFilters() {
     const channels = [...new Set(allAssignmentsForFilters.map(a => a.channel).filter(Boolean))].sort();
     const agents = !isAgent ? [...new Set(allAssignmentsForFilters.map(a => a.employee_email).filter(Boolean))].sort() : [];
     
-    // Update UI with fresh data
+    // Cache the results
     const filtersData = { channels, agents };
+    const cacheKey = `filters_${currentUserEmail}`;
+    sessionStorage.setItem(cacheKey, JSON.stringify(filtersData));
+    sessionStorage.setItem(cacheKey + '_time', Date.now().toString());
+    
+    // Update UI with fresh data
     console.log('Updating UI with fresh filters');
     renderFiltersFromData(filtersData);
   } catch (error) {
@@ -1772,6 +2114,68 @@ function renderFiltersFromData(filtersData) {
 function formatAgentName(email) {
   if (!email || email === 'Unknown') return 'Unknown';
   return email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+// Clear cache for a specific pattern
+function clearCache(pattern) {
+  const keys = Object.keys(sessionStorage);
+  keys.forEach(key => {
+    if (key.includes(pattern)) {
+      sessionStorage.removeItem(key);
+    }
+  });
+}
+
+// Loading state management
+function showLoader(elementId, loadingHtml = null) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  
+  if (loadingHtml) {
+    element.innerHTML = loadingHtml;
+  } else {
+    // Default loading skeleton
+    if (elementId.includes('Feed') || elementId.includes('List')) {
+      element.innerHTML = `
+        <div class="px-4 py-8 text-center">
+          <div class="inline-flex items-center gap-2 text-gray-500 text-xs">
+            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Loading...</span>
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+
+function showStatsLoader() {
+  // Show loading state for stats cards
+  const statsElements = [
+    'statsAuditsConductedCount',
+    'statsAvgQualityScore',
+    'statsPassRate',
+    'statsRemainingCount',
+    'statsRequiresAcknowledgmentCount',
+    'statsReversalTotalCount',
+    'statsInProgressCount',
+    'statsAvgDuration'
+  ];
+  
+  statsElements.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.innerHTML = '<div class="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>';
+    }
+  });
+  
+  // Reset progress bar
+  const progressEl = document.getElementById('statsRemainingProgress');
+  if (progressEl) {
+    progressEl.style.width = '0%';
+  }
 }
 
 // Helper function to check if date is within filter range
@@ -1920,7 +2324,7 @@ async function initializeDashboard() {
     const cachedUsersTime = sessionStorage.getItem('cachedUsersTime');
     const cacheAge = cachedUsersTime ? Date.now() - parseInt(cachedUsersTime) : Infinity;
     
-    if (cachedUsers && cacheAge < 300000) { // 5 minutes cache
+    if (cachedUsers && cacheAge < 120000) { // 2 minutes cache
       allUsers = JSON.parse(cachedUsers);
     } else {
       await loadAllUsers();
@@ -1928,6 +2332,7 @@ async function initializeDashboard() {
       sessionStorage.setItem('cachedUsersTime', Date.now().toString());
     }
 
+    // Show initial loaders (data is already showing skeleton loaders in HTML)
     // Load all dashboard data in parallel
     await Promise.all([
       loadRecentUpdates(),
@@ -1935,10 +2340,19 @@ async function initializeDashboard() {
       loadAssignedAudits(),
       loadNotifications(),
       loadUpcomingEvents() // Preload events for calendar modal
-    ]);
+    ]).catch(error => {
+      console.error('Error loading dashboard data:', error);
+      // Individual functions handle their own error states
+    });
 
     // Populate filter options after loading data (non-blocking)
     populateFilters().catch(err => console.error('Error populating filters:', err));
+
+    // Auto-refresh page every minute (60,000 ms)
+    setInterval(() => {
+      console.log('Auto-refreshing page...');
+      window.location.reload();
+    }, 60000);
 
   } catch (error) {
     console.error('Error initializing dashboard:', error);
@@ -2190,10 +2604,34 @@ async function loadRecentUpdates() {
 
     const period = getCurrentPeriodDates();
     
-    // Always fetch fresh data
+    // Check cache first
+    const cacheKey = `recentUpdates_${currentUserEmail}_${JSON.stringify(period)}_${JSON.stringify(currentFilters)}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    const cachedTime = sessionStorage.getItem(cacheKey + '_time');
+    const cacheAge = cachedTime ? Date.now() - parseInt(cachedTime) : Infinity;
+    
+    if (cachedData && cacheAge < 60000) { // 1 minute cache
+      console.log('Loading recent updates from cache');
+      const allUpdates = JSON.parse(cachedData);
+      renderRecentUpdatesFromData(allUpdates);
+      return;
+    }
+    
+    // Show loader
+    showLoader('updatesFeed');
+    
     await fetchAndCacheRecentUpdates(period);
   } catch (error) {
     console.error('Error loading recent updates:', error);
+    const updatesFeed = document.getElementById('updatesFeed');
+    if (updatesFeed) {
+      updatesFeed.innerHTML = `
+        <div class="px-4 py-8 text-center text-red-500 text-xs">
+          <p class="font-medium mb-1">Error loading updates</p>
+          <p class="text-gray-500">Please try again</p>
+        </div>
+      `;
+    }
   }
 }
 
@@ -2224,14 +2662,8 @@ async function fetchAndCacheRecentUpdates(period) {
               .limit(20);
             
             if (!error && audits && audits.length > 0) {
-              // Client-side filtering with exact email match
-              const filteredAudits = audits.filter(audit => {
-                const emailToCheck = audit.employee_email;
-                if (!emailToCheck) return false;
-                return emailToCheck.toLowerCase().trim() === normalizedCurrentEmail;
-              });
-              
-              return filteredAudits.map(audit => {
+              // No client-side filtering needed - already filtered server-side
+              return audits.map(audit => {
                 // Don't fetch auditor info for agents - they shouldn't see it
                 
                 return {
@@ -2267,10 +2699,11 @@ async function fetchAndCacheRecentUpdates(period) {
         // Parallelize all reversal queries
         const reversalPromises = scorecards.map(async (scorecard) => {
           try {
-            // Query reversals - get all reversals and sort client-side to prioritize recent responses
+            // Query reversals - filter by employee_email server-side for agents
             const { data: reversals, error } = await window.supabaseClient
               .from(scorecard.table_name)
               .select('id, employee_email, auditor_email, reversal_requested_at, reversal_responded_at, reversal_approved, acknowledgement_status, interaction_id, submitted_at')
+              .eq('employee_email', currentUserEmail)
               .not('reversal_requested_at', 'is', null)
               .order('reversal_requested_at', { ascending: false })
               .limit(200);
@@ -2289,12 +2722,8 @@ async function fetchAndCacheRecentUpdates(period) {
                 return bRequested - aRequested;
               });
               
-              // Filter by email first
-              let filteredReversals = reversals.filter(rev => {
-                const emailToCheck = rev[reversalFilterField];
-                if (!emailToCheck) return false;
-                return emailToCheck.toLowerCase().trim() === normalizedCurrentEmail;
-              });
+              // No email filtering needed - already filtered server-side
+              let filteredReversals = reversals;
               
               // For agents: Apply the same filtering logic as reversal.html
               // Show reversals that need acknowledgement (pending, approved but not acknowledged, rejected but not acknowledged)
@@ -2616,6 +3045,11 @@ async function fetchAndCacheRecentUpdates(period) {
     // Limit to 15 most recent
     allUpdates = allUpdates.slice(0, 15);
     
+    // Cache the results
+    const cacheKey = `recentUpdates_${currentUserEmail}_${JSON.stringify(period)}_${JSON.stringify(currentFilters)}`;
+    sessionStorage.setItem(cacheKey, JSON.stringify(allUpdates));
+    sessionStorage.setItem(cacheKey + '_time', Date.now().toString());
+    
     // Update UI with fresh data
     console.log('Updating UI with fresh recent updates');
     renderRecentUpdatesFromData(allUpdates);
@@ -2753,10 +3187,34 @@ async function loadAssignedAudits() {
     
     const period = getCurrentPeriodDates();
     
-    // Always fetch fresh data
+    // Check cache first
+    const cacheKey = `assignedAudits_${currentUserEmail}_${JSON.stringify(period)}_${JSON.stringify(currentFilters)}_${sortBy}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    const cachedTime = sessionStorage.getItem(cacheKey + '_time');
+    const cacheAge = cachedTime ? Date.now() - parseInt(cachedTime) : Infinity;
+    
+    if (cachedData && cacheAge < 60000) { // 1 minute cache
+      console.log('Loading assigned audits from cache');
+      assignedAudits = JSON.parse(cachedData);
+      renderAssignedAudits();
+      return;
+    }
+    
+    // Show loader
+    showLoader('assignedAuditsList');
+    
     await fetchAndCacheAssignedAudits(period);
   } catch (error) {
     console.error('Error loading assigned audits:', error);
+    const list = document.getElementById('assignedAuditsList');
+    if (list) {
+      list.innerHTML = `
+        <div class="px-4 py-8 text-center text-red-500 text-xs">
+          <p class="font-medium mb-1">Error loading audits</p>
+          <p class="text-gray-500">Please try again</p>
+        </div>
+      `;
+    }
   }
 }
 
@@ -2770,6 +3228,11 @@ async function fetchAndCacheAssignedAudits(period) {
       await loadPendingAssignmentsForAuditor();
     }
 
+    // Cache the results
+    const cacheKey = `assignedAudits_${currentUserEmail}_${JSON.stringify(period)}_${JSON.stringify(currentFilters)}_${sortBy}`;
+    sessionStorage.setItem(cacheKey, JSON.stringify(assignedAudits));
+    sessionStorage.setItem(cacheKey + '_time', Date.now().toString());
+    
     // Update UI with fresh data
     console.log('Updating UI with fresh assigned audits');
     renderAssignedAudits();
@@ -2800,12 +3263,13 @@ async function loadCompletedAuditsForEmployee() {
   // Load audits from all scorecard tables
   for (const scorecard of (scorecards || [])) {
       try {
-        // Try with exact match first (case-sensitive)
+        // For agents: Filter by employee_email server-side
         const { data, error } = await window.supabaseClient
           .from(scorecard.table_name)
           .select('*')
+          .eq('employee_email', currentUserEmail)
           .order('submitted_at', { ascending: false })
-          .limit(500); // Get more to filter client-side
+          .limit(500);
         
         if (error) {
           console.warn(`Error loading from ${scorecard.table_name}:`, error);
@@ -2813,30 +3277,10 @@ async function loadCompletedAuditsForEmployee() {
         }
         
         if (data && data.length > 0) {
-          console.log(`Found ${data.length} audits in ${scorecard.table_name} before filtering`);
+          console.log(`Found ${data.length} audits in ${scorecard.table_name} for ${currentUserEmail}`);
           
-          // Client-side filtering with exact email match (case-insensitive)
-          let filteredAudits = data.filter(audit => {
-            const emailToCheck = audit[auditFilterField];
-            if (!emailToCheck) return false;
-            
-            const normalizedEmailToCheck = emailToCheck.toLowerCase().trim();
-            const matches = normalizedEmailToCheck === currentUserEmail;
-            
-            if (!matches && auditFilterField === 'employee_email') {
-              // Debug: log mismatches for employees
-              console.log(`Mismatch in ${scorecard.table_name}:`, {
-                auditId: audit.id,
-                expectedEmail: currentUserEmail,
-                foundEmail: emailToCheck,
-                normalizedFound: normalizedEmailToCheck,
-                employee_email: audit.employee_email,
-                employee_name: audit.employee_name
-              });
-            }
-            
-            return matches;
-          });
+          // No client-side filtering needed - already filtered server-side
+          let filteredAudits = data;
           
           // Apply date filter (week or date range)
           const period = getCurrentPeriodDates();
@@ -2888,19 +3332,7 @@ async function loadCompletedAuditsForEmployee() {
       return dateB - dateA;
     });
     
-    // Final verification: Ensure all audits belong to current user
-    const invalidAudits = combinedAudits.filter(audit => {
-      const auditEmployeeEmail = (audit.employee_email || '').toLowerCase().trim();
-      return auditEmployeeEmail !== currentUserEmail;
-    });
-    
-    if (invalidAudits.length > 0) {
-      console.error('CRITICAL: Found audits that do not belong to current user:', invalidAudits);
-      combinedAudits = combinedAudits.filter(audit => {
-        const auditEmployeeEmail = (audit.employee_email || '').toLowerCase().trim();
-        return auditEmployeeEmail === currentUserEmail;
-      });
-    }
+    // No need for verification - already filtered server-side
     
     // Limit total results
     combinedAudits = combinedAudits.slice(0, 50);
@@ -3269,6 +3701,8 @@ function sortAssignedAudits() {
   const select = document.getElementById('auditSortBy');
   if (select) {
     sortBy = select.value;
+    // Clear cache when sort changes
+    clearCache(`assignedAudits_${currentUserEmail}_`);
     renderAssignedAudits();
   }
 }
@@ -3301,10 +3735,31 @@ async function updateYourStats() {
     
     const period = getCurrentPeriodDates();
     
-    // Always fetch fresh data
+    // Check cache first
+    const cacheKey = `stats_${currentUserEmail}_${JSON.stringify(period)}_${JSON.stringify(currentFilters)}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    const cachedTime = sessionStorage.getItem(cacheKey + '_time');
+    const cacheAge = cachedTime ? Date.now() - parseInt(cachedTime) : Infinity;
+    
+    if (cachedData && cacheAge < 60000) { // 1 minute cache
+      console.log('Loading stats from cache');
+      const statsData = JSON.parse(cachedData);
+      renderStatsFromData(statsData);
+      return;
+    }
+    
+    // Show loader
+    showStatsLoader();
+    
     await fetchAndCacheStats(period);
   } catch (error) {
     console.error('Error loading stats:', error);
+    // Show error state in stats
+    showStatsLoader();
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'text-xs text-red-500 text-center mt-2';
+    errorMsg.textContent = 'Error loading stats';
+    // Stats will show loading state, error is logged
   }
 }
 
@@ -3628,19 +4083,17 @@ async function fetchAndCacheStats(period) {
           // Parallelize all audit queries
           const auditPromises = scorecards.map(async (scorecard) => {
             try {
+              // For agents: Filter by employee_email server-side
               const { data: audits, error } = await window.supabaseClient
                 .from(scorecard.table_name)
                 .select('*')
+                .eq('employee_email', currentUserEmail)
                 .order('submitted_at', { ascending: false })
                 .limit(500);
               
               if (!error && audits && audits.length > 0) {
-                let filteredAudits = audits.filter(audit => {
-                  const emailToCheck = audit[auditFilterField];
-                  if (!emailToCheck) return false;
-                  const normalizedEmailToCheck = emailToCheck.toLowerCase().trim();
-                  return normalizedEmailToCheck === normalizedCurrentEmail;
-                });
+                // No client-side filtering needed - already filtered server-side
+                let filteredAudits = audits;
                 
                 // Apply date filter (week or date range)
                 const period = getCurrentPeriodDates();
@@ -3808,26 +4261,23 @@ async function fetchAndCacheStats(period) {
           // Parallelize all audit count queries
           const auditPromises = scorecards.map(async (scorecard) => {
             try {
-              // Get all audits for this employee and filter client-side
+              // For agents: Filter by employee_email server-side
               const { data: allAudits, error: auditError } = await window.supabaseClient
                 .from(scorecard.table_name)
                 .select('id, employee_email, acknowledgement_status, submitted_at')
+                .eq('employee_email', currentUserEmail)
                 .limit(1000);
               
               if (!auditError && allAudits) {
-                // Filter by email (case-insensitive) and acknowledgement_status = 'pending'
+                // Filter by acknowledgement_status client-side (since status values may vary)
                 let pendingAudits = allAudits.filter(audit => {
-                  const emailToCheck = audit.employee_email;
-                  if (!emailToCheck) return false;
-                  const emailMatches = emailToCheck.toLowerCase().trim() === normalizedCurrentEmail;
-                  
                   const ackStatus = audit.acknowledgement_status || audit.acknowledgementStatus || '';
                   const isPending = ackStatus && (
                     ackStatus.toLowerCase() === 'pending' || 
                     ackStatus === 'Pending'
                   );
                   
-                  return emailMatches && isPending;
+                  return isPending;
                 });
                 
                 // Apply date filter (week or date range)
@@ -3872,12 +4322,20 @@ async function fetchAndCacheStats(period) {
         // Parallelize all reversal count queries
         const reversalPromises = scorecards.map(async (scorecard) => {
           try {
-            // Try query with reversal_requested_at filter first
-            let { data: allReversals, error: allError } = await window.supabaseClient
+            // For agents: Filter by employee_email server-side; for auditors: filter by auditor_email
+            let query = window.supabaseClient
               .from(scorecard.table_name)
               .select('reversal_requested_at, reversal_responded_at, ' + reversalFilterField)
-              .not('reversal_requested_at', 'is', null)
-              .limit(500);
+              .not('reversal_requested_at', 'is', null);
+            
+            // Add email filter server-side
+            if (isAgent) {
+              query = query.eq('employee_email', currentUserEmail);
+            } else {
+              query = query.eq('auditor_email', currentUserEmail);
+            }
+            
+            let { data: allReversals, error: allError } = await query.limit(500);
             
             // If error, table might not have reversal_requested_at column - skip this table silently
             if (allError) {
@@ -3886,14 +4344,8 @@ async function fetchAndCacheStats(period) {
             }
             
             if (!allError && allReversals) {
-              const normalizedCurrentEmail = currentUserEmail.toLowerCase().trim();
-              
-              // Filter by email (case-insensitive)
-              let filteredReversals = allReversals.filter(reversal => {
-                const emailToCheck = reversal[reversalFilterField];
-                if (!emailToCheck) return false;
-                return emailToCheck.toLowerCase().trim() === normalizedCurrentEmail;
-              });
+              // No email filtering needed - already filtered server-side
+              let filteredReversals = allReversals;
               
               // Apply date filter based on reversal_requested_at (week or date range)
               const period = getCurrentPeriodDates();
@@ -3953,6 +4405,11 @@ async function fetchAndCacheStats(period) {
       totalReversals,
       requiresAcknowledgment
     };
+    
+    // Cache the results
+    const cacheKey = `stats_${currentUserEmail}_${JSON.stringify(period)}_${JSON.stringify(currentFilters)}`;
+    sessionStorage.setItem(cacheKey, JSON.stringify(statsData));
+    sessionStorage.setItem(cacheKey + '_time', Date.now().toString());
     
     // Update UI with fresh data
     console.log('Updating UI with fresh stats');
@@ -4317,10 +4774,42 @@ async function loadNotifications() {
   try {
     if (!currentUserEmail) return;
 
-    // Always fetch fresh data
+    // Check cache first
+    const cacheKey = `notifications_${currentUserEmail}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    const cachedTime = sessionStorage.getItem(cacheKey + '_time');
+    const cacheAge = cachedTime ? Date.now() - parseInt(cachedTime) : Infinity;
+    
+    if (cachedData && cacheAge < 30000) { // 30 seconds cache (notifications should be fresher)
+      console.log('Loading notifications from cache');
+      notifications = JSON.parse(cachedData);
+      const cachedUnread = sessionStorage.getItem(cacheKey + '_unread');
+      if (cachedUnread) {
+        unreadNotificationCount = parseInt(cachedUnread);
+      }
+      renderNotifications();
+      updateNotificationBadge();
+      return;
+    }
+
+    // Show loader
+    const notificationsList = document.getElementById('notificationsList');
+    if (notificationsList) {
+      showLoader('notificationsList');
+    }
+
     await fetchAndCacheNotifications();
   } catch (error) {
     console.error('Error loading notifications:', error);
+    const notificationsList = document.getElementById('notificationsList');
+    if (notificationsList) {
+      notificationsList.innerHTML = `
+        <div class="px-4 py-8 text-center text-red-500 text-xs">
+          <p class="font-medium mb-1">Error loading notifications</p>
+          <p class="text-gray-500">Please try again</p>
+        </div>
+      `;
+    }
   }
 }
 
@@ -4389,12 +4878,20 @@ async function fetchAndCacheNotifications() {
       
       for (const scorecard of reversalScorecards) {
         try {
-          // Get all reversals and filter client-side for case-insensitive matching
-          // Try query with reversal_requested_at filter first
-          let { data: auditReversals, error } = await window.supabaseClient
+          // For agents: Filter by employee_email server-side; for auditors: filter by auditor_email
+          let query = window.supabaseClient
             .from(scorecard.table_name)
             .select('id, employee_name, employee_email, auditor_email, reversal_requested_at, reversal_responded_at, reversal_approved, acknowledgement_status, interaction_id, submitted_at')
-            .not('reversal_requested_at', 'is', null)
+            .not('reversal_requested_at', 'is', null);
+          
+          // Add email filter server-side
+          if (isAgent) {
+            query = query.eq('employee_email', currentUserEmail);
+          } else {
+            query = query.eq('auditor_email', currentUserEmail);
+          }
+          
+          let { data: auditReversals, error } = await query
             .order('reversal_requested_at', { ascending: false })
             .limit(200);
 
@@ -4405,12 +4902,8 @@ async function fetchAndCacheNotifications() {
           }
 
           if (!error && auditReversals && auditReversals.length > 0) {
-            // Filter reversals by email (case-insensitive)
-            let filteredReversals = auditReversals.filter(rev => {
-              const emailToCheck = rev[reversalNotificationFilterField];
-              if (!emailToCheck) return false;
-              return emailToCheck.toLowerCase().trim() === normalizedCurrentEmail;
-            });
+            // No email filtering needed - already filtered server-side
+            let filteredReversals = auditReversals;
             
             // Apply the same filtering logic as reversal.html
             if (isAgent) {
@@ -4585,6 +5078,12 @@ async function fetchAndCacheNotifications() {
       unreadNotificationCount = recentNotifications.length;
     }
 
+    // Cache the results
+    const cacheKey = `notifications_${currentUserEmail}`;
+    sessionStorage.setItem(cacheKey, JSON.stringify(notifications));
+    sessionStorage.setItem(cacheKey + '_time', Date.now().toString());
+    sessionStorage.setItem(cacheKey + '_unread', unreadNotificationCount.toString());
+    
     // Update UI with fresh data
     console.log('Updating UI with fresh notifications');
     renderNotifications();
