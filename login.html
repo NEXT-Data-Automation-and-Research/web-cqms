@@ -435,12 +435,12 @@
     <script src="supabase-config.js"></script>
     <script src="confirmation-dialog.js"></script>
     <script>
-        // Check localStorage for is_dev flag
-        const isDev = localStorage.getItem('is_dev') === 'true';
-        const emailPasswordSection = document.getElementById('emailPasswordSection');
+        // Feature flag: Enable/disable email/password login
+        const ENABLE_EMAIL_PASSWORD_LOGIN = false; // Set to true to enable email/password login fields
         
-        // Show email/password section only if is_dev is true
-        if (isDev) {
+        // Show email/password section only if feature flag is enabled
+        const emailPasswordSection = document.getElementById('emailPasswordSection');
+        if (ENABLE_EMAIL_PASSWORD_LOGIN) {
             emailPasswordSection.style.display = 'block';
         }
         

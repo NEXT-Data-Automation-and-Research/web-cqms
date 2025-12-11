@@ -1152,6 +1152,50 @@ function showError(message) {
     document.getElementById('errorText').textContent = message;
 }
 
+// Copy audit ID to clipboard
+window.copyAuditId = function(auditId, element) {
+    if (!auditId) return;
+    
+    navigator.clipboard.writeText(auditId).then(() => {
+        // Visual feedback - temporarily change text
+        const originalText = element.textContent;
+        element.textContent = 'Copied!';
+        element.style.background = 'rgba(26, 115, 62, 0.4)';
+        element.style.borderColor = 'rgba(255,255,255,0.8)';
+        
+        // Show notification if available
+        if (typeof showNotification === 'function') {
+            showNotification('Audit ID copied!', 'success');
+        }
+        
+        // Reset after 1.5 seconds
+        setTimeout(() => {
+            element.textContent = originalText;
+            element.style.background = 'rgba(0,0,0,0.2)';
+            element.style.borderColor = 'rgba(255,255,255,0.3)';
+        }, 1500);
+    }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = auditId;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            if (typeof showNotification === 'function') {
+                showNotification('Audit ID copied!', 'success');
+            }
+        } catch (err) {
+            if (typeof showNotification === 'function') {
+                showNotification('Failed to copy Audit ID', 'error');
+            }
+        }
+        document.body.removeChild(textArea);
+    });
+};
+
 // Edit current audit
 function editCurrentAudit() {
     // Verify that current user is a Quality Analyst and there's a pending reversal
@@ -1622,11 +1666,8 @@ async function populateEditFormFields(audit) {
         auditTypeInput.value = audit.auditType || audit.audit_type || 'Routine Audit (Recorded)';
     }
     
-    // Populate recommendations field
-    const recommendationsTextarea = document.getElementById('recommendations');
-    if (recommendationsTextarea) {
-        recommendationsTextarea.value = audit.recommendations || '';
-    }
+    // Recommendations will be populated by initializeRecommendationsEditor
+    // No need to populate textarea here since we're using Quill
 }
 
 // Helper function to copy conversation ID
@@ -1810,11 +1851,11 @@ function renderAudit(audit, auditScorecard, errorFields, mode = 'view') {
     }
 
     // Generate recommendations HTML
-    // In edit mode, show editable textarea; otherwise show read-only div
+    // In edit mode, show editable Quill editor; otherwise show read-only div
     const recommendationsHtml = isEditMode
-        ? `<div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;"><h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0 0 0.4852rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;"><svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>Recommendations / Next Steps</h3><textarea id="recommendations" name="recommendations" rows="4" placeholder="Enter recommendations and next steps for the employee..." style="width: 100%; padding: 0.5659rem; border: 0.0304rem solid #e5e7eb; border-radius: 0.2425rem; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: 'Poppins', sans-serif; background-color: white; resize: vertical; box-sizing: border-box;">${escapeHtml(audit.recommendations || '')}</textarea></div>`
+        ? `<div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;"><h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0 0 0.4852rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;"><svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>Recommendations / Next Steps</h3><div class="quill-editor-container" style="margin-top: 0.3234rem;"><div id="quill_recommendations"></div></div></div>`
         : (audit.recommendations 
-            ? `<div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;"><h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0 0 0.4852rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;"><svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>Recommendations / Next Steps</h3><div style="background: white; padding: 0.5659rem; border-radius: 0.2425rem; border: 0.0304rem solid #e5e7eb; white-space: pre-wrap; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: 'Poppins', sans-serif;">${escapeHtml(audit.recommendations)}</div></div>`
+            ? `<div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;"><h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0 0 0.4852rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;"><svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>Recommendations / Next Steps</h3><div style="background: white; padding: 0.5659rem; border-radius: 0.2425rem; border: 0.0304rem solid #e5e7eb; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: 'Poppins', sans-serif;">${audit.recommendations}</div></div>`
             : '');
 
     // Check if current user is the audited employee (for showing acknowledge button)
@@ -2111,6 +2152,9 @@ function renderAudit(audit, auditScorecard, errorFields, mode = 'view') {
                     updateFeedbackBoxesForParameter(field.key, fieldType, paramType);
                 });
             }
+            
+            // Initialize Quill editor for recommendations field
+            initializeRecommendationsEditor(audit);
             
             // Update score display after form is populated
             // This will recalculate based on current form values
@@ -6073,6 +6117,64 @@ function updateFeedbackBoxesForParameter(fieldId, fieldType, paramType) {
     }
 }
 
+// Initialize Quill editor for recommendations field
+function initializeRecommendationsEditor(audit) {
+    const recommendationsContainer = document.getElementById('quill_recommendations');
+    if (!recommendationsContainer) {
+        console.warn('Recommendations Quill container not found');
+        return;
+    }
+    
+    // Check if Quill is available
+    if (typeof Quill === 'undefined') {
+        console.error('Quill.js is not loaded. Please check the CDN link.');
+        // Fallback to textarea if Quill is not available
+        const fallbackTextarea = document.createElement('textarea');
+        fallbackTextarea.id = 'recommendations';
+        fallbackTextarea.name = 'recommendations';
+        fallbackTextarea.rows = 4;
+        fallbackTextarea.placeholder = 'Enter recommendations and next steps for the employee...';
+        fallbackTextarea.style.cssText = 'width: 100%; padding: 0.5659rem; border: 0.0304rem solid #e5e7eb; border-radius: 0.2425rem; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: "Poppins", sans-serif; background-color: white; resize: vertical; box-sizing: border-box;';
+        recommendationsContainer.replaceWith(fallbackTextarea);
+        if (audit && audit.recommendations) {
+            fallbackTextarea.value = audit.recommendations;
+        }
+        return;
+    }
+    
+    // Initialize Quill editor
+    const quill = new Quill(recommendationsContainer, {
+        theme: 'snow',
+        placeholder: 'Enter recommendations and next steps for the employee...',
+        modules: {
+            toolbar: [
+                ['bold', 'italic'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link'],
+                ['clean']
+            ]
+        }
+    });
+    
+    // Store Quill instance
+    quillInstances.set('recommendations', quill);
+    
+    // Populate with existing content if available
+    if (audit && audit.recommendations) {
+        // Check if it's already HTML (contains tags) or plain text
+        if (audit.recommendations.trim().startsWith('<')) {
+            // It's HTML, set directly
+            quill.root.innerHTML = audit.recommendations;
+        } else {
+            // It's plain text, convert to HTML
+            const htmlContent = audit.recommendations.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+            quill.root.innerHTML = htmlContent;
+        }
+    }
+    
+    console.log('✅ Recommendations Quill editor initialized');
+}
+
 // Counter Button Functionality for Edit Mode
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('counter-btn') || e.target.closest('.counter-btn')) {
@@ -7231,10 +7333,41 @@ async function saveAuditChanges() {
             });
         }
         
-        // Collect recommendations field
-        const recommendationsTextarea = document.getElementById('recommendations');
-        if (recommendationsTextarea) {
-            auditData.recommendations = recommendationsTextarea.value.trim() || null;
+        // Collect recommendations from Quill editor
+        if (quillInstances.has('recommendations')) {
+            const quill = quillInstances.get('recommendations');
+            const htmlContent = quill.root.innerHTML;
+            // Check if content is not empty (Quill returns '<p><br></p>' for empty)
+            if (htmlContent && htmlContent.trim() && htmlContent !== '<p><br></p>') {
+                // Sanitize HTML before storing
+                const sanitized = DOMPurify.sanitize(htmlContent, {
+                    ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel'],
+                    ALLOW_DATA_ATTR: false
+                });
+                if (sanitized && sanitized.trim() && sanitized !== '<p><br></p>') {
+                    auditData.recommendations = sanitized.trim();
+                } else {
+                    auditData.recommendations = null;
+                }
+            } else {
+                auditData.recommendations = null;
+            }
+        } else {
+            // Fallback to textarea for backward compatibility
+            const recommendationsTextarea = document.getElementById('recommendations');
+            if (recommendationsTextarea) {
+                const value = recommendationsTextarea.value.trim();
+                if (value) {
+                    // Convert plain text to HTML
+                    const htmlText = value.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                    auditData.recommendations = htmlText;
+                } else {
+                    auditData.recommendations = null;
+                }
+            } else {
+                auditData.recommendations = null;
+            }
         }
         
         // Collect parameter comments from all comment input fields
