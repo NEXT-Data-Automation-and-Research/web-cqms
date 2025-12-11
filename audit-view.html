@@ -1533,6 +1533,50 @@ function showError(message) {
     document.getElementById('errorText').textContent = message;
 }
 
+// Copy audit ID to clipboard
+window.copyAuditId = function(auditId, element) {
+    if (!auditId) return;
+    
+    navigator.clipboard.writeText(auditId).then(() => {
+        // Visual feedback - temporarily change text
+        const originalText = element.textContent;
+        element.textContent = 'Copied!';
+        element.style.background = 'rgba(26, 115, 62, 0.4)';
+        element.style.borderColor = 'rgba(255,255,255,0.8)';
+        
+        // Show notification if available
+        if (typeof showNotification === 'function') {
+            showNotification('Audit ID copied!', 'success');
+        }
+        
+        // Reset after 1.5 seconds
+        setTimeout(() => {
+            element.textContent = originalText;
+            element.style.background = 'rgba(0,0,0,0.2)';
+            element.style.borderColor = 'rgba(255,255,255,0.3)';
+        }, 1500);
+    }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = auditId;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            if (typeof showNotification === 'function') {
+                showNotification('Audit ID copied!', 'success');
+            }
+        } catch (err) {
+            if (typeof showNotification === 'function') {
+                showNotification('Failed to copy Audit ID', 'error');
+            }
+        }
+        document.body.removeChild(textArea);
+    });
+};
+
 // Edit current audit
 function editCurrentAudit() {
     if (!currentAudit || !currentScorecardId || !currentTableName) {
@@ -2133,8 +2177,23 @@ function renderAudit(audit, auditScorecard, errorFields) {
     }
 
     // Generate recommendations HTML
+    // Render as HTML if it contains HTML tags, otherwise render as plain text
     const recommendationsHtml = audit.recommendations 
-        ? `<div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;"><h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0 0 0.4852rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;"><svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>Recommendations / Next Steps</h3><div style="background: white; padding: 0.5659rem; border-radius: 0.2425rem; border: 0.0304rem solid #e5e7eb; white-space: pre-wrap; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: 'Poppins', sans-serif;">${audit.recommendations}</div></div>`
+        ? (() => {
+            const recommendations = audit.recommendations;
+            // Check if it's HTML (contains tags) or plain text
+            const isHtml = recommendations.trim().startsWith('<');
+            // Sanitize HTML for safe rendering
+            const sanitizedHtml = isHtml 
+                ? DOMPurify.sanitize(recommendations, {
+                    ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel'],
+                    ALLOW_DATA_ATTR: false
+                })
+                : recommendations.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+            
+            return `<div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;"><h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0 0 0.4852rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;"><svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>Recommendations / Next Steps</h3><div style="background: white; padding: 0.5659rem; border-radius: 0.2425rem; border: 0.0304rem solid #e5e7eb; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: 'Poppins', sans-serif;">${sanitizedHtml}</div></div>`;
+        })()
         : '';
 
     // Set ratingHtml to empty string so it doesn't appear in the right column
@@ -2396,6 +2455,33 @@ function renderAudit(audit, auditScorecard, errorFields) {
     }
     
     auditContentDiv.innerHTML = html;
+
+    // Show background score in header
+    const backgroundScoreContainer = document.getElementById('headerBackgroundScore');
+    const headerScoreValue = document.getElementById('headerScoreValue');
+    if (backgroundScoreContainer && headerScoreValue && auditScorecard) {
+        // Get average score from audit
+        const averageScore = audit.averageScore || audit.average_score || 0;
+        
+        // Determine score text color based on passing status
+        const passingStatusLower = passingStatus.toLowerCase();
+        const isPassingForScore = passingStatusLower.includes('pass') && !passingStatusLower.includes('not');
+        const scoreTextColor = isPassingForScore 
+            ? 'rgba(10, 50, 30, 0.4)' // Darker green for passing
+            : 'rgba(100, 10, 10, 0.4)'; // Darker red for not passing
+        
+        // Set the score value
+        headerScoreValue.textContent = Math.round(averageScore);
+        
+        // Update background score color
+        const scoreSpan = backgroundScoreContainer.querySelector('span');
+        if (scoreSpan) {
+            scoreSpan.style.color = scoreTextColor;
+        }
+        
+        // Display the background score
+        backgroundScoreContainer.style.display = 'flex';
+    }
 
     // Re-insert reversal form container after rendering
     if (reversalFormContainer && auditContentDiv) {

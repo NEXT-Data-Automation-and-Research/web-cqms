@@ -1074,7 +1074,9 @@
                     <svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>
                     Recommendations / Next Steps
                 </h3>
-                <textarea id="recommendations" name="recommendations" rows="4" placeholder="Enter recommendations and next steps for the employee..." style="width: 100%; padding: 0.5659rem; border: 0.0304rem solid #e5e7eb; border-radius: 0.2425rem; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: 'Poppins', sans-serif; background-color: white; resize: vertical; box-sizing: border-box;"></textarea>
+                <div class="quill-editor-container" style="margin-top: 0.3234rem;">
+                    <div id="quill_recommendations"></div>
+                </div>
             </div>
         </div>
     </div> <!-- End Two Column Layout -->
@@ -8076,9 +8078,16 @@ function clearAIAuditData() {
         errorDescriptionField.value = '';
     }
     
-    const recommendationsField = document.getElementById('recommendations');
-    if (recommendationsField) {
-        recommendationsField.value = '';
+    // Clear recommendations Quill editor
+    if (quillInstances.has('recommendations')) {
+        const quill = quillInstances.get('recommendations');
+        quill.root.innerHTML = '';
+    } else {
+        // Fallback to textarea
+        const recommendationsField = document.getElementById('recommendations');
+        if (recommendationsField) {
+            recommendationsField.value = '';
+        }
     }
     
     // Recalculate average score
@@ -10104,10 +10113,30 @@ async function populateFormWithAuditData(audit) {
         
         // Populate transcript and recommendations
         const transcript = document.getElementById('transcript');
-        const recommendations = document.getElementById('recommendations');
         
         if (transcript) transcript.value = audit.transcript || '';
-        if (recommendations) recommendations.value = audit.recommendations || '';
+        
+        // Populate recommendations in Quill editor
+        if (quillInstances.has('recommendations')) {
+            const quill = quillInstances.get('recommendations');
+            if (audit.recommendations) {
+                // Check if it's already HTML (contains tags) or plain text
+                if (audit.recommendations.trim().startsWith('<')) {
+                    // It's HTML, set directly
+                    quill.root.innerHTML = audit.recommendations;
+                } else {
+                    // It's plain text, convert to HTML
+                    const htmlContent = audit.recommendations.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                    quill.root.innerHTML = htmlContent;
+                }
+            } else {
+                quill.root.innerHTML = '';
+            }
+        } else {
+            // Fallback to textarea for backward compatibility
+            const recommendations = document.getElementById('recommendations');
+            if (recommendations) recommendations.value = audit.recommendations || '';
+        }
         
         // Wait for scorecard parameters to be fully loaded and rendered
         let attempts = 0;
@@ -11542,6 +11571,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 auditData.week = weekField.value;
             }
             
+            // Collect recommendations from Quill editor
+            if (quillInstances.has('recommendations')) {
+                const quill = quillInstances.get('recommendations');
+                const htmlContent = quill.root.innerHTML;
+                // Check if content is not empty (Quill returns '<p><br></p>' for empty)
+                if (htmlContent && htmlContent.trim() && htmlContent !== '<p><br></p>') {
+                    // Sanitize HTML before storing
+                    const sanitized = DOMPurify.sanitize(htmlContent, {
+                        ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a'],
+                        ALLOWED_ATTR: ['href', 'target', 'rel'],
+                        ALLOW_DATA_ATTR: false
+                    });
+                    if (sanitized && sanitized.trim() && sanitized !== '<p><br></p>') {
+                        auditData.recommendations = sanitized.trim();
+                    } else {
+                        auditData.recommendations = null;
+                    }
+                } else {
+                    auditData.recommendations = null;
+                }
+            } else {
+                // Fallback to textarea for backward compatibility
+                const recommendationsTextarea = document.getElementById('recommendations');
+                if (recommendationsTextarea && recommendationsTextarea.value && recommendationsTextarea.value.trim()) {
+                    // Convert plain text to HTML
+                    const plainText = recommendationsTextarea.value.trim();
+                    const htmlText = plainText.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                    auditData.recommendations = htmlText;
+                } else {
+                    auditData.recommendations = null;
+                }
+            }
+            
             // Add unique ID and submission timestamp
             auditData.id = 'audit_' + Date.now();
             auditData.submittedAt = new Date().toISOString();
@@ -12140,6 +12202,54 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 500);
     } // End of initializeForm()
+    
+    // Initialize Quill editor for recommendations field
+    function initializeRecommendationsEditor() {
+        const recommendationsContainer = document.getElementById('quill_recommendations');
+        if (!recommendationsContainer) {
+            console.warn('Recommendations Quill container not found');
+            return;
+        }
+        
+        // Check if Quill is available
+        if (typeof Quill === 'undefined') {
+            console.error('Quill.js is not loaded. Please check the CDN link.');
+            // Fallback to textarea if Quill is not available
+            const fallbackTextarea = document.createElement('textarea');
+            fallbackTextarea.id = 'recommendations';
+            fallbackTextarea.name = 'recommendations';
+            fallbackTextarea.rows = 4;
+            fallbackTextarea.placeholder = 'Enter recommendations and next steps for the employee...';
+            fallbackTextarea.style.cssText = 'width: 100%; padding: 0.5659rem; border: 0.0304rem solid #e5e7eb; border-radius: 0.2425rem; font-size: 0.5257rem; line-height: 1.6; color: #374151; font-family: "Poppins", sans-serif; background-color: white; resize: vertical; box-sizing: border-box;';
+            recommendationsContainer.replaceWith(fallbackTextarea);
+            return;
+        }
+        
+        // Initialize Quill editor
+        const quill = new Quill(recommendationsContainer, {
+            theme: 'snow',
+            placeholder: 'Enter recommendations and next steps for the employee...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+        
+        // Store Quill instance
+        quillInstances.set('recommendations', quill);
+        
+        console.log('✅ Recommendations Quill editor initialized');
+    }
+    
+    // Initialize recommendations editor after a short delay to ensure DOM is ready
+    setTimeout(() => {
+        initializeRecommendationsEditor();
+    }, 500);
+    
     // Check for assignment parameter in URL
     const urlParams = new URLSearchParams(window.location.search);
     const assignmentId = urlParams.get('assignment');
@@ -12693,10 +12803,24 @@ async function loadAssignmentFromURL(assignmentId) {
                     console.log('✅ Set error description');
                 }
                 
-                const recommendationsField = document.getElementById('recommendations');
-                if (recommendationsField && normalizedAIData.recommendations) {
-                    recommendationsField.value = normalizedAIData.recommendations;
+                // Set recommendations in Quill editor
+                if (quillInstances.has('recommendations') && normalizedAIData.recommendations) {
+                    const quill = quillInstances.get('recommendations');
+                    // Check if it's already HTML or plain text
+                    if (normalizedAIData.recommendations.trim().startsWith('<')) {
+                        quill.root.innerHTML = normalizedAIData.recommendations;
+                    } else {
+                        const htmlContent = normalizedAIData.recommendations.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                        quill.root.innerHTML = htmlContent;
+                    }
                     console.log('✅ Set recommendations');
+                } else {
+                    // Fallback to textarea
+                    const recommendationsField = document.getElementById('recommendations');
+                    if (recommendationsField && normalizedAIData.recommendations) {
+                        recommendationsField.value = normalizedAIData.recommendations;
+                        console.log('✅ Set recommendations (fallback)');
+                    }
                 }
                 
                 // AI Notes (if available)
@@ -16113,9 +16237,17 @@ Agent: You're welcome! Have a great day!`;
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         // Step 9: Fill recommendations
-        const recommendations = document.getElementById('recommendations');
-        if (recommendations) {
-            recommendations.value = `Recommendations for improvement:
+        // Fill recommendations in Quill editor
+        if (quillInstances.has('recommendations')) {
+            const quill = quillInstances.get('recommendations');
+            const recommendationsHtml = `<p><strong>Recommendations for improvement:</strong></p><ol><li>Continue maintaining professional communication standards</li><li>Ensure all customer information is verified before making changes</li><li>Follow up with customers to ensure satisfaction</li></ol><p><strong>Next Steps:</strong></p><ul><li>Review this audit with the employee</li><li>Provide additional training if needed</li><li>Schedule follow-up audit in next quarter</li></ul>`;
+            quill.root.innerHTML = recommendationsHtml;
+            console.log('✓ Filled recommendations');
+        } else {
+            // Fallback to textarea
+            const recommendations = document.getElementById('recommendations');
+            if (recommendations) {
+                recommendations.value = `Recommendations for improvement:
 1. Continue maintaining professional communication standards
 2. Ensure all customer information is verified before making changes
 3. Follow up with customers to ensure satisfaction
@@ -16124,8 +16256,9 @@ Next Steps:
 - Review this audit with the employee
 - Provide additional training if needed
 - Schedule follow-up audit in next quarter`;
-            recommendations.dispatchEvent(new Event('input', { bubbles: true }));
-            console.log('✓ Filled recommendations');
+                recommendations.dispatchEvent(new Event('input', { bubbles: true }));
+                console.log('✓ Filled recommendations (fallback)');
+            }
         }
         
         // Step 10: Final wait and submit
@@ -16432,10 +16565,24 @@ async function loadConversationDataIntoForm(conversationData) {
                 }
                 
                 // Recommendations
-                const recommendationsField = document.getElementById('recommendations');
-                if (recommendationsField && aiScorecardData.recommendations) {
-                    recommendationsField.value = aiScorecardData.recommendations;
+                // Set recommendations in Quill editor
+                if (quillInstances.has('recommendations') && aiScorecardData.recommendations) {
+                    const quill = quillInstances.get('recommendations');
+                    // Check if it's already HTML or plain text
+                    if (aiScorecardData.recommendations.trim().startsWith('<')) {
+                        quill.root.innerHTML = aiScorecardData.recommendations;
+                    } else {
+                        const htmlContent = aiScorecardData.recommendations.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('');
+                        quill.root.innerHTML = htmlContent;
+                    }
                     console.log('✅ Set recommendations');
+                } else {
+                    // Fallback to textarea
+                    const recommendationsField = document.getElementById('recommendations');
+                    if (recommendationsField && aiScorecardData.recommendations) {
+                        recommendationsField.value = aiScorecardData.recommendations;
+                        console.log('✅ Set recommendations (fallback)');
+                    }
                 }
                 
                 // AI Notes (if available)
