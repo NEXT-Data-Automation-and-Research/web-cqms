@@ -5573,6 +5573,94 @@ async function acknowledgeAudit() {
     }
 }
 
+// Highlight empty comment fields and provide visual guidance
+function highlightEmptyCommentFields() {
+    // Find all comment input fields
+    const allCommentInputs = document.querySelectorAll('input[data-param-key]');
+    const emptyInputs = [];
+    
+    // Check which inputs are empty
+    allCommentInputs.forEach(input => {
+        if (!input.value || !input.value.trim()) {
+            emptyInputs.push(input);
+            // Highlight with red border and background
+            input.style.borderColor = '#ef4444';
+            input.style.borderWidth = '2px';
+            input.style.backgroundColor = '#fef2f2';
+            input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+            
+            // Add focus event to remove highlighting when user starts typing
+            const removeHighlight = () => {
+                input.style.borderColor = '#d1d5db';
+                input.style.borderWidth = '1px';
+                input.style.backgroundColor = '';
+                input.style.boxShadow = '';
+                input.removeEventListener('input', removeHighlight);
+                input.removeEventListener('focus', removeHighlight);
+            };
+            input.addEventListener('input', removeHighlight);
+            input.addEventListener('focus', removeHighlight);
+        }
+    });
+    
+    // Scroll to the first empty field
+    if (emptyInputs.length > 0) {
+        const firstEmptyInput = emptyInputs[0];
+        firstEmptyInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Focus the first empty input after a short delay
+        setTimeout(() => {
+            firstEmptyInput.focus();
+        }, 300);
+    }
+    
+    // Show a message in the reversal form area
+    const reversalFormContainer = document.getElementById('reversalFormContainer');
+    if (reversalFormContainer) {
+        // Remove any existing validation message
+        const existingMessage = reversalFormContainer.querySelector('.validation-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        // Create and show validation message
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'validation-message';
+        messageDiv.style.cssText = `
+            background-color: #fef2f2;
+            border: 2px solid #ef4444;
+            border-radius: 0.2812rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            color: #991b1b;
+            font-size: 0.6094rem;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+        `;
+        messageDiv.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg style="width: 1rem; height: 1rem; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span>At least one parameter comment is required. Please add comments to the highlighted fields in the Error Details section above.</span>
+            </div>
+        `;
+        
+        // Insert message at the top of the form
+        const form = document.getElementById('reversalForm');
+        if (form) {
+            reversalFormContainer.insertBefore(messageDiv, form);
+        } else {
+            reversalFormContainer.insertBefore(messageDiv, reversalFormContainer.firstChild);
+        }
+        
+        // Scroll to the message
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
 // Handle reversal form submission
 document.addEventListener('DOMContentLoaded', function() {
     const reversalForm = document.getElementById('reversalForm');
@@ -5652,7 +5740,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (parametersWithComments.length === 0) {
-                alert('⚠ No parameter comments found. Please add comments using the comment icon next to each parameter\'s feedback before submitting a reversal request.\n\nYou can add comments by clicking on the comment input boxes in the Error Details section.');
+                // Highlight all empty comment fields and scroll to the first one
+                highlightEmptyCommentFields();
                 e.preventDefault(); // Explicitly prevent form submission
                 return false;
             }
