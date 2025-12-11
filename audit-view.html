@@ -2314,12 +2314,13 @@ function renderAudit(audit, auditScorecard, errorFields) {
     
     // Generate interactive feedback rating HTML for footer
     // Always show stars (outlined if no rating, filled if rating exists)
+    // Only show ratings to the audited employee
     let footerRatingHtml = '';
     const totalErrorsCount = audit.totalErrorsCount || audit.total_errors_count || 0;
     const existingRating = audit.audit_rating || 0;
     const hasRating = existingRating > 0;
     
-    if (ENABLE_RATING_SYSTEM) {
+    if (ENABLE_RATING_SYSTEM && isCurrentUserAuditedEmployee()) {
         // Use white text for green footer, dark text for gray footer
         const ratingTextColor = footerTextColor;
         const ratingIconColor = acknowledgementStatusLower === 'acknowledged' ? 'white' : '#1A733E';
@@ -3692,7 +3693,8 @@ function displayConversationMessages(conversation) {
                             partType === 'conversation_rating_remark_added';
         
         // Render rating cards if this is a rating part and we haven't rendered them yet
-        if (isRatingPart && !ratingCardsRendered) {
+        // Only show ratings to the audited employee
+        if (isRatingPart && !ratingCardsRendered && isCurrentUserAuditedEmployee()) {
             ratingCardsRendered = true; // Mark as rendered to avoid duplicates
             
             const rating = conversation.conversation_rating;
@@ -3716,7 +3718,8 @@ function displayConversationMessages(conversation) {
         }
         
         // Skip if we've already rendered rating cards and this is another rating part
-        if (isRatingPart && ratingCardsRendered) {
+        // Also skip rating parts if the current user is not the audited employee
+        if (isRatingPart && (ratingCardsRendered || !isCurrentUserAuditedEmployee())) {
             return;
         }
         
