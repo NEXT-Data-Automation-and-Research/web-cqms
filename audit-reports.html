@@ -490,6 +490,16 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Sync button styles */
+        #forceSyncBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        #lastSyncTime {
+            user-select: none;
+        }
 
         /* Multi-Select Dropdown Styles */
         .multi-select-container {
@@ -778,6 +788,18 @@
             <span>Clear All</span>
         </button>
         <button id="viewAllBtn" onclick="toggleViewAll()" style="display: none; padding: 0.4688rem 0.75rem; background-color: #f3f4f6; color: #374151; border: 0.0469rem solid #d1d5db; border-radius: 0.375rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s ease;" class="action-btn">View All</button>
+        <button class="action-btn" id="forceSyncBtn" title="Force Sync - Refresh data from database">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" id="syncIcon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <span id="syncBtnText">Sync</span>
+        </button>
+        <div id="lastSyncTime" style="display: flex; align-items: center; gap: 0.375rem; padding: 0.4688rem 0.75rem; font-size: 0.5625rem; color: var(--text-secondary); font-family: 'Poppins', sans-serif;">
+            <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span id="lastSyncText">Never synced</span>
+        </div>
                 </div>
 
     <!-- Filters and Search -->
@@ -1581,6 +1603,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cache configuration
     const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes cache duration
+    const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes auto-sync interval
+    let syncIntervalId = null;
+    let isSyncing = false;
     
     // Cache helper functions
     function getCacheKey() {
@@ -1653,6 +1678,419 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem(timestampKey);
         } catch (error) {
             console.error('Error clearing cache:', error);
+        }
+    }
+    
+    // Last sync time helper functions
+    function getLastSyncTimeKey() {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const userEmail = (userInfo.email || 'anonymous').toLowerCase().trim();
+        return `expert_audits_last_sync_${userEmail}`;
+    }
+    
+    function getLastSyncTime() {
+        try {
+            const syncTimeKey = getLastSyncTimeKey();
+            const syncTime = localStorage.getItem(syncTimeKey);
+            return syncTime ? parseInt(syncTime, 10) : null;
+        } catch (error) {
+            console.error('Error reading last sync time:', error);
+            return null;
+        }
+    }
+    
+    function setLastSyncTime() {
+        try {
+            const syncTimeKey = getLastSyncTimeKey();
+            localStorage.setItem(syncTimeKey, Date.now().toString());
+            updateLastSyncDisplay();
+        } catch (error) {
+            console.error('Error writing last sync time:', error);
+        }
+    }
+    
+    function updateLastSyncDisplay() {
+        const lastSyncText = document.getElementById('lastSyncText');
+        if (!lastSyncText) return;
+        
+        const lastSyncTime = getLastSyncTime();
+        if (!lastSyncTime) {
+            lastSyncText.textContent = 'Never synced';
+            return;
+        }
+        
+        const now = Date.now();
+        const diffMs = now - lastSyncTime;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) {
+            lastSyncText.textContent = 'Just now';
+        } else if (diffMins < 60) {
+            lastSyncText.textContent = `${diffMins}m ago`;
+        } else if (diffHours < 24) {
+            lastSyncText.textContent = `${diffHours}h ago`;
+        } else {
+            lastSyncText.textContent = `${diffDays}d ago`;
+        }
+    }
+    
+    // Force sync function
+    async function forceSync() {
+        if (isSyncing) {
+            console.log('Sync already in progress');
+            return;
+        }
+        
+        isSyncing = true;
+        const syncBtn = document.getElementById('forceSyncBtn');
+        const syncIcon = document.getElementById('syncIcon');
+        const syncBtnText = document.getElementById('syncBtnText');
+        
+        // Update button state
+        if (syncBtn) {
+            syncBtn.disabled = true;
+            syncBtn.style.opacity = '0.6';
+            syncBtn.style.cursor = 'not-allowed';
+        }
+        
+        if (syncIcon) {
+            syncIcon.style.animation = 'spin 1s linear infinite';
+        }
+        
+        if (syncBtnText) {
+            syncBtnText.textContent = 'Syncing...';
+        }
+        
+        try {
+            // Force refresh by clearing cache and loading fresh data
+            clearCache();
+            await loadAudits(true); // Force refresh
+            
+            // Update last sync time
+            setLastSyncTime();
+            
+            console.log('Force sync completed successfully');
+        } catch (error) {
+            console.error('Error during force sync:', error);
+        } finally {
+            isSyncing = false;
+            
+            // Reset button state
+            if (syncBtn) {
+                syncBtn.disabled = false;
+                syncBtn.style.opacity = '1';
+                syncBtn.style.cursor = 'pointer';
+            }
+            
+            if (syncIcon) {
+                syncIcon.style.animation = '';
+            }
+            
+            if (syncBtnText) {
+                syncBtnText.textContent = 'Sync';
+            }
+        }
+    }
+    
+    // Auto-sync function (runs in background)
+    async function autoSync() {
+        if (isSyncing) {
+            console.log('Sync already in progress, skipping auto-sync');
+            return;
+        }
+        
+        console.log('Auto-sync triggered');
+        isSyncing = true;
+        
+        try {
+            // Create a silent version of loadAudits that doesn't show loading indicator
+            // We'll call the internal logic directly
+            if (!window.supabaseClient) {
+                console.error('Supabase client not initialized for auto-sync');
+                return;
+            }
+            
+            let combinedAudits = [];
+            
+            // If no specific scorecard is selected, load from ALL scorecard tables
+            if (!currentScorecard) {
+                let tablesToQuery = [];
+                
+                try {
+                    const { data: allTables, error: tablesError } = await window.supabaseClient.rpc('get_audit_tables');
+                    
+                    if (tablesError) {
+                        if (allScorecards && allScorecards.length > 0) {
+                            tablesToQuery = allScorecards
+                                .filter(s => s.table_name !== 'ai_analysis_results')
+                                .map(s => ({
+                                    table_name: s.table_name,
+                                    scorecard_id: s.id,
+                                    scorecard_name: s.name,
+                                    scoring_type: s.scoring_type
+                                }));
+                        } else {
+                            return;
+                        }
+                    } else {
+                        if (allTables && allTables.length > 0) {
+                            tablesToQuery = allTables
+                                .filter(t => t.table_name !== 'ai_analysis_results')
+                                .map(t => {
+                                    const matchingScorecard = allScorecards.find(s => s.table_name === t.table_name);
+                                    return {
+                                        table_name: t.table_name,
+                                        scorecard_id: matchingScorecard?.id || null,
+                                        scorecard_name: matchingScorecard?.name || `Deleted Scorecard (${t.table_name})`,
+                                        scoring_type: matchingScorecard?.scoring_type || 'unknown'
+                                    };
+                                });
+                        } else if (allScorecards && allScorecards.length > 0) {
+                            tablesToQuery = allScorecards
+                                .filter(s => s.table_name !== 'ai_analysis_results')
+                                .map(s => ({
+                                    table_name: s.table_name,
+                                    scorecard_id: s.id,
+                                    scorecard_name: s.name,
+                                    scoring_type: s.scoring_type
+                                }));
+                        } else {
+                            return;
+                        }
+                    }
+                } catch (rpcError) {
+                    if (allScorecards && allScorecards.length > 0) {
+                        tablesToQuery = allScorecards
+                            .filter(s => s.table_name !== 'ai_analysis_results')
+                            .map(s => ({
+                                table_name: s.table_name,
+                                scorecard_id: s.id,
+                                scorecard_name: s.name,
+                                scoring_type: s.scoring_type
+                            }));
+                    } else {
+                        return;
+                    }
+                }
+                
+                tablesToQuery = tablesToQuery.filter(t => t.table_name !== 'ai_analysis_results');
+                
+                for (const tableInfo of tablesToQuery) {
+                    try {
+                        let query = window.supabaseClient
+                            .from(tableInfo.table_name)
+                            .select('*')
+                            .order('submitted_at', { ascending: false });
+                        
+                        if (isAgent && !showAllAudits && currentUserEmail) {
+                            query = query.eq('employee_email', currentUserEmail);
+                        }
+                        
+                        let data, error;
+                        const result = await query;
+                        data = result.data;
+                        error = result.error;
+                        
+                        if (error) {
+                            const errorMessage = error.message || JSON.stringify(error);
+                            if (errorMessage.includes('audit_status') || error.code === 'PGRST116' || error.code === '42703') {
+                                let retryQuery = window.supabaseClient
+                                    .from(tableInfo.table_name)
+                                    .select('*')
+                                    .order('submitted_at', { ascending: false });
+                                
+                                if (isAgent && !showAllAudits && currentUserEmail) {
+                                    retryQuery = retryQuery.eq('employee_email', currentUserEmail);
+                                }
+                                
+                                const retryResult = await retryQuery;
+                                data = retryResult.data;
+                                error = retryResult.error;
+                            }
+                        
+                            if (error) {
+                                continue;
+                            }
+                        }
+                        
+                        if (data && data.length > 0) {
+                            let filteredData = data;
+                            filteredData = filteredData.filter(audit => {
+                                const auditStatus = audit.audit_status;
+                                const isComplete = !auditStatus || auditStatus === 'completed';
+                                if (!isComplete) return false;
+                                
+                                if (isAgent && !showAllAudits && currentUserEmail) {
+                                    const auditEmployeeEmail = (audit.employee_email || '').toLowerCase().trim();
+                                    return auditEmployeeEmail === currentUserEmail;
+                                }
+                                return true;
+                            });
+                            
+                            const auditsWithScorecard = filteredData.map(audit => ({
+                                ...audit,
+                                _scorecard_id: tableInfo.scorecard_id,
+                                _scorecard_name: tableInfo.scorecard_name,
+                                _scorecard_table: tableInfo.table_name,
+                                _scoring_type: tableInfo.scoring_type
+                            }));
+                            combinedAudits = combinedAudits.concat(auditsWithScorecard);
+                        }
+                    } catch (err) {
+                        continue;
+                    }
+                }
+                
+                combinedAudits.sort((a, b) => {
+                    const dateA = toDhakaTime(a.submitted_at);
+                    const dateB = toDhakaTime(b.submitted_at);
+                    return dateB - dateA;
+                });
+            } else {
+                let query = window.supabaseClient
+                    .from(currentScorecard.table_name)
+                    .select('*')
+                    .order('submitted_at', { ascending: false });
+                
+                if (isAgent && !showAllAudits && currentUserEmail) {
+                    query = query.eq('employee_email', currentUserEmail);
+                }
+                
+                let data, error;
+                const result = await query;
+                data = result.data;
+                error = result.error;
+                
+                if (error) {
+                    return;
+                }
+                
+                let processedData = data || [];
+                processedData = processedData.filter(audit => {
+                    const auditStatus = audit.audit_status;
+                    const isComplete = !auditStatus || auditStatus === 'completed';
+                    if (!isComplete) return false;
+                    
+                    if (isAgent && !showAllAudits && currentUserEmail) {
+                        const auditEmployeeEmail = (audit.employee_email || '').toLowerCase().trim();
+                        return auditEmployeeEmail === currentUserEmail;
+                    }
+                    return true;
+                });
+                
+                if (processedData.length > 0) {
+                    combinedAudits = processedData.map(audit => ({
+                        ...audit,
+                        _scorecard_id: currentScorecard.id,
+                        _scorecard_name: currentScorecard.name,
+                        _scorecard_table: currentScorecard.table_name,
+                        _scoring_type: currentScorecard.scoring_type
+                    }));
+                }
+            }
+            
+            if (combinedAudits.length > 0) {
+                allAudits = combinedAudits.map(audit => {
+                    const mapped = {
+                        ...audit,
+                        id: audit.id,
+                        submittedAt: audit.submitted_at || audit.audit_timestamp,
+                        auditTimestamp: audit.submitted_at || audit.audit_timestamp,
+                        auditDuration: audit.audit_duration,
+                        auditorEmail: audit.auditor_email,
+                        auditorName: audit.auditor_name,
+                        employeeName: audit.employee_name,
+                        employeeEmail: audit.employee_email,
+                        employeeType: audit.employee_type,
+                        interactionId: audit.interaction_id,
+                        interactionDate: audit.interaction_date,
+                        auditType: audit.audit_type,
+                        channel: audit.channel,
+                        quarter: audit.quarter,
+                        week: audit.week,
+                        countryOfEmployee: audit.country_of_employee,
+                        clientEmail: audit.client_email,
+                        agentPreStatus: audit.agent_pre_status,
+                        agentPostStatus: audit.agent_post_status,
+                        passingStatus: normalizePassingStatus(audit.passing_status),
+                        validationStatus: audit.validation_status,
+                        averageScore: audit.average_score,
+                        criticalErrors: audit.critical_errors,
+                        totalErrorsCount: audit.total_errors_count,
+                        transcript: audit.transcript,
+                        errorDescription: audit.error_description,
+                        criticalFailError: audit.critical_fail_error,
+                        criticalError: audit.critical_error,
+                        significantError: audit.significant_error,
+                        recommendations: audit.recommendations,
+                        reversalRequestedAt: audit.reversal_requested_at,
+                        reversalRespondedAt: audit.reversal_responded_at,
+                        slaInHours: audit.sla_in_hours,
+                        reasonForReversalResponseDelay: audit.response_from_auditor,
+                        reversalApproved: audit.reversal_approved,
+                        withinAuditorScope: audit.within_auditor_scope,
+                        scoreBeforeAppeal: audit.score_before_appeal,
+                        scoreAfterAppeal: audit.score_after_appeal,
+                        didResultInPass: audit.did_result_in_pass,
+                        reversalType: audit.reversal_type,
+                        reversalMetricsParameters: audit.reversal_metrics_parameters,
+                        reversalJustificationFromAgent: audit.reversal_justification_from_agent,
+                        reversalAttachments: audit.reversal_attachments,
+                        reversalApprovedBy: audit.reversal_approved_by,
+                        reversalResolvedBy: audit.reversal_resolved_by,
+                        acknowledgementStatus: audit.acknowledgement_status,
+                        acknowledgementStatusUpdatedAt: audit.acknowledgement_status_updated_at
+                    };
+                    return mapped;
+                });
+            } else {
+                allAudits = [];
+            }
+            
+            // Save to cache silently
+            setCachedAudits(allAudits);
+            
+            // Update last sync time
+            setLastSyncTime();
+            
+            // Populate multi-select options
+            populateMultiSelectOptions();
+            
+            // Update acknowledgment badge in sidebar
+            if (window.updateAcknowledgmentBadgeCount) {
+                window.updateAcknowledgmentBadgeCount();
+            }
+            
+            console.log('Auto-sync completed successfully');
+        } catch (error) {
+            console.error('Error during auto-sync:', error);
+        } finally {
+            isSyncing = false;
+        }
+    }
+    
+    // Setup auto-sync interval
+    function setupAutoSync() {
+        // Clear existing interval if any
+        if (syncIntervalId) {
+            clearInterval(syncIntervalId);
+        }
+        
+        // Set up new interval
+        syncIntervalId = setInterval(() => {
+            autoSync();
+        }, SYNC_INTERVAL_MS);
+        
+        console.log(`Auto-sync interval set to ${SYNC_INTERVAL_MS / 1000 / 60} minutes`);
+    }
+    
+    // Cleanup sync interval
+    function cleanupAutoSync() {
+        if (syncIntervalId) {
+            clearInterval(syncIntervalId);
+            syncIntervalId = null;
         }
     }
     
@@ -1852,6 +2290,20 @@ document.addEventListener('DOMContentLoaded', function() {
     setupHeaderActionListeners();
     setupKpiCardClickHandlers();
     
+    // Setup force sync button
+    const forceSyncBtn = document.getElementById('forceSyncBtn');
+    if (forceSyncBtn) {
+        forceSyncBtn.addEventListener('click', forceSync);
+    }
+    
+    // Initialize last sync display
+    updateLastSyncDisplay();
+    
+    // Update last sync display every minute
+    setInterval(() => {
+        updateLastSyncDisplay();
+    }, 60000); // Update every minute
+    
     // Wait for Supabase client to be ready, then initialize
     async function initializePage() {
         // Wait for Supabase to be ready
@@ -1891,7 +2343,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Start initialization
-    initializePage();
+    initializePage().then(() => {
+        // Start auto-sync after initial load
+        setupAutoSync();
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        cleanupAutoSync();
+    });
     
     // Safety timeout: Hide loading indicator after 30 seconds if still showing
     // This prevents the loading indicator from showing forever if something goes wrong
@@ -2242,6 +2702,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Save to cache
             setCachedAudits(allAudits);
+            
+            // Update last sync time (we only reach here if we fetched from database)
+            setLastSyncTime();
             
             // Populate multi-select options after audits are loaded
             populateMultiSelectOptions();
