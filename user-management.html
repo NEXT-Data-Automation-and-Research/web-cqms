@@ -934,6 +934,15 @@
                         <option value="false">Inactive</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="editUserIntercomAdmin">Intercom Admin</label>
+                    <select id="editUserIntercomAdmin">
+                        <option value="">Select Intercom Admin (Optional)</option>
+                    </select>
+                    <small style="display: block; margin-top: 0.25rem; font-size: 0.5rem; color: #6b7280;">
+                        Auto-detected if email matches an Intercom admin
+                    </small>
+                </div>
             </form>
         </div>
         <div class="modal-footer">
@@ -1065,6 +1074,15 @@
                         <option value="false">Inactive</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="createUserIntercomAdmin">Intercom Admin</label>
+                    <select id="createUserIntercomAdmin">
+                        <option value="">Select Intercom Admin (Optional)</option>
+                    </select>
+                    <small style="display: block; margin-top: 0.25rem; font-size: 0.5rem; color: #6b7280;">
+                        Auto-detected if email matches an Intercom admin
+                    </small>
+                </div>
             </form>
         </div>
         <div class="modal-footer">
@@ -1080,6 +1098,7 @@ let allUsers = [];
 let filteredUsers = [];
 let availableChannels = [];
 let selectedUsers = new Set(); // Store selected user emails
+let intercomAdmins = []; // Store Intercom admins from cache
 const availableDepartments = [
     'Admin, Compliance & Corporate Affairs',
     'Operations',
@@ -1127,6 +1146,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Wait for Supabase to be initialized
     waitForSupabaseAndLoadUsers();
     loadChannels();
+    loadIntercomAdmins();
     updateDepartmentFilter();
     setupEventListeners();
 });
@@ -1156,6 +1176,75 @@ async function loadChannels() {
     } catch (error) {
         console.error('Error loading channels:', error);
         availableChannels = [];
+    }
+}
+
+// Load Intercom admins from cache table
+async function loadIntercomAdmins() {
+    try {
+        if (!window.supabaseClient) {
+            console.error('Supabase client not initialized');
+            return;
+        }
+
+        const { data, error } = await window.supabaseClient
+            .from('intercom_admin_cache')
+            .select('id, email, name')
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        intercomAdmins = data || [];
+        console.log('Loaded Intercom admins:', intercomAdmins.length);
+        
+        // Populate dropdowns
+        populateIntercomAdminDropdown('createUserIntercomAdmin');
+        populateIntercomAdminDropdown('editUserIntercomAdmin');
+
+    } catch (error) {
+        console.error('Error loading Intercom admins:', error);
+        intercomAdmins = [];
+    }
+}
+
+// Populate Intercom admin dropdown
+function populateIntercomAdminDropdown(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Clear existing options except the first one
+    select.innerHTML = '<option value="">Select Intercom Admin (Optional)</option>';
+    
+    // Add all admins as options
+    intercomAdmins.forEach(admin => {
+        if (admin.id && admin.name) {
+            const option = document.createElement('option');
+            option.value = admin.id;
+            option.textContent = `${admin.name}${admin.email ? ' (' + admin.email + ')' : ''}`;
+            option.dataset.email = admin.email || '';
+            option.dataset.name = admin.name || '';
+            select.appendChild(option);
+        }
+    });
+}
+
+// Auto-detect Intercom admin when email is entered
+function detectIntercomAdmin(email, selectId) {
+    if (!email || !selectId) return;
+    
+    const normalizedEmail = email.toLowerCase().trim();
+    const admin = intercomAdmins.find(a => a.email && a.email.toLowerCase() === normalizedEmail);
+    
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    if (admin) {
+        // Found matching admin, set the value
+        select.value = admin.id;
+        console.log('Auto-detected Intercom admin:', admin.name);
+    } else {
+        // No match found, but keep current selection if user manually selected one
+        // Only clear if it was auto-selected (we could track this, but for simplicity, just leave it)
     }
 }
 
@@ -1523,6 +1612,7 @@ function editUser(userEmail) {
     // Populate dropdowns
     populateChannelDropdown('editUserChannel');
     populateSupervisorDropdowns();
+    populateIntercomAdminDropdown('editUserIntercomAdmin');
     updateDepartmentFilter();
 
     // Populate the form with user data
@@ -1537,6 +1627,14 @@ function editUser(userEmail) {
     document.getElementById('editUserDesignation').value = user.designation || '';
     document.getElementById('editUserEmployeeId').value = user.employee_id || '';
     document.getElementById('editUserStatus').value = user.is_active ? 'true' : 'false';
+    
+    // Set Intercom admin if exists
+    if (user.intercom_admin_id) {
+        document.getElementById('editUserIntercomAdmin').value = user.intercom_admin_id;
+    } else {
+        // Try to auto-detect based on email
+        detectIntercomAdmin(user.email, 'editUserIntercomAdmin');
+    }
 
     // Show the modal
     document.getElementById('editUserModal').style.display = 'flex';
@@ -1598,6 +1696,9 @@ function closeEditModal() {
 
 async function saveUserChanges() {
     const userEmail = document.getElementById('editUserId').value;
+    const intercomAdminId = document.getElementById('editUserIntercomAdmin').value;
+    const selectedAdmin = intercomAdmins.find(a => a.id === intercomAdminId);
+    
     const formData = {
         name: document.getElementById('editUserName').value,
         role: document.getElementById('editUserRole').value,
@@ -1610,6 +1711,16 @@ async function saveUserChanges() {
         employee_id: document.getElementById('editUserEmployeeId').value,
         is_active: document.getElementById('editUserStatus').value === 'true'
     };
+    
+    // Add or clear Intercom admin fields
+    if (intercomAdminId && selectedAdmin) {
+        formData.intercom_admin_id = intercomAdminId;
+        formData.intercom_admin_alias = selectedAdmin.name || '';
+    } else {
+        // Clear the fields if no admin selected
+        formData.intercom_admin_id = null;
+        formData.intercom_admin_alias = null;
+    }
 
     // Basic validation
     if (!formData.name || !formData.role) {
@@ -1741,6 +1852,7 @@ function openCreateUserModal() {
     // Populate dropdowns
     populateChannelDropdown('createUserChannel');
     populateCreateSupervisorDropdowns();
+    populateIntercomAdminDropdown('createUserIntercomAdmin');
     updateDepartmentFilter();
     
     // Reset form
@@ -1748,6 +1860,22 @@ function openCreateUserModal() {
     
     // Set default status to Active
     document.getElementById('createUserStatus').value = 'true';
+    
+    // Add event listener for email auto-detection
+    const emailInput = document.getElementById('createUserEmail');
+    if (emailInput) {
+        // Remove existing listeners by cloning the element
+        const newEmailInput = emailInput.cloneNode(true);
+        emailInput.parentNode.replaceChild(newEmailInput, emailInput);
+        
+        // Add new listener
+        newEmailInput.addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email) {
+                detectIntercomAdmin(email, 'createUserIntercomAdmin');
+            }
+        });
+    }
     
     // Show the modal
     document.getElementById('createUserModal').style.display = 'flex';
@@ -1793,6 +1921,9 @@ function closeCreateModal() {
 }
 
 async function createNewUser() {
+    const intercomAdminId = document.getElementById('createUserIntercomAdmin').value;
+    const selectedAdmin = intercomAdmins.find(a => a.id === intercomAdminId);
+    
     const formData = {
         name: document.getElementById('createUserName').value.trim(),
         email: document.getElementById('createUserEmail').value.trim().toLowerCase(),
@@ -1809,6 +1940,12 @@ async function createNewUser() {
         login_count: 0,
         last_login: null
     };
+    
+    // Add Intercom admin fields if selected
+    if (intercomAdminId && selectedAdmin) {
+        formData.intercom_admin_id = intercomAdminId;
+        formData.intercom_admin_alias = selectedAdmin.name || '';
+    }
 
     // Basic validation
     if (!formData.name || !formData.email || !formData.role) {
