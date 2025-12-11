@@ -112,96 +112,183 @@
         }
 
         .controls-section {
-            background: #ffffff;
-            border-radius: 0.375rem;
-            padding: 0.75rem;
-            border: 0.0469rem solid #e5e7eb;
-            margin-bottom: 0.75rem;
+            background: linear-gradient(to bottom, #ffffff, #f9fafb);
+            border-radius: 0.625rem;
+            padding: 1.125rem 1rem;
+            border: 0.0625rem solid #e5e7eb;
+            margin-bottom: 1rem;
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
+            box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
         }
 
         .controls-header {
-            font-size: 0.6562rem;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 700;
             color: #1A733E;
-            margin-bottom: 0.5625rem;
-            padding-bottom: 0.1875rem;
-            border-bottom: 0.0469rem solid #1A733E;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 0.125rem solid #1A733E;
             text-transform: uppercase;
-            letter-spacing: 0.0141rem;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .controls-header::before {
+            content: '';
+            width: 0.25rem;
+            height: 1rem;
+            background: linear-gradient(to bottom, var(--primary-color), var(--primary-dark));
+            border-radius: 0.125rem;
         }
 
         .controls-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(6.3281rem, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
+            grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
             box-sizing: border-box;
         }
 
         .control-group {
             display: flex;
             flex-direction: column;
+            gap: 0.375rem;
         }
 
         .control-label {
             font-size: 0.5625rem;
-            font-weight: 500;
+            font-weight: 600;
             color: #374151;
-            margin-bottom: 0.1875rem;
+            margin-bottom: 0;
             font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
-        .control-select {
-            padding: 0.2812rem 0.375rem;
-            border: 0.0469rem solid #d1d5db;
-            border-radius: 0.1875rem;
+        .control-label::before {
+            content: '';
+            width: 0.125rem;
+            height: 0.75rem;
+            background-color: var(--primary-color);
+            border-radius: 0.0625rem;
+        }
+
+        .control-select,
+        .control-input {
+            padding: 0.5rem 0.75rem;
+            border: 0.0625rem solid #d1d5db;
+            border-radius: 0.375rem;
             font-size: 0.5625rem;
             font-family: 'Poppins', sans-serif;
             transition: all 0.2s ease;
             background-color: #ffffff;
+            color: #374151;
+            box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.05);
+        }
+
+        .control-input {
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
-            background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23374151\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e');
+        }
+
+        .control-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%231A733E\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6,9 12,15 18,9\'%3e%3c/polyline%3e%3c/svg%3e');
             background-repeat: no-repeat;
-            background-position: right 0.5625rem center;
-            background-size: 0.75rem;
-            padding-right: 1.875rem;
+            background-position: right 0.75rem center;
+            background-size: 0.875rem;
+            padding-right: 2.25rem;
             cursor: pointer;
         }
 
-        .control-select:focus {
+        .control-select:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0.125rem 0.25rem rgba(26, 115, 62, 0.1);
+        }
+
+        .control-select:focus,
+        .control-input:focus {
             outline: none;
             border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.1875rem rgba(26, 115, 62, 0.1);
+        }
+
+        .control-input::placeholder {
+            color: #9ca3af;
+            font-style: italic;
         }
 
         .action-buttons {
             display: flex;
-            gap: 0.375rem;
+            gap: 0.75rem;
             flex-wrap: wrap;
+            justify-content: center;
+            padding-top: 0.75rem;
+            border-top: 0.0625rem solid #e5e7eb;
+            margin-top: 0.5rem;
         }
 
         .btn-primary {
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: #ffffff;
             border: none;
-            border-radius: 0.1875rem;
-            padding: 0.375rem 0.75rem;
-            font-size: 0.5625rem;
+            border-radius: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            font-size: 0.5938rem;
             font-weight: 600;
             font-family: 'Poppins', sans-serif;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 0.1875rem;
+            gap: 0.5rem;
+            box-shadow: 0 0.125rem 0.375rem rgba(26, 115, 62, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-dark);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            box-shadow: 0 0.25rem 0.625rem rgba(26, 115, 62, 0.4);
+            transform: translateY(-0.0625rem);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 0.125rem 0.375rem rgba(26, 115, 62, 0.3);
+        }
+
+        .btn-primary svg {
+            transition: transform 0.3s ease;
+        }
+
+        .btn-primary:hover svg {
+            transform: rotate(180deg);
         }
 
         .btn-secondary {
@@ -225,11 +312,11 @@
         }
 
         .btn-edit {
-            background-color: #f3f4f6;
+            background-color: #ffffff;
             color: #374151;
-            border: 0.0469rem solid #d1d5db;
-            border-radius: 0.1875rem;
-            padding: 0.1875rem 0.375rem;
+            border: 0.0625rem solid #d1d5db;
+            border-radius: 0.25rem;
+            padding: 0.3125rem 0.5rem;
             font-size: 0.45rem;
             font-weight: 500;
             font-family: 'Poppins', sans-serif;
@@ -239,11 +326,15 @@
             align-items: center;
             gap: 0.1875rem;
             white-space: nowrap;
+            box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.05);
         }
 
         .btn-edit:hover {
-            background-color: #e5e7eb;
-            border-color: #9ca3af;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+            transform: translateY(-0.0625rem);
         }
 
         .btn-create {
@@ -394,59 +485,79 @@
 
         .users-table {
             background: #ffffff;
-            border-radius: 0.375rem;
-            padding: 0.5625rem;
-            border: 0.0469rem solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            border: 0.0625rem solid #e5e7eb;
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
+            box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.05);
         }
 
         .users-table table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 0.525rem;
             table-layout: fixed;
         }
 
         .users-table th,
         .users-table td {
-            padding: 0.3rem 0.375rem;
+            padding: 0.625rem 0.5rem;
             text-align: left;
-            border-bottom: 0.0469rem solid #e5e7eb;
+            border-bottom: 0.0625rem solid #f3f4f6;
             word-wrap: break-word;
             overflow-wrap: break-word;
             hyphens: auto;
-            line-height: 1.4;
+            line-height: 1.5;
             vertical-align: middle;
         }
         
-
         .users-table th {
-            background-color: #f9fafb;
+            background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
             font-weight: 600;
-            color: #374151;
+            color: #1f2937;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            font-size: 0.45rem;
+            font-size: 0.4688rem;
+            padding: 0.75rem 0.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 0.125rem solid #e5e7eb;
         }
 
-        .users-table tr:hover {
-            background-color: #f9fafb;
+        .users-table tbody tr {
+            transition: all 0.2s ease;
+            border-left: 0.1875rem solid transparent;
+        }
+
+        .users-table tbody tr:hover {
+            background: linear-gradient(to right, #f9fafb, #ffffff);
+            border-left-color: var(--primary-color);
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
+            transform: translateX(0.0625rem);
+        }
+
+        .users-table tbody tr:last-child td {
+            border-bottom: none;
         }
 
         .user-avatar {
-            width: 1.125rem;
-            height: 1.125rem;
+            width: 1.5rem;
+            height: 1.5rem;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 0.45rem;
+            font-size: 0.5rem;
             color: white;
             background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             flex-shrink: 0;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+            border: 0.125rem solid rgba(255, 255, 255, 0.3);
         }
         
         .users-table td > div {
@@ -454,50 +565,185 @@
         }
 
         .role-badge {
-            padding: 0.1125rem 0.2625rem;
-            border-radius: 0.15rem;
-            font-size: 0.4125rem;
-            font-weight: 600;
+            padding: 0.1875rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.4rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            display: inline-block;
+            letter-spacing: 0.06em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             white-space: normal;
             word-break: break-word;
+            box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.1), inset 0 0.03125rem 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 0.0625rem solid transparent;
+            position: relative;
+            overflow: hidden;
+            min-width: fit-content;
+            line-height: 1.2;
+        }
+
+        .role-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .role-badge:hover {
+            transform: translateY(-0.125rem) scale(1.02);
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .role-badge:hover::before {
+            left: 100%;
         }
 
         .role-super-admin {
-            background-color: #fef3c7;
-            color: #92400e;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #78350f;
+            border-color: rgba(146, 64, 14, 0.2);
+        }
+
+        .role-super-admin:hover {
+            background: linear-gradient(135deg, #fde68a, #fcd34d);
+            box-shadow: 0 0.25rem 0.5rem rgba(146, 64, 14, 0.2);
         }
 
         .role-admin {
-            background-color: #dbeafe;
-            color: #1e40af;
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e3a8a;
+            border-color: rgba(30, 64, 175, 0.2);
+        }
+
+        .role-admin:hover {
+            background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+            box-shadow: 0 0.25rem 0.5rem rgba(30, 64, 175, 0.2);
         }
 
         .role-quality-analyst {
-            background-color: #d1fae5;
-            color: #065f46;
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #064e3b;
+            border-color: rgba(5, 95, 70, 0.2);
+        }
+
+        .role-quality-analyst:hover {
+            background: linear-gradient(135deg, #a7f3d0, #6ee7b7);
+            box-shadow: 0 0.25rem 0.5rem rgba(5, 95, 70, 0.2);
         }
 
         .role-employee {
-            background-color: #f3f4f6;
-            color: #374151;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            color: #1f2937;
+            border-color: rgba(55, 65, 81, 0.2);
+        }
+
+        .role-employee:hover {
+            background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+            box-shadow: 0 0.25rem 0.5rem rgba(55, 65, 81, 0.15);
         }
 
         .role-general-user {
-            background-color: #e5e7eb;
+            background: linear-gradient(135deg, #e5e7eb, #d1d5db);
             color: #374151;
+            border-color: rgba(55, 65, 81, 0.2);
+        }
+
+        .role-general-user:hover {
+            background: linear-gradient(135deg, #d1d5db, #9ca3af);
+            box-shadow: 0 0.25rem 0.5rem rgba(55, 65, 81, 0.15);
         }
 
         .status-active {
             color: #10b981;
             font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-active::before {
+            content: '';
+            width: 0.375rem;
+            height: 0.375rem;
+            border-radius: 50%;
+            background-color: #10b981;
+            display: inline-block;
+            box-shadow: 0 0 0 0.125rem rgba(16, 185, 129, 0.2);
         }
 
         .status-inactive {
             color: #ef4444;
             font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-inactive::before {
+            content: '';
+            width: 0.375rem;
+            height: 0.375rem;
+            border-radius: 50%;
+            background-color: #ef4444;
+            display: inline-block;
+            box-shadow: 0 0 0 0.125rem rgba(239, 68, 68, 0.2);
+        }
+
+        .intercom-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.1875rem;
+            font-size: 0.4rem;
+            font-weight: 500;
+            background-color: #dbeafe;
+            color: #1e40af;
+            margin-left: 0.375rem;
+            white-space: nowrap;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3125rem;
+        }
+
+        .user-name-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-name-row span {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.5625rem;
+        }
+
+        .user-email-row {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.4688rem;
+            color: #6b7280;
+            font-weight: 400;
+        }
+
+        .users-table td {
+            color: #374151;
+            font-size: 0.5rem;
+        }
+
+        .users-table td:not(:first-child):not(:last-child) {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
         }
 
         .loading {
@@ -588,28 +834,28 @@
         .users-table td:nth-child(2) { width: 5%; } /* ID */
         
         .users-table th:nth-child(3),
-        .users-table td:nth-child(3) { width: 10%; } /* Name */
+        .users-table td:nth-child(3) { width: 15%; } /* Name & Email */
         
         .users-table th:nth-child(4),
-        .users-table td:nth-child(4) { width: 12%; } /* Email */
+        .users-table td:nth-child(4) { width: 7%; } /* Department */
         
         .users-table th:nth-child(5),
-        .users-table td:nth-child(5) { width: 7%; } /* Department */
+        .users-table td:nth-child(5) { width: 7%; } /* Channel */
         
         .users-table th:nth-child(6),
-        .users-table td:nth-child(6) { width: 7%; } /* Channel */
+        .users-table td:nth-child(6) { width: 7%; } /* Team */
         
         .users-table th:nth-child(7),
-        .users-table td:nth-child(7) { width: 7%; } /* Team */
+        .users-table td:nth-child(7) { width: 8%; } /* Designation */
         
         .users-table th:nth-child(8),
-        .users-table td:nth-child(8) { width: 8%; } /* Designation */
+        .users-table td:nth-child(8) { width: 9%; } /* Team Supervisor */
         
         .users-table th:nth-child(9),
-        .users-table td:nth-child(9) { width: 9%; } /* Team Supervisor */
+        .users-table td:nth-child(9) { width: 9%; } /* Quality Mentor */
         
         .users-table th:nth-child(10),
-        .users-table td:nth-child(10) { width: 9%; } /* Quality Mentor */
+        .users-table td:nth-child(10) { width: 8%; } /* Intercom Admin */
         
         .users-table th:nth-child(11),
         .users-table td:nth-child(11) { width: 7%; } /* Role */
@@ -761,7 +1007,7 @@
             <div class="controls-grid">
                 <div class="control-group">
                     <label class="control-label">Search</label>
-                    <input type="text" id="searchInput" placeholder="Search users..." class="control-select" style="background-image: none;">
+                    <input type="text" id="searchInput" placeholder="Search users..." class="control-input">
                 </div>
                 <div class="control-group">
                     <label class="control-label">Role</label>
@@ -793,7 +1039,7 @@
             </div>
             <div class="action-buttons">
                 <button class="btn-primary" onclick="refreshUsers()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23,4 23,10 17,10"/>
                         <polyline points="1,20 1,14 7,14"/>
                         <path d="M20.49,9A9,9,0,0,0,5.64,5.64L1,10m22,4L18.36,18.36A9,9,0,0,1,3.51,15"/>
@@ -925,7 +1171,10 @@
                 </div>
                 <div class="form-group">
                     <label for="editUserEmployeeId">Employee ID</label>
-                    <input type="text" id="editUserEmployeeId">
+                    <div style="display: flex; align-items: center; gap: 0.375rem;">
+                        <span style="font-size: 0.5625rem; font-weight: 600; color: var(--primary-color); padding: 0.375rem 0.5rem; background-color: #f3f4f6; border-radius: 0.1875rem; border: 0.0469rem solid #d1d5db;">NXT</span>
+                        <input type="text" id="editUserEmployeeId" style="flex: 1;">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="editUserStatus">Status</label>
@@ -1061,7 +1310,10 @@
                 </div>
                 <div class="form-group">
                     <label for="createUserEmployeeId">Employee ID</label>
-                    <input type="text" id="createUserEmployeeId" placeholder="Enter employee ID">
+                    <div style="display: flex; align-items: center; gap: 0.375rem;">
+                        <span style="font-size: 0.5625rem; font-weight: 600; color: var(--primary-color); padding: 0.375rem 0.5rem; background-color: #f3f4f6; border-radius: 0.1875rem; border: 0.0469rem solid #d1d5db;">NXT</span>
+                        <input type="text" id="createUserEmployeeId" placeholder="Enter employee ID" style="flex: 1;">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="createUserCountry">Country</label>
@@ -1449,14 +1701,14 @@ function renderUsersTable() {
                         <input type="checkbox" id="selectAllUsers" onchange="toggleAllUsers(this.checked)" style="cursor: pointer; accent-color: #1A733E;">
                     </th>
                     <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
+                    <th>Name & Email</th>
                     <th>Department</th>
                     <th>Channel</th>
                     <th>Team</th>
                     <th>Designation</th>
                     <th>Team<br>Supervisor</th>
                     <th>Quality<br>Mentor</th>
+                    <th>Intercom<br>Admin</th>
                     <th>Role</th>
                     <th>Country</th>
                     <th>Status</th>
@@ -1503,6 +1755,9 @@ function createUserRow(user) {
     
     const isSelected = selectedUsers.has(user.email);
     
+    // Get Intercom admin name
+    const intercomAdminName = user.intercom_admin_alias || '-';
+    
     return `
         <tr>
             <td style="text-align: center;">
@@ -1511,20 +1766,25 @@ function createUserRow(user) {
                        onchange="toggleUserSelection('${user.email}', this.checked)"
                        style="cursor: pointer; accent-color: #1A733E;">
             </td>
-            <td>${user.employee_id || '-'}</td>
+            <td style="font-weight: 600; color: #6b7280;">${user.employee_id || '-'}</td>
             <td>
-                <div style="display: flex; align-items: center; gap: 0.2625rem;">
-                    <div class="user-avatar">${initials}</div>
-                    <span>${user.name || 'Unknown'}</span>
+                <div class="user-info">
+                    <div class="user-name-row">
+                        <div class="user-avatar">${initials}</div>
+                        <span>${user.name || 'Unknown'}</span>
+                    </div>
+                    <div class="user-email-row">
+                        <span>${user.email || '-'}</span>
+                    </div>
                 </div>
             </td>
-            <td>${user.email || '-'}</td>
             <td>${user.department || '-'}</td>
             <td>${user.channel || '-'}</td>
             <td>${user.team || '-'}</td>
             <td>${user.designation || '-'}</td>
-            <td>${teamSupervisorName}</td>
-            <td>${qualitySupervisorName}</td>
+            <td style="color: #4b5563;">${teamSupervisorName}</td>
+            <td style="color: #4b5563;">${qualitySupervisorName}</td>
+            <td style="color: #1e40af; font-weight: 500;">${intercomAdminName}</td>
             <td><span class="role-badge role-${roleClass}">${user.role || '-'}</span></td>
             <td>${user.country || '-'}</td>
             <td><span class="${statusClass}">${statusText}</span></td>
