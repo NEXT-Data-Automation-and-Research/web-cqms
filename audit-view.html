@@ -2314,13 +2314,12 @@ function renderAudit(audit, auditScorecard, errorFields) {
     
     // Generate interactive feedback rating HTML for footer
     // Always show stars (outlined if no rating, filled if rating exists)
-    // Only show if errors were detected (agents rate how helpful the feedback was)
     let footerRatingHtml = '';
     const totalErrorsCount = audit.totalErrorsCount || audit.total_errors_count || 0;
     const existingRating = audit.audit_rating || 0;
     const hasRating = existingRating > 0;
     
-    if (ENABLE_RATING_SYSTEM && totalErrorsCount > 0) {
+    if (ENABLE_RATING_SYSTEM) {
         // Use white text for green footer, dark text for gray footer
         const ratingTextColor = footerTextColor;
         const ratingIconColor = acknowledgementStatusLower === 'acknowledged' ? 'white' : '#1A733E';
@@ -2331,11 +2330,12 @@ function renderAudit(audit, auditScorecard, errorFields) {
         footerRatingHtml = `
             <div id="footerRatingContainer" style="display: flex; align-items: center; gap: 0.5rem; margin-right: 0.75rem;">
                 <span style="font-size: 0.6875rem; font-weight: 500; color: ${ratingTextColor}; font-family: 'Poppins', sans-serif; white-space: nowrap;">How helpful was the feedback?</span>
-                <div id="footerRatingStars" class="footer-star-rating" style="display: flex; align-items: center; gap: 0.25rem;" data-rating="${existingRating}">
+                <div id="footerRatingStars" class="footer-star-rating" style="display: flex; align-items: center; gap: 0.25rem;" data-rating="${existingRating}" data-has-rating="${hasRating}">
                     ${Array.from({ length: 5 }, (_, i) => {
                         const starId = `footerStar${i + 1}`;
                         const isActive = i < existingRating;
-                        return `<span id="${starId}" class="footer-star" data-rating="${i + 1}" style="color: ${isActive ? (existingRating >= 4 ? '#fbbf24' : existingRating >= 3 ? '#f59e0b' : '#ef4444') : '#d1d5db'}; transition: all 0.2s ease; user-select: none; cursor: pointer;">★</span>`;
+                        const cursorStyle = hasRating ? 'cursor: default;' : 'cursor: pointer;';
+                        return `<span id="${starId}" class="footer-star" data-rating="${i + 1}" style="color: ${isActive ? (existingRating >= 4 ? '#fbbf24' : existingRating >= 3 ? '#f59e0b' : '#ef4444') : '#d1d5db'}; transition: all 0.2s ease; user-select: none; ${cursorStyle}">★</span>`;
                     }).join('')}
                 </div>
                 ${hasRating ? `<span style="font-size: 0.6875rem; font-weight: 600; color: ${ratingTextColor}; font-family: 'Poppins', sans-serif;">${existingRating}/5</span>` : ''}
@@ -6454,6 +6454,7 @@ async function showRatingDialog(initialRating = 0) {
                 submitBtn.addEventListener('click', () => {
                     if (selectedRating > 0) {
                         let feedback = '';
+                        const feedbackParts = [];
                         
                         // Collect feedback if rating < 5
                         if (selectedRating < 5) {
@@ -6461,14 +6462,17 @@ async function showRatingDialog(initialRating = 0) {
                             const selectedOptions = Array.from(selectedButtons)
                                 .map(btn => btn.dataset.value);
                             
+                            // Add selected options as comma-separated values
+                            if (selectedOptions.length > 0) {
+                                feedbackParts.push(...selectedOptions);
+                            }
+                            
                             const additionalComments = modal.querySelector('#additionalComments');
                             const additionalText = additionalComments ? additionalComments.value.trim() : '';
                             
-                            if (selectedOptions.length > 0) {
-                                feedback = 'Selected issues:\n• ' + selectedOptions.join('\n• ');
-                            }
+                            // Add additional comments if provided
                             if (additionalText) {
-                                feedback += (feedback ? '\n\nAdditional comments:\n' : '') + additionalText;
+                                feedbackParts.push(additionalText);
                             }
                         } else if (selectedRating >= 5) {
                             // Collect compliments if rating is 5 stars
@@ -6476,10 +6480,14 @@ async function showRatingDialog(initialRating = 0) {
                             const complimentValues = Array.from(selectedCompliments)
                                 .map(btn => btn.dataset.value);
                             
+                            // Add compliments as comma-separated values
                             if (complimentValues.length > 0) {
-                                feedback = 'Compliments:\n• ' + complimentValues.join('\n• ');
+                                feedbackParts.push(...complimentValues);
                             }
                         }
+                        
+                        // Join all feedback parts with comma and space for data-friendly CSV format
+                        feedback = feedbackParts.join(', ');
                         
                         console.log('Submitting - Rating:', selectedRating, 'Feedback:', feedback);
                         document.body.removeChild(overlay);
@@ -6542,17 +6550,24 @@ async function acknowledgeAudit() {
     }
     
     // Step 3: Show rating dialog (Uber-style) with integrated feedback
-    // Only show rating dialog if errors were detected and rating system is enabled
+    // Show rating dialog if rating system is enabled and no rating exists yet
     let rating = null;
     let feedback = null;
     
-    if (ENABLE_RATING_SYSTEM && totalErrorsCount > 0) {
-        const ratingResult = await showRatingDialog();
-        
-        if (ratingResult.rating === null) return; // User cancelled rating
-        
-        rating = ratingResult.rating;
-        feedback = ratingResult.feedback;
+    if (ENABLE_RATING_SYSTEM) {
+        // Check if rating already exists - prevent editing
+        const existingRating = currentAudit.audit_rating || 0;
+        if (existingRating > 0) {
+            // Rating already exists, skip rating dialog
+            console.log('Rating already exists, skipping rating dialog');
+        } else {
+            const ratingResult = await showRatingDialog();
+            
+            if (ratingResult.rating === null) return; // User cancelled rating
+            
+            rating = ratingResult.rating;
+            feedback = ratingResult.feedback;
+        }
     }
     
     // Step 4: Save acknowledgment and rating to database
@@ -6628,8 +6643,10 @@ function setupFooterRatingHover() {
     const stars = footerRatingContainer.querySelectorAll('.footer-star');
     if (stars.length === 0) return;
     
-    // Get current rating
-    const currentRating = parseInt(footerRatingContainer.querySelector('#footerRatingStars')?.dataset.rating || '0');
+    // Get current rating and check if rating already exists
+    const starRatingContainer = footerRatingContainer.querySelector('#footerRatingStars');
+    const currentRating = parseInt(starRatingContainer?.dataset.rating || '0');
+    const hasRating = starRatingContainer?.dataset.hasRating === 'true';
     
     // Check if footer is acknowledged (green) or not (gray)
     const footerBar = document.getElementById('footerBar');
@@ -6653,38 +6670,42 @@ function setupFooterRatingHover() {
             star.classList.remove('active');
         }
         
-        // Click handler - open modal with this rating pre-selected
-        star.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const clickedRating = parseInt(star.dataset.rating);
-            handleFooterRatingClick(clickedRating);
-        });
-        
-        // Mouse enter - fill this star and all before it
-        star.addEventListener('mouseenter', () => {
-            stars.forEach((s, i) => {
-                if (i <= index) {
-                    s.style.color = hoverColor;
-                } else {
-                    s.style.color = defaultUnfilledColor;
-                }
+        // Only add click handler if rating doesn't exist yet
+        if (!hasRating) {
+            // Click handler - open modal with this rating pre-selected
+            star.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const clickedRating = parseInt(star.dataset.rating);
+                handleFooterRatingClick(clickedRating);
             });
-        });
+            
+            // Mouse enter - fill this star and all before it (only if no rating exists)
+            star.addEventListener('mouseenter', () => {
+                stars.forEach((s, i) => {
+                    if (i <= index) {
+                        s.style.color = hoverColor;
+                    } else {
+                        s.style.color = defaultUnfilledColor;
+                    }
+                });
+            });
+        }
         
         // Mouse leave - restore original state
-        const starRatingContainer = footerRatingContainer.querySelector('#footerRatingStars');
-        starRatingContainer.addEventListener('mouseleave', () => {
-            stars.forEach((s, i) => {
-                const starNum = i + 1;
-                const wasFilled = starNum <= currentRating;
-                if (wasFilled) {
-                    const ratingColor = currentRating >= 4 ? '#fbbf24' : currentRating >= 3 ? '#f59e0b' : '#ef4444';
-                    s.style.color = ratingColor;
-                } else {
-                    s.style.color = defaultUnfilledColor;
-                }
+        if (starRatingContainer) {
+            starRatingContainer.addEventListener('mouseleave', () => {
+                stars.forEach((s, i) => {
+                    const starNum = i + 1;
+                    const wasFilled = starNum <= currentRating;
+                    if (wasFilled) {
+                        const ratingColor = currentRating >= 4 ? '#fbbf24' : currentRating >= 3 ? '#f59e0b' : '#ef4444';
+                        s.style.color = ratingColor;
+                    } else {
+                        s.style.color = defaultUnfilledColor;
+                    }
+                });
             });
-        });
+        }
     });
 }
 
@@ -6700,18 +6721,18 @@ async function handleFooterRatingClick(clickedRating = 0) {
         return;
     }
     
-    // Check if errors were detected
-    const totalErrorsCount = currentAudit.totalErrorsCount || currentAudit.total_errors_count || 0;
-    if (totalErrorsCount === 0) {
+    // Check if rating already exists - prevent editing
+    const existingRating = currentAudit.audit_rating || 0;
+    if (existingRating > 0) {
         if (window.confirmationDialog) {
             await window.confirmationDialog.show({
-                title: 'No Rating Available',
-                message: 'Feedback rating is only available for audits with detected errors.',
+                title: 'Rating Already Submitted',
+                message: 'This audit has already been rated. Ratings cannot be modified once submitted.',
                 confirmText: 'OK',
                 type: 'info'
             });
         } else {
-            alert('Feedback rating is only available for audits with detected errors.');
+            alert('This audit has already been rated. Ratings cannot be modified once submitted.');
         }
         return;
     }
