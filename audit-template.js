@@ -94,7 +94,8 @@ window.generateAuditHeader = function(options = {}) {
         headerGradient = 'linear-gradient(135deg, #1A733E 0%, #2d9a5a 100%)',
         audit = {},
         mode = 'view',
-        headerActions = ''
+        headerActions = '',
+        showAuditorName = false  // Only show to quality analysts and above
     } = options;
 
     const isEdit = mode === 'edit';
@@ -128,6 +129,12 @@ window.generateAuditHeader = function(options = {}) {
                     <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Country *</p>
                     <input type="text" id="countryOfEmployee" name="countryOfEmployee" required readonly style="padding: 0; border: none; background-color: transparent; color: white; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; width: 100%; line-height: 1.2;">
                 </div>
+                ${showAuditorName ? `
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Auditor</p>
+                    <input type="text" id="auditorName" name="auditorName" readonly style="padding: 0; border: none; background-color: transparent; color: white; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;" value="${escapeHtml(audit.auditorName || 'N/A')}">
+                </div>
+                ` : ''}
                 <div id="intercomAliasContainer" style="display: none; background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
                     <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Intercom Alias</p>
                     <input type="text" id="intercomAlias" name="intercomAlias" readonly style="padding: 0; border: none; background-color: transparent; color: rgba(255,255,255,0.9); font-size: 0.5659rem; font-family: 'Poppins', sans-serif; font-weight: 600; width: 100%; line-height: 1.2;" placeholder="Intercom alias...">
@@ -161,6 +168,12 @@ window.generateAuditHeader = function(options = {}) {
                         <span style="font-size: 0.4852rem; font-weight: 600; font-family: 'Poppins', sans-serif; color: white;">${escapeHtml(audit.countryOfEmployee || 'N/A')}</span>
                     </div>
                 </div>
+                ${showAuditorName ? `
+                <div style="background: rgba(0,0,0,0.15); border-radius: 0.2425rem; padding: 0.3234rem 0.4852rem; backdrop-filter: blur(0.3516rem);">
+                    <p style="font-size: 0.4043rem; color: rgba(255,255,255,0.8); margin: 0 0 0.0808rem 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0122rem; line-height: 1;">Auditor</p>
+                    <p style="font-size: 0.5659rem; font-weight: 600; margin: 0; font-family: 'Poppins', sans-serif; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;" title="${escapeHtml(audit.auditorName || 'N/A')}">${escapeHtml(audit.auditorName || 'N/A')}</p>
+                </div>
+                ` : ''}
             </div>
         `;
     }
@@ -435,7 +448,8 @@ window.generateAuditFormHTML = function(options = {}) {
         errorDetailsHtml = '',
         recommendationsHtml = '',
         ratingHtml = '',
-        actionButtonsHtml = ''
+        actionButtonsHtml = '',
+        showAuditorName = false
     } = options;
 
     const headerHtml = window.generateAuditHeader({
@@ -443,7 +457,8 @@ window.generateAuditFormHTML = function(options = {}) {
         headerGradient: headerGradient,
         audit: audit,
         mode: mode,
-        headerActions: headerActions
+        headerActions: headerActions,
+        showAuditorName: showAuditorName
     });
 
     const transcriptHtml = window.generateTranscriptSection({
@@ -870,7 +885,9 @@ window.generateAuditFormHTML = function(options = {}) {
 
         ratingHtml = '',
 
-        actionButtonsHtml = ''
+        actionButtonsHtml = '',
+
+        showAuditorName = false
 
     } = options;
 
@@ -886,7 +903,9 @@ window.generateAuditFormHTML = function(options = {}) {
 
         mode: mode,
 
-        headerActions: headerActions
+        headerActions: headerActions,
+
+        showAuditorName: showAuditorName
 
     });
 

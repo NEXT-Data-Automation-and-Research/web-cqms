@@ -1511,6 +1511,9 @@ async function loadAuditFromURL() {
 
         // Store errorFields globally for reversal form
         currentErrorFields = errorFields;
+        
+        // Update currentAudit to the mapped version (with camelCase fields)
+        currentAudit = audit;
 
         // Render the audit
         renderAudit(audit, auditScorecard, errorFields);
@@ -2424,6 +2427,9 @@ function renderAudit(audit, auditScorecard, errorFields) {
         <button onclick="handleCloseButtonClick()" style="background: rgba(255,255,255,0.2); border: 0.0606rem solid white; border-radius: 0.2425rem; width: 1.2937rem; height: 1.2937rem; font-size: 0.8086rem; cursor: pointer; color: white; font-weight: bold; transition: all 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'" title="Close (Esc)">×</button>
     `;
 
+    // Check if user is quality analyst or above (should see auditor name)
+    const shouldShowAuditorName = isCurrentUserQualityAnalyst();
+    
     // Use shared template to generate HTML
     const html = window.generateAuditFormHTML({
         audit: audit,
@@ -2435,7 +2441,8 @@ function renderAudit(audit, auditScorecard, errorFields) {
         errorDetailsHtml: errorDetailsHtml,
         recommendationsHtml: recommendationsHtml,
         ratingHtml: ratingHtml,
-        actionButtonsHtml: actionButtonsHtml
+        actionButtonsHtml: actionButtonsHtml,
+        showAuditorName: shouldShowAuditorName
     });
 
     const auditContentDiv = document.getElementById('auditContent');
@@ -2684,7 +2691,7 @@ function handleReversalStatusUI(audit) {
             
             // Get auditor's response if available
             const auditorResponse = currentAudit?.reasonForReversalResponseDelay || currentAudit?.response_from_auditor || '';
-            const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee()) && auditorResponse && auditorResponse.trim();
+            const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && auditorResponse && auditorResponse.trim();
             
             statusBanner.innerHTML = `
                 <svg style="width: 0.9375rem; height: 0.9375rem; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
@@ -2720,7 +2727,7 @@ function handleReversalStatusUI(audit) {
             
             // Get auditor's response if available
             const auditorResponse = currentAudit?.reasonForReversalResponseDelay || currentAudit?.response_from_auditor || '';
-            const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee()) && auditorResponse && auditorResponse.trim();
+            const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && auditorResponse && auditorResponse.trim();
             
             statusBanner.innerHTML = `
                 <svg style="width: 0.9375rem; height: 0.9375rem; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
@@ -2982,7 +2989,7 @@ function displaySubmittedReversalForm(audit) {
                 ${(() => {
                     const reversalRespondedAt = audit.reversalRespondedAt || audit.reversal_responded_at;
                     const auditorResponse = audit.reasonForReversalResponseDelay || audit.response_from_auditor || '';
-                    const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee()) && reversalRespondedAt && auditorResponse && auditorResponse.trim();
+                    const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && reversalRespondedAt && auditorResponse && auditorResponse.trim();
                     
                     if (!shouldShowResponse) return '';
                     
