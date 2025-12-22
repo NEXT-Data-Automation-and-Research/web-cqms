@@ -825,6 +825,12 @@
             <input type="text" id="searchInput" placeholder="Search audits..." style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
         </div>
         
+        <!-- Audit ID Search -->
+        <div>
+            <label for="auditIdSearch" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Audit ID</label>
+            <input type="text" id="auditIdSearch" placeholder="e.g., audit_1765963145843" style="padding: 0.1875rem 0.2812rem; border: 0.0469rem solid #d1d5db; border-radius: 0.1875rem; font-size: 0.5156rem; font-family: 'Poppins', sans-serif; width: 100%;">
+        </div>
+        
         <!-- Auditor Name -->
         <div id="auditorNameFilterContainer">
             <label for="auditorNameFilter" style="font-size: 0.5156rem; font-weight: 500; color: #374151; margin-bottom: 0.0938rem; font-family: 'Poppins', sans-serif; display: block;">Auditor</label>
@@ -4121,12 +4127,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         filteredAudits = dateFilteredAudits.filter(audit => {
-            // General search
+            // Audit ID search (separate from general search)
+            const auditIdSearchInput = document.getElementById('auditIdSearch');
+            const auditIdSearchTerm = (auditIdSearchInput?.value || '').trim().toLowerCase();
+            let matchesAuditId = true;
+            
+            if (auditIdSearchTerm) {
+                // Remove "audit_" prefix if present for comparison
+                const searchId = auditIdSearchTerm.startsWith('audit_') 
+                    ? auditIdSearchTerm.substring(6) 
+                    : auditIdSearchTerm;
+                
+                // Get audit ID and normalize it (remove "audit_" prefix if present)
+                const auditId = audit.id ? String(audit.id).toLowerCase() : '';
+                const normalizedAuditId = auditId.startsWith('audit_') 
+                    ? auditId.substring(6) 
+                    : auditId;
+                
+                // Match if the search term is contained in the audit ID
+                matchesAuditId = normalizedAuditId.includes(searchId) || auditId.includes(auditIdSearchTerm);
+            }
+            
+            // General search (exclude audit ID from general search when audit ID search is active)
             const matchesSearch = !searchTerm || 
                 (audit.employeeName && audit.employeeName.toLowerCase().includes(searchTerm)) ||
                 (audit.auditorName && audit.auditorName.toLowerCase().includes(searchTerm)) ||
                 (audit.interactionId && audit.interactionId.toLowerCase().includes(searchTerm)) ||
-                (audit.id && String(audit.id).toLowerCase().includes(searchTerm));
+                (!auditIdSearchTerm && audit.id && String(audit.id).toLowerCase().includes(searchTerm));
             
             // Helper function to parse multi-select filter values
             function parseMultiSelectFilter(filterId) {
@@ -4271,7 +4298,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            return matchesSearch && matchesStatus && matchesQuarter &&
+            return matchesSearch && matchesAuditId && matchesStatus && matchesQuarter &&
                    matchesAuditor && matchesEmployee && matchesAuditType &&
                    matchesChannel && matchesEmployeeType && matchesCountry &&
                    matchesInteractionId && matchesWeek && matchesValidation &&
@@ -4358,6 +4385,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check search input
         if (searchInput && searchInput.value.trim() !== '') return true;
         
+        // Check audit ID search input
+        const auditIdSearchInput = document.getElementById('auditIdSearch');
+        if (auditIdSearchInput && auditIdSearchInput.value.trim() !== '') return true;
+        
         // Check all other filter inputs (excluding hidden multi-select inputs)
         const filterInputs = document.querySelectorAll('input[id$="Filter"]:not([type="hidden"]), select[id$="Filter"]');
         for (const input of filterInputs) {
@@ -4403,7 +4434,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Clear all filters function
     async function clearAllFilters() {
             // Clear all filter inputs and selects
-            document.querySelectorAll('input[id$="Filter"], select[id$="Filter"], #searchInput').forEach(input => {
+            document.querySelectorAll('input[id$="Filter"], select[id$="Filter"], #searchInput, #auditIdSearch').forEach(input => {
                 // Skip hidden inputs (multi-select values)
                 if (input.type !== 'hidden') {
                 input.value = '';
@@ -4455,6 +4486,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners - simplified
     if (searchInput) {
         searchInput.addEventListener('input', () => {
+            updateClearAllButtonVisibility();
+            filterAudits();
+        });
+    }
+    
+    // Audit ID search event listener
+    const auditIdSearchInput = document.getElementById('auditIdSearch');
+    if (auditIdSearchInput) {
+        auditIdSearchInput.addEventListener('input', () => {
             updateClearAllButtonVisibility();
             filterAudits();
         });
