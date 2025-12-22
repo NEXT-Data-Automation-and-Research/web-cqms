@@ -806,12 +806,17 @@ async function loadMetricsData() {
         
         // Initialize metrics structure
         const metrics = {
-            'Chat Coverage': { target: '100%', tracking: 'Daily', values: [], average: 0 },
+            'Chat Coverage Count': { target: '-', tracking: 'Daily', values: [], average: 0, isCount: true },
+            'Chat Coverage %': { target: '100%', tracking: 'Daily', values: [], average: 0 },
+            'Average Score': { target: '85', tracking: 'Daily', values: [], average: 0 },
             'Passing Rate': { target: '80%', tracking: 'Daily', values: [], average: 0 },
-            'In-Scope Reversal Rate': { target: '2.50%', tracking: 'Daily', values: [], average: 0 },
             'Audit Rating': { target: '4.5', tracking: 'Daily', values: [], average: 0 },
-            'Acknowledgement Rate': { target: '95%', tracking: 'Daily', values: [], average: 0 },
-            'Avg Audit Time': { target: '15', tracking: 'Daily', values: [], average: 0 },
+            'Acknowledgement Count (24-hours)': { target: '-', tracking: 'Daily', values: [], average: 0, isCount: true },
+            'Overall Acknowledgement Count': { target: '-', tracking: 'Daily', values: [], average: 0, isCount: true },
+            'Average Audit Time': { target: '15', tracking: 'Daily', values: [], average: 0 },
+            'Reversals Filed Count': { target: '-', tracking: 'Daily', values: [], average: 0, isCount: true },
+            'In-Scope Reversals Count': { target: '-', tracking: 'Daily', values: [], average: 0, isCount: true },
+            'In-Scope Reversals Rate': { target: '2.50%', tracking: 'Daily', values: [], average: 0 },
             'Reversal SLA - Weekdays': { target: '30', tracking: 'Daily', values: [], average: 0 },
             'Reversal SLA - Weekends': { target: '96', tracking: 'Weekends', values: [], average: 0 }
         };
@@ -834,13 +839,17 @@ async function loadMetricsData() {
                 totalAudits: 0,
                 passedAudits: 0,
                 reversals: 0,
+                inScopeReversals: 0,
                 totalStarRating: 0,
                 starRatingCount: 0,
                 acknowledgedAudits: 0,
+                acknowledgedWithin24Hours: 0,
                 totalDuration: 0,
                 durationCount: 0,
                 chatCompletedAudits: 0,
                 chatAssignedAudits: 0,
+                totalQualityScore: 0,
+                qualityScoreCount: 0,
                 reversalSLAs: [],
                 ratingBreakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } // Track count per rating
             };
@@ -928,15 +937,28 @@ async function loadMetricsData() {
             allAudits.forEach(audit => {
                 dayMetrics.totalAudits++;
                 
+                // Average Score (quality score)
+                const qualityScore = parseFloat(audit.averageScore || audit.average_score || audit.score || 0);
+                if (qualityScore > 0) {
+                    dayMetrics.totalQualityScore += qualityScore;
+                    dayMetrics.qualityScoreCount++;
+                }
+                
                 // Passing Rate
                 const passingStatus = normalizePassingStatus(audit.passing_status);
                 if (passingStatus === 'Passed') {
                     dayMetrics.passedAudits++;
                 }
                 
-                // Reversal Rate
+                // Reversals Filed Count
                 if (audit.reversal_requested_at) {
                     dayMetrics.reversals++;
+                    
+                    // In-Scope Reversals Count
+                    const withinScope = audit.within_auditor_scope || audit.withinAuditorScope;
+                    if (withinScope === true || withinScope === 'true' || withinScope === 'True') {
+                        dayMetrics.inScopeReversals++;
+                    }
                     
                     // Reversal SLA (time between request and response)
                     if (audit.reversal_responded_at) {
@@ -983,9 +1005,6 @@ async function loadMetricsData() {
                         errorCount = Array.isArray(audit.errors) ? audit.errors.length : 0;
                     }
                     
-                    // Get quality score
-                    const qualityScore = parseFloat(audit.averageScore || audit.average_score || audit.score || 0);
-                    
                     detailedAuditRecords.push({
                         id: audit.id,
                         submitted_at: audit.submitted_at,
@@ -1002,13 +1021,29 @@ async function loadMetricsData() {
                     });
                 }
                 
-                // Acknowledgement Rate
+                // Acknowledgement tracking
                 const ackStatus = audit.acknowledgement_status || audit.acknowledgementStatus || '';
-                if (ackStatus && (
+                const isAcknowledged = ackStatus && (
                     ackStatus.toLowerCase().includes('acknowledged') ||
                     ackStatus === 'Acknowledged'
-                )) {
+                );
+                
+                if (isAcknowledged) {
                     dayMetrics.acknowledgedAudits++;
+                    
+                    // Check if acknowledged within 24 hours
+                    const submittedAt = audit.submitted_at;
+                    const ackUpdatedAt = audit.acknowledgement_status_updated_at || audit.acknowledgementStatusUpdatedAt;
+                    
+                    if (submittedAt && ackUpdatedAt) {
+                        const submittedTime = new Date(submittedAt).getTime();
+                        const ackTime = new Date(ackUpdatedAt).getTime();
+                        const hoursDiff = (ackTime - submittedTime) / (1000 * 60 * 60);
+                        
+                        if (hoursDiff >= 0 && hoursDiff <= 24) {
+                            dayMetrics.acknowledgedWithin24Hours++;
+                        }
+                    }
                 }
                 
                 // Avg Audit Time
@@ -1029,24 +1064,25 @@ async function loadMetricsData() {
             });
             
             // Calculate percentages and averages for the day
+            const chatCoverageCount = dayMetrics.chatCompletedAudits;
             const chatCoverage = dayMetrics.chatAssignedAudits > 0
                 ? (dayMetrics.chatCompletedAudits / dayMetrics.chatAssignedAudits) * 100
+                : 0;
+            
+            const avgScore = dayMetrics.qualityScoreCount > 0
+                ? dayMetrics.totalQualityScore / dayMetrics.qualityScoreCount
                 : 0;
             
             const passingRate = dayMetrics.totalAudits > 0
                 ? (dayMetrics.passedAudits / dayMetrics.totalAudits) * 100
                 : 0;
             
-            const reversalRate = dayMetrics.totalAudits > 0
-                ? (dayMetrics.reversals / dayMetrics.totalAudits) * 100
+            const inScopeReversalRate = dayMetrics.totalAudits > 0
+                ? (dayMetrics.inScopeReversals / dayMetrics.totalAudits) * 100
                 : 0;
             
             const avgStarRating = dayMetrics.starRatingCount > 0
                 ? dayMetrics.totalStarRating / dayMetrics.starRatingCount
-                : 0;
-            
-            const ackRate = dayMetrics.totalAudits > 0
-                ? (dayMetrics.acknowledgedAudits / dayMetrics.totalAudits) * 100
                 : 0;
             
             const avgAuditTime = dayMetrics.durationCount > 0
@@ -1070,12 +1106,17 @@ async function loadMetricsData() {
                 : 0;
             
             // Store day values
-            metrics['Chat Coverage'].values.push(chatCoverage);
+            metrics['Chat Coverage Count'].values.push(chatCoverageCount);
+            metrics['Chat Coverage %'].values.push(chatCoverage);
+            metrics['Average Score'].values.push(avgScore);
             metrics['Passing Rate'].values.push(passingRate);
-            metrics['In-Scope Reversal Rate'].values.push(reversalRate);
             metrics['Audit Rating'].values.push(avgStarRating);
-            metrics['Acknowledgement Rate'].values.push(ackRate);
-            metrics['Avg Audit Time'].values.push(avgAuditTime);
+            metrics['Acknowledgement Count (24-hours)'].values.push(dayMetrics.acknowledgedWithin24Hours);
+            metrics['Overall Acknowledgement Count'].values.push(dayMetrics.acknowledgedAudits);
+            metrics['Average Audit Time'].values.push(avgAuditTime);
+            metrics['Reversals Filed Count'].values.push(dayMetrics.reversals);
+            metrics['In-Scope Reversals Count'].values.push(dayMetrics.inScopeReversals);
+            metrics['In-Scope Reversals Rate'].values.push(inScopeReversalRate);
             metrics['Reversal SLA - Weekdays'].values.push(avgWeekdaySLA);
             metrics['Reversal SLA - Weekends'].values.push(avgWeekendSLA);
             
@@ -1088,9 +1129,12 @@ async function loadMetricsData() {
         // Calculate averages for the selected period
         const dayCount = days.length;
         Object.keys(metrics).forEach(key => {
-            const values = metrics[key].values.filter(v => v > 0);
+            const metric = metrics[key];
+            // Exclude zeros from average calculation for all metrics
+            // Zero means all members were absent/on leave, not actual data
+            const values = metric.values.filter(v => v > 0);
             if (values.length > 0) {
-                metrics[key].average = values.reduce((a, b) => a + b, 0) / values.length;
+                metric.average = values.reduce((a, b) => a + b, 0) / values.length;
             }
         });
         
@@ -1239,11 +1283,17 @@ function renderMetricsTable(days, metrics) {
         
         // Period Average
         const avgCell = document.createElement('td');
-        if (metricName === 'Avg Audit Time') {
+        if (metric.isCount) {
+            // For count metrics, show the average count per day with 2 decimal places
+            // Show "-" instead of "0" since 0 means all members were absent/on leave
+            avgCell.textContent = metric.average > 0 ? metric.average.toFixed(2) : '-';
+        } else if (metricName === 'Avg Audit Time' || metricName === 'Average Audit Time') {
             avgCell.textContent = metric.average > 0 ? formatDuration(metric.average) : '-';
         } else if (metricName.includes('SLA')) {
             avgCell.textContent = metric.average > 0 ? `${Math.round(metric.average)}h` : '-';
         } else if (metricName === 'Audit Rating') {
+            avgCell.textContent = metric.average > 0 ? `${metric.average.toFixed(2)}` : '-';
+        } else if (metricName === 'Average Score') {
             avgCell.textContent = metric.average > 0 ? `${metric.average.toFixed(2)}` : '-';
         } else {
             avgCell.textContent = metric.average > 0 ? `${metric.average.toFixed(2)}%` : '-';
@@ -1262,11 +1312,17 @@ function renderMetricsTable(days, metrics) {
             
             const value = metric.values[index] || 0;
             
-            if (metricName === 'Avg Audit Time') {
+            if (metric.isCount) {
+                // For count metrics, show the count directly
+                // Show "-" instead of "0" since 0 means all members were absent/on leave
+                valueCell.textContent = value > 0 ? value.toString() : '-';
+            } else if (metricName === 'Avg Audit Time' || metricName === 'Average Audit Time') {
                 valueCell.textContent = value > 0 ? formatDuration(value) : '-';
             } else if (metricName.includes('SLA')) {
                 valueCell.textContent = value > 0 ? `${Math.round(value)}h` : '-';
             } else if (metricName === 'Audit Rating') {
+                valueCell.textContent = value > 0 ? `${value.toFixed(2)}` : '-';
+            } else if (metricName === 'Average Score') {
                 valueCell.textContent = value > 0 ? `${value.toFixed(2)}` : '-';
             } else {
                 valueCell.textContent = value > 0 ? `${value.toFixed(2)}%` : '-';
@@ -1399,12 +1455,17 @@ function viewAuditDetails(record) {
 // Get explanation for a specific metric
 function getMetricExplanation(metricName) {
     const explanations = {
-        'Chat Coverage': `Percentage of completed audits for selected channels. Calculated as: (Number of completed audits for selected channels) / (Number of audit assignments for selected channels) × 100%. This tracks how many assigned audits have been completed. If no channels are selected, it includes all channels.`,
+        'Chat Coverage Count': `Total count of completed audits for selected channels. This is the raw count of audits that were completed, regardless of assignments. If no channels are selected, it includes all channels.`,
+        'Chat Coverage %': `Percentage of completed audits for selected channels. Calculated as: (Number of completed audits for selected channels) / (Number of audit assignments for selected channels) × 100%. This tracks how many assigned audits have been completed. If no channels are selected, it includes all channels.`,
+        'Average Score': `Average quality score across all audits. Calculated as: Sum of all average_score values / (Number of audits with scores). Only includes audits where a quality score is available.`,
         'Passing Rate': `Percentage of audits that passed. Calculated as: (Number of audits with passing_status = 'Passed') / (Total audits) × 100%. Uses normalized passing status to handle variations in status values.`,
-        'In-Scope Reversal Rate': `Percentage of audits that have a reversal requested. Calculated as: (Number of audits with reversal_requested_at not null) / (Total audits) × 100%. This tracks how many audits are being disputed.`,
         'Audit Rating': `Average star rating (1-5) given by employees when acknowledging audits. Calculated as: Sum of all audit_rating values / (Number of audits with ratings). Only includes audits where employees have provided a star rating (1-5 stars).`,
-        'Acknowledgement Rate': `Percentage of audits that have been acknowledged by the employee. Calculated as: (Number of audits with acknowledgement_status = 'Acknowledged') / (Total audits) × 100%. Checks for 'acknowledged' in the status field (case-insensitive).`,
-        'Avg Audit Time': `Average time taken to complete an audit. Calculated as: Sum of all audit_duration values (converted to minutes) / (Number of audits with duration). Numeric values are in seconds (converted to minutes by dividing by 60). Legacy string formats like "MM:SS", "HH:MM:SS", "1h 30m", or "90m" are also supported.`,
+        'Acknowledgement Count (24-hours)': `Count of audits that were acknowledged within 24 hours of submission. Calculated by comparing acknowledgement_status_updated_at with submitted_at. This count cannot increase past the 24-hour mark - once an audit passes 24 hours, it will not be counted even if acknowledged later.`,
+        'Overall Acknowledgement Count': `Total count of all audits that have been acknowledged, regardless of when they were acknowledged. This count can increase past the 24-hour mark. Calculated as: Number of audits with acknowledgement_status containing 'acknowledged' (case-insensitive).`,
+        'Average Audit Time': `Average time taken to complete an audit. Calculated as: Sum of all audit_duration values (converted to minutes) / (Number of audits with duration). Numeric values are in seconds (converted to minutes by dividing by 60). Legacy string formats like "MM:SS", "HH:MM:SS", "1h 30m", or "90m" are also supported.`,
+        'Reversals Filed Count': `Total count of audits that have a reversal requested. Calculated as: Number of audits with reversal_requested_at not null. This includes all reversals regardless of scope.`,
+        'In-Scope Reversals Count': `Count of reversals that are within auditor scope. Calculated as: Number of audits where reversal_requested_at is not null AND within_auditor_scope is true.`,
+        'In-Scope Reversals Rate': `Percentage of audits that have an in-scope reversal requested. Calculated as: (Number of in-scope reversals) / (Total audits) × 100%. Only counts reversals where within_auditor_scope is true.`,
         'Reversal SLA - Weekdays': `Average time (in hours) between reversal_requested_at and reversal_responded_at for reversals submitted on weekdays (Monday-Friday). Calculated as: Sum of time differences / (Number of weekday reversals with responses). Only includes reversals that have both request and response timestamps.`,
         'Reversal SLA - Weekends': `Average time (in hours) between reversal_requested_at and reversal_responded_at for reversals submitted on weekends (Saturday-Sunday). Calculated as: Sum of time differences / (Number of weekend reversals with responses). Only includes reversals that have both request and response timestamps.`
     };
