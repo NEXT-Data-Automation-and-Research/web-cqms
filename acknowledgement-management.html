@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Acknowledgement Management | CQMS</title>
+<meta name="description" content="Team Leader View for Acknowledgement Management">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAtOTYwIDk2MCA5NjAiIHdpZHRoPSIyNHB4IiBmaWxsPSIjMWY5ZTRiIj48cGF0aCBkPSJNMjAwLTEyMHEtMzMgMC01Ni41LTIzLjVUMTIwLTIwMHYtNTYwcTAtMzMgMjMuNS01Ni41VDIwMC04NDBoNTYwcTMzIDAgNTYuNSAyMy41VDg0MC03NjB2NTYwcTAgMzMtMjMuNSA1Ni41VDc2MC0xMjBIMjAwWm00OTEtODBoNjl2LTY5bC02OSA2OVptLTQ1NyAwaDczbDEyMC0xMjBoODVMNDUyLTIwMGg2NGwxMjAtMTIwaDg1TDU0MS0yMDBoNjVsMTIwLTEyMGgzNHYtNDQwSDIwMHY1MDlsNjktNjloODVMNDM0LTIwMFptNzItMjAwLTU2LTU2IDE3Ny0xNzcgODAgODAgMTQ3LTE0NyA1NiA1Ni0yMDMgMjA0LTgwLTgwLTEyMSAxMjBaIi8+PC9zdmc+">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="sidebar.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="env-config.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth-check.js"></script>
+    <script src="confirmation-dialog.js"></script>
+    <script src="load-sidebar.js"></script>
+    <script src="dark-mode.js"></script>
+    <script src="search.js"></script>
+    <script src="timezone-utils.js"></script>
+    <script src="date-filter-utils.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f9fafb;
+        }
+
+        .main-content {
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .filters-bar {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-filters-section {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-picker-dropdown {
+            position: relative;
+        }
+
+        .date-picker-dropdown .quick-date-btn {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .date-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.25rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            display: none;
+            min-width: 200px;
+        }
+
+        .date-dropdown-menu.active {
+            display: block;
+        }
+
+        .date-filter-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .date-filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .date-filter-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        .date-filter-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .date-filter-input:focus {
+            outline: none;
+            border-color: #1f9e4b;
+            box-shadow: 0 0 0 3px rgba(31, 158, 75, 0.1);
+        }
+
+        .date-filter-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .date-filter-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background: white;
+            color: #374151;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .date-filter-btn:hover {
+            background: #f9fafb;
+            border-color: #1f9e4b;
+        }
+
+        .date-filter-btn.primary {
+            background: #1f9e4b;
+            color: white;
+            border-color: #1f9e4b;
+        }
+
+        .date-filter-btn.primary:hover {
+            background: #15803d;
+        }
+
+        .quick-date-btn {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background: white;
+            color: #374151;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-date-btn:hover {
+            background: #f9fafb;
+            border-color: #1f9e4b;
+        }
+
+        .quick-date-btn.active {
+            background: #1f9e4b;
+            color: white;
+            border-color: #1f9e4b;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #1f9e4b;
+            box-shadow: 0 0 0 3px rgba(31, 158, 75, 0.1);
+        }
+
+        .filter-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+            background: white;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #1f9e4b;
+        }
+
+        .stats-summary {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .summary-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .summary-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .summary-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .summary-value.pending {
+            color: #f59e0b;
+        }
+
+        .summary-value.total {
+            color: #1f9e4b;
+        }
+
+        .agents-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .agents-table thead {
+            background: #f9fafb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .agents-table th {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .agents-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 1.5rem;
+        }
+
+        .agents-table th.sortable:hover {
+            background: #f3f4f6;
+        }
+
+        .sort-indicator {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
+        .agents-table th.sortable.active .sort-indicator {
+            color: #1f9e4b;
+        }
+
+        .agents-table td {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8125rem;
+            color: #1f2937;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .agents-table tbody tr {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .agents-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .agents-table tbody tr.expanded {
+            background: #f9fafb;
+        }
+
+        .agents-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .expand-icon {
+            display: inline-block;
+            width: 0.75rem;
+            height: 0.75rem;
+            margin-right: 0.5rem;
+            transition: transform 0.2s;
+            vertical-align: middle;
+            color: #6b7280;
+            font-size: 0.625rem;
+            line-height: 0.75rem;
+            text-align: center;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .agents-table tbody tr:hover .expand-icon {
+            color: #1f9e4b;
+        }
+
+        .nested-audits-row {
+            background: #f9fafb;
+        }
+
+        .nested-audits-row td {
+            padding: 0;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .nested-audits-container {
+            padding: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .nested-audits-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 0.375rem;
+            overflow: hidden;
+        }
+
+        .nested-audits-table thead {
+            background: #f3f4f6;
+        }
+
+        .nested-audits-table th {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .nested-audits-table td {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            color: #1f2937;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .nested-audits-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .nested-audits-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .agent-name-cell {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.8125rem;
+        }
+
+        .agent-email-cell {
+            font-size: 0.6875rem;
+            color: #6b7280;
+            margin-top: 0.125rem;
+        }
+
+        .pending-count-cell {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f59e0b;
+            text-align: center;
+        }
+
+        .pending-count-cell.zero {
+            color: #9ca3af;
+        }
+
+        .channel-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #e0e7ff;
+            color: #4338ca;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .view-link {
+            color: #1f9e4b;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .view-link:hover {
+            text-decoration: underline;
+        }
+
+
+        .audit-link {
+            color: #1f9e4b;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .audit-link:hover {
+            text-decoration: underline;
+        }
+
+        .reversal-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Dark mode styles */
+        [data-theme="dark"] body {
+            background-color: var(--background-color) !important;
+        }
+
+        [data-theme="dark"] .filters-bar,
+        [data-theme="dark"] .summary-card,
+        [data-theme="dark"] .agents-table,
+        [data-theme="dark"] .nested-audits-table {
+            background: var(--background-white) !important;
+            border-color: var(--border-light) !important;
+        }
+
+        [data-theme="dark"] .nested-audits-row {
+            background: var(--background-color) !important;
+        }
+
+        [data-theme="dark"] .nested-audits-container {
+            background: var(--background-color) !important;
+        }
+
+        [data-theme="dark"] .nested-audits-table thead {
+            background: var(--background-color) !important;
+        }
+
+        [data-theme="dark"] .nested-audits-table th {
+            color: var(--text-color) !important;
+            border-bottom-color: var(--border-light) !important;
+        }
+
+        [data-theme="dark"] .nested-audits-table td {
+            color: var(--text-color) !important;
+            border-bottom-color: var(--border-light) !important;
+        }
+
+        [data-theme="dark"] .nested-audits-table tbody tr:hover {
+            background: var(--background-color) !important;
+        }
+
+        [data-theme="dark"] .search-input,
+        [data-theme="dark"] .filter-select,
+        [data-theme="dark"] .date-filter-input {
+            background: var(--background-white) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-light) !important;
+        }
+
+        [data-theme="dark"] .date-dropdown-menu {
+            background: var(--background-white) !important;
+            border-color: var(--border-light) !important;
+        }
+
+        [data-theme="dark"] .date-filter-btn,
+        [data-theme="dark"] .quick-date-btn {
+            background: var(--background-white) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-light) !important;
+        }
+
+        [data-theme="dark"] .date-filter-btn:hover,
+        [data-theme="dark"] .quick-date-btn:hover {
+            background: var(--background-color) !important;
+        }
+
+        [data-theme="dark"] .quick-date-btn.active {
+            background: #1f9e4b !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .agent-name-cell,
+        [data-theme="dark"] .section-title {
+            color: var(--text-color) !important;
+        }
+
+        [data-theme="dark"] .agent-email-cell,
+        [data-theme="dark"] .summary-label,
+        [data-theme="dark"] .loading,
+        [data-theme="dark"] .empty-state {
+            color: var(--text-secondary) !important;
+        }
+
+        [data-theme="dark"] .summary-value {
+            color: var(--text-color) !important;
+        }
+
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .filters-bar {
+                flex-direction: column;
+            }
+
+            .search-input,
+            .filter-select {
+                width: 100%;
+            }
+
+            .stats-summary {
+                flex-direction: column;
+            }
+
+            .summary-card {
+                width: 100%;
+            }
+
+            .agents-table {
+                font-size: 0.75rem;
+            }
+
+            .agents-table th,
+            .agents-table td {
+                padding: 0.375rem 0.5rem;
+            }
+
+            .agent-email-cell {
+                display: none;
+            }
+        }
+
+        /* Sticky header for better UX */
+        .agents-table thead th {
+            background: #f9fafb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] .agents-table thead th {
+            background: var(--background-color) !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Acknowledgement Management</h1>
+            <p class="page-subtitle">View agent-wise acknowledgement pending counts and manage unacknowledged audits</p>
+        </div>
+
+        <div id="loadingState" class="loading">
+            Loading agent acknowledgement data...
+        </div>
+
+        <div id="agentStatsContainer" style="display: none;">
+            <div class="stats-summary" id="statsSummary"></div>
+            
+            <div class="filters-bar">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Search by agent name or email..."
+                       oninput="filterAgents()">
+                <select id="channelFilter" class="filter-select" onchange="filterAgents()">
+                    <option value="">All Channels</option>
+                </select>
+                <select id="sortBy" class="filter-select" onchange="sortAgents()">
+                    <option value="count-desc">Sort by: Pending Count (High to Low)</option>
+                    <option value="count-asc">Sort by: Pending Count (Low to High)</option>
+                    <option value="name-asc">Sort by: Name (A to Z)</option>
+                    <option value="name-desc">Sort by: Name (Z to A)</option>
+                </select>
+                <div class="date-filters-section">
+                    <div class="date-picker-dropdown">
+                        <button class="quick-date-btn" id="dateBtn" onclick="toggleDateDropdown()">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 0.875rem; height: 0.875rem; margin-right: 0.375rem; vertical-align: middle;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span id="dateBtnText">Date Range</span>
+                            <svg style="width: 0.5rem; height: 0.5rem; margin-left: 0.375rem; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="date-dropdown-menu" id="dateDropdown">
+                            <div class="date-filter-group">
+                                <label class="date-filter-label">From Date</label>
+                                <input type="date" class="date-filter-input" id="startDate">
+                            </div>
+                            <div class="date-filter-group">
+                                <label class="date-filter-label">To Date</label>
+                                <input type="date" class="date-filter-input" id="endDate">
+                            </div>
+                            <div class="date-filter-actions">
+                                <button class="date-filter-btn primary" onclick="applyDateFilter()">Apply</button>
+                                <button class="date-filter-btn" onclick="clearDateFilter()">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="quick-date-btn" id="todayBtn" onclick="applyQuickDateFilter('today')">Today</button>
+                    <button class="quick-date-btn" id="yesterdayBtn" onclick="applyQuickDateFilter('yesterday')">Yesterday</button>
+                    <button class="quick-date-btn" id="thisMonthBtn" onclick="applyQuickDateFilter('thisMonth')">This Month</button>
+                    <button class="quick-date-btn" id="lastMonthBtn" onclick="applyQuickDateFilter('lastMonth')">Last Month</button>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="agents-table" id="agentsTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name" onclick="toggleSort('name')">
+                                Agent
+                                <span class="sort-indicator" id="sortName">↕</span>
+                            </th>
+                            <th>Channel</th>
+                            <th>Team Supervisor</th>
+                            <th class="sortable" data-sort="count" onclick="toggleSort('count')">
+                                Pending Count
+                                <span class="sort-indicator" id="sortCount">↕</span>
+                            </th>
+                            <th>Last Acknowledged at</th>
+                            <th>Last Login</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agentsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let allAgents = [];
+        let agentStats = new Map();
+        let allAudits = [];
+        let allScorecards = [];
+        let allUsers = []; // For supervisor lookup
+        let expandedRows = new Set(); // Track expanded rows
+        
+        // Date filter state (no default filter - show lifetime data)
+        let dateFilter = {
+            start: null,
+            end: null
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Set initial sort
+            const sortSelect = document.getElementById('sortBy');
+            if (sortSelect) {
+                sortSelect.value = 'count-desc';
+            }
+            
+            await loadScorecards();
+            await loadAllUsers(); // Load all users for supervisor lookup
+            await loadAgents();
+            await loadAllAudits();
+            await calculateAgentStats();
+            renderAgentStats();
+        });
+
+        // Load scorecards
+        async function loadScorecards() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('scorecards')
+                    .select('id, name, table_name, is_active')
+                    .eq('is_active', true);
+
+                if (error) {
+                    console.error('Error loading scorecards:', error);
+                    return;
+                }
+
+                allScorecards = data || [];
+            } catch (error) {
+                console.error('Error loading scorecards:', error);
+            }
+        }
+
+        // Load all agents/employees
+        async function loadAgents() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('users')
+                    .select('email, name, channel, role, team_supervisor, last_login')
+                    .eq('is_active', true)
+                    .or('role.in.(Employee,Agent),channel.not.is.null')
+                    .order('name', { ascending: true });
+
+                if (error) {
+                    console.error('Error loading agents:', error);
+                    return;
+                }
+
+                allAgents = data || [];
+            } catch (error) {
+                console.error('Error loading agents:', error);
+            }
+        }
+
+        // Load all users for supervisor name lookup
+        async function loadAllUsers() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('users')
+                    .select('email, name')
+                    .eq('is_active', true);
+
+                if (error) {
+                    console.error('Error loading all users:', error);
+                    return;
+                }
+
+                allUsers = data || [];
+            } catch (error) {
+                console.error('Error loading all users:', error);
+            }
+        }
+
+        // Get supervisor name from email
+        function getSupervisorName(supervisorEmail) {
+            if (!supervisorEmail) return '-';
+            const supervisor = allUsers.find(u => 
+                u.email && supervisorEmail && 
+                u.email.toLowerCase() === supervisorEmail.toLowerCase()
+            );
+            return supervisor ? supervisor.name : supervisorEmail;
+        }
+
+        // Load all audits from all scorecard tables
+        async function loadAllAudits() {
+            try {
+                allAudits = [];
+                let tablesToQuery = [];
+
+                // Try to get all audit tables using RPC
+                try {
+                    const { data: allTables, error: tablesError } = await window.supabaseClient.rpc('get_audit_tables');
+
+                    if (tablesError) {
+                        console.warn('RPC failed, using scorecard-based loading:', tablesError);
+                        if (allScorecards && allScorecards.length > 0) {
+                            tablesToQuery = allScorecards
+                                .filter(s => s.table_name !== 'ai_analysis_results')
+                                .map(s => ({
+                                    table_name: s.table_name,
+                                    scorecard_id: s.id,
+                                    scorecard_name: s.name
+                                }));
+                        }
+                    } else {
+                        if (allTables && allTables.length > 0) {
+                            tablesToQuery = allTables
+                                .filter(t => t.table_name !== 'ai_analysis_results')
+                                .map(t => {
+                                    const matchingScorecard = allScorecards.find(s => s.table_name === t.table_name);
+                                    return {
+                                        table_name: t.table_name,
+                                        scorecard_id: matchingScorecard?.id || null,
+                                        scorecard_name: matchingScorecard?.name || `Inactive Scorecard (${t.table_name})`
+                                    };
+                                });
+                        } else if (allScorecards && allScorecards.length > 0) {
+                            tablesToQuery = allScorecards
+                                .filter(s => s.table_name !== 'ai_analysis_results')
+                                .map(s => ({
+                                    table_name: s.table_name,
+                                    scorecard_id: s.id,
+                                    scorecard_name: s.name
+                                }));
+                        }
+                    }
+                } catch (rpcError) {
+                    console.warn('RPC error, using scorecard-based loading:', rpcError);
+                    if (allScorecards && allScorecards.length > 0) {
+                        tablesToQuery = allScorecards
+                            .filter(s => s.table_name !== 'ai_analysis_results')
+                            .map(s => ({
+                                table_name: s.table_name,
+                                scorecard_id: s.id,
+                                scorecard_name: s.name
+                            }));
+                    }
+                }
+
+                // Load audits from each table
+                for (const tableInfo of tablesToQuery) {
+                    try {
+                        const { data, error } = await window.supabaseClient
+                            .from(tableInfo.table_name)
+                            .select('*')
+                            .not('submitted_at', 'is', null) // Only completed audits
+                            .order('submitted_at', { ascending: false });
+
+                        if (error) {
+                            console.warn(`Error loading from ${tableInfo.table_name}:`, error);
+                            continue;
+                        }
+
+                        if (data && data.length > 0) {
+                            const auditsWithScorecard = data.map(audit => ({
+                                ...audit,
+                                _scorecard_id: tableInfo.scorecard_id,
+                                _scorecard_name: tableInfo.scorecard_name,
+                                _scorecard_table: tableInfo.table_name
+                            }));
+                            allAudits = allAudits.concat(auditsWithScorecard);
+                        }
+                    } catch (err) {
+                        console.warn(`Exception loading from ${tableInfo.table_name}:`, err);
+                        continue;
+                    }
+                }
+
+                console.log(`Loaded ${allAudits.length} total audits`);
+            } catch (error) {
+                console.error('Error loading all audits:', error);
+            }
+        }
+
+        // Check if audit is under reversal (pending)
+        function isAuditUnderReversal(audit) {
+            const reversalRequestedAt = audit.reversal_requested_at || audit.reversalRequestedAt;
+            if (!reversalRequestedAt) {
+                return false; // No reversal requested
+            }
+
+            // Check workflow state from acknowledgement_status
+            const ackStatus = (audit.acknowledgement_status || audit.acknowledgementStatus || '').toLowerCase();
+            const pendingStates = [
+                'pending',
+                'team_lead_review',
+                'qa_review',
+                'cqc_review'
+            ];
+
+            // Check if status indicates pending reversal
+            if (ackStatus.includes('team_lead_review') || 
+                ackStatus.includes('qa_review') || 
+                ackStatus.includes('auditor_review') ||
+                ackStatus.includes('cqc_review')) {
+                return true;
+            }
+
+            // Fallback: check old logic
+            const reversalRespondedAt = audit.reversal_responded_at || audit.reversalRespondedAt;
+            const reversalApproved = audit.reversal_approved || audit.reversalApproved;
+
+            // Pending if reversal was requested but not yet responded to
+            if (reversalRequestedAt && !reversalRespondedAt) {
+                return true;
+            }
+
+            // Also check if reversal_approved is null (which means pending)
+            if (reversalRequestedAt && (reversalApproved === null || reversalApproved === undefined)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // Check if audit is acknowledged (matching audit-reports.html logic)
+        function isAuditAcknowledged(audit) {
+            const status = audit.acknowledgement_status || audit.acknowledgementStatus || '';
+            return status && (
+                status.toLowerCase().includes('acknowledged') || 
+                status === 'Acknowledged'
+            );
+        }
+
+        // Calculate agent-wise stats
+        async function calculateAgentStats() {
+            agentStats.clear();
+
+            // Initialize stats for all agents
+            allAgents.forEach(agent => {
+                agentStats.set(agent.email.toLowerCase(), {
+                    email: agent.email,
+                    name: agent.name || agent.email.split('@')[0],
+                    channel: agent.channel || '-',
+                    teamSupervisor: agent.team_supervisor || null,
+                    lastLogin: agent.last_login || null,
+                    lastAcknowledgedAt: null,
+                    pendingCount: 0,
+                    audits: []
+                });
+            });
+
+            // Process all audits
+            allAudits.forEach(audit => {
+                const employeeEmail = (audit.employee_email || '').toLowerCase().trim();
+                if (!employeeEmail) return;
+
+                // Apply date filter if set (filter by submitted_at)
+                if (dateFilter.start || dateFilter.end) {
+                    const submittedDate = audit.submitted_at || audit.submittedAt;
+                    if (!submittedDate) return; // Skip audits without submission date
+                    
+                    const submitted = new Date(submittedDate);
+                    if (isNaN(submitted.getTime())) return; // Invalid date
+                    
+                    if (dateFilter.start) {
+                        const startDate = new Date(dateFilter.start);
+                        startDate.setHours(0, 0, 0, 0);
+                        if (submitted < startDate) return;
+                    }
+                    
+                    if (dateFilter.end) {
+                        const endDate = new Date(dateFilter.end);
+                        endDate.setHours(23, 59, 59, 999);
+                        if (submitted > endDate) return;
+                    }
+                }
+
+                const agentStat = agentStats.get(employeeEmail);
+                if (!agentStat) {
+                    // Agent not in our list, but has audits - add them
+                    // Try to find agent in allAgents to get team_supervisor and last_login
+                    const agentFromList = allAgents.find(a => 
+                        a.email && a.email.toLowerCase() === employeeEmail
+                    );
+                    agentStats.set(employeeEmail, {
+                        email: audit.employee_email,
+                        name: audit.employee_name || employeeEmail.split('@')[0],
+                        channel: audit.channel || '-',
+                        teamSupervisor: agentFromList?.team_supervisor || null,
+                        lastLogin: agentFromList?.last_login || null,
+                        lastAcknowledgedAt: null,
+                        pendingCount: 0,
+                        audits: []
+                    });
+                }
+
+                // Check if audit is acknowledged (matching audit-reports.html logic)
+                const isAcknowledged = isAuditAcknowledged(audit);
+
+                // Track last acknowledged date
+                if (isAcknowledged) {
+                    const stat = agentStats.get(employeeEmail);
+                    if (stat) {
+                        const ackDate = audit.acknowledgement_status_updated_at || audit.acknowledgementStatusUpdatedAt;
+                        if (ackDate) {
+                            const ackDateObj = new Date(ackDate);
+                            if (!isNaN(ackDateObj.getTime())) {
+                                if (!stat.lastAcknowledgedAt || ackDateObj > new Date(stat.lastAcknowledgedAt)) {
+                                    stat.lastAcknowledgedAt = ackDate;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Count as pending if not acknowledged (matching audit-reports.html: total - acknowledged)
+                // Note: This includes audits under reversal, which will be indicated in the UI
+                if (!isAcknowledged) {
+                    const stat = agentStats.get(employeeEmail);
+                    if (stat) {
+                        stat.pendingCount++;
+                        stat.audits.push(audit);
+                    }
+                }
+            });
+
+            console.log('Calculated stats for', agentStats.size, 'agents');
+        }
+
+        let currentSort = { field: 'count', direction: 'desc' };
+        let filteredAgents = [];
+
+        // Render agent stats
+        function renderAgentStats() {
+            const loadingState = document.getElementById('loadingState');
+            const container = document.getElementById('agentStatsContainer');
+            const tbody = document.getElementById('agentsTableBody');
+            const summaryContainer = document.getElementById('statsSummary');
+            const channelFilter = document.getElementById('channelFilter');
+
+            loadingState.style.display = 'none';
+            container.style.display = 'block';
+
+            // Calculate summary stats
+            const allAgentStats = Array.from(agentStats.values());
+            const totalAgents = allAgentStats.length;
+            const totalPending = allAgentStats.reduce((sum, a) => sum + a.pendingCount, 0);
+            const agentsWithPending = allAgentStats.filter(a => a.pendingCount > 0).length;
+
+            // Render summary
+            summaryContainer.innerHTML = `
+                <div class="summary-card">
+                    <div>
+                        <div class="summary-label">Total Agents</div>
+                        <div class="summary-value total">${totalAgents}</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div>
+                        <div class="summary-label">Total Pending</div>
+                        <div class="summary-value pending">${totalPending}</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div>
+                        <div class="summary-label">Agents with Pending</div>
+                        <div class="summary-value">${agentsWithPending}</div>
+                    </div>
+                </div>
+            `;
+
+            // Populate channel filter
+            const channels = [...new Set(allAgentStats.map(a => a.channel).filter(c => c && c !== '-'))].sort();
+            channelFilter.innerHTML = '<option value="">All Channels</option>';
+            channels.forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel;
+                option.textContent = channel;
+                channelFilter.appendChild(option);
+            });
+
+            // Initial render
+            filterAgents();
+        }
+
+        // Filter agents based on search and channel
+        function filterAgents() {
+            const searchInput = document.getElementById('searchInput');
+            const channelFilter = document.getElementById('channelFilter');
+            const searchTerm = (searchInput.value || '').toLowerCase().trim();
+            const selectedChannel = channelFilter.value;
+
+            filteredAgents = Array.from(agentStats.values()).filter(agent => {
+                // Exclude agents with 0 pending count
+                if (agent.pendingCount === 0) {
+                    return false;
+                }
+
+                const matchesSearch = !searchTerm || 
+                    agent.name.toLowerCase().includes(searchTerm) ||
+                    agent.email.toLowerCase().includes(searchTerm);
+                
+                const matchesChannel = !selectedChannel || agent.channel === selectedChannel;
+
+                return matchesSearch && matchesChannel;
+            });
+
+            sortAgents();
+        }
+
+        // Sort agents
+        function sortAgents() {
+            const sortSelect = document.getElementById('sortBy');
+            const sortValue = sortSelect ? sortSelect.value : 'count-desc';
+
+            let [field, direction] = sortValue.split('-');
+            currentSort = { field, direction };
+
+            filteredAgents.sort((a, b) => {
+                let comparison = 0;
+                
+                if (field === 'count') {
+                    comparison = a.pendingCount - b.pendingCount;
+                } else if (field === 'name') {
+                    comparison = a.name.localeCompare(b.name);
+                }
+
+                return direction === 'asc' ? comparison : -comparison;
+            });
+
+            renderTable();
+        }
+
+        // Toggle sort when clicking table headers
+        function toggleSort(field) {
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'desc';
+            }
+
+            // Update sort select
+            const sortSelect = document.getElementById('sortBy');
+            if (sortSelect) {
+                const value = `${currentSort.field}-${currentSort.direction}`;
+                sortSelect.value = value;
+            }
+
+            sortAgents();
+            updateSortIndicators();
+        }
+
+        // Update sort indicators in table headers
+        function updateSortIndicators() {
+            document.querySelectorAll('.sort-indicator').forEach(indicator => {
+                indicator.textContent = '↕';
+                indicator.parentElement.classList.remove('active');
+            });
+
+            const field = currentSort.field;
+            const direction = currentSort.direction;
+            const indicator = document.getElementById(`sort${field.charAt(0).toUpperCase() + field.slice(1)}`);
+            
+            if (indicator) {
+                indicator.textContent = direction === 'asc' ? '↑' : '↓';
+                indicator.parentElement.classList.add('active');
+            }
+        }
+
+        // Render table
+        function renderTable() {
+            const tbody = document.getElementById('agentsTableBody');
+            tbody.innerHTML = '';
+
+            if (filteredAgents.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state" style="text-align: center; padding: 2rem;">
+                            <div class="empty-state-icon">🔍</div>
+                            <p>No agents found matching your filters</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredAgents.forEach(agent => {
+                const isExpanded = expandedRows.has(agent.email.toLowerCase());
+                const row = document.createElement('tr');
+                row.setAttribute('data-agent-email', agent.email.toLowerCase());
+                if (isExpanded) {
+                    row.classList.add('expanded');
+                }
+
+                const supervisorName = agent.teamSupervisor ? getSupervisorName(agent.teamSupervisor) : '-';
+                const lastAcknowledgedDisplay = formatLastAcknowledged(agent.lastAcknowledgedAt);
+                const lastLoginDisplay = formatLastLogin(agent.lastLogin);
+                
+                row.innerHTML = `
+                    <td>
+                        <span class="expand-icon ${isExpanded ? 'expanded' : ''}" style="display: inline-block; width: 0.75rem; height: 0.75rem; line-height: 0.75rem; text-align: center; font-size: 0.625rem;">▶</span>
+                        <div class="agent-name-cell" style="display: inline-block; vertical-align: middle;">
+                            ${escapeHtml(agent.name)}
+                        </div>
+                        <div class="agent-email-cell">${escapeHtml(agent.email)}</div>
+                    </td>
+                    <td>
+                        ${agent.channel && agent.channel !== '-' 
+                            ? `<span class="channel-badge">${escapeHtml(agent.channel)}</span>` 
+                            : '<span style="color: #9ca3af;">-</span>'}
+                    </td>
+                    <td style="font-size: 0.8125rem; color: #6b7280;">
+                        ${escapeHtml(supervisorName)}
+                    </td>
+                    <td class="pending-count-cell ${agent.pendingCount === 0 ? 'zero' : ''}">
+                        ${agent.pendingCount}
+                    </td>
+                    <td style="font-size: 0.8125rem; color: #6b7280;">
+                        ${escapeHtml(lastAcknowledgedDisplay)}
+                    </td>
+                    <td style="font-size: 0.8125rem; color: #6b7280;">
+                        ${escapeHtml(lastLoginDisplay)}
+                    </td>
+                    <td>
+                        <a href="#" class="view-link" onclick="event.stopPropagation(); toggleAgentAudits('${escapeHtml(agent.email)}'); return false;">
+                            ${isExpanded ? 'Hide' : 'View'} Audits
+                        </a>
+                    </td>
+                `;
+
+                row.onclick = (e) => {
+                    // Don't toggle if clicking on the link
+                    if (e.target.tagName === 'A') return;
+                    toggleAgentAudits(agent.email);
+                };
+
+                tbody.appendChild(row);
+
+                // Add nested audits row if expanded
+                if (isExpanded) {
+                    const nestedRow = createNestedAuditsRow(agent);
+                    tbody.appendChild(nestedRow);
+                }
+            });
+
+            updateSortIndicators();
+        }
+
+        // Create nested audits row
+        function createNestedAuditsRow(agent) {
+            const nestedRow = document.createElement('tr');
+            nestedRow.className = 'nested-audits-row';
+            nestedRow.setAttribute('data-nested-for', agent.email.toLowerCase());
+
+            const agentStat = agentStats.get(agent.email.toLowerCase());
+            
+            if (!agentStat || agentStat.audits.length === 0) {
+                nestedRow.innerHTML = `
+                    <td colspan="7" style="padding: 1rem; text-align: center; color: #6b7280;">
+                        <div class="empty-state-icon">✓</div>
+                        <p>No unacknowledged audits for this agent</p>
+                    </td>
+                `;
+                return nestedRow;
+            }
+
+            // Sort audits by date (newest first)
+            const sortedAudits = [...agentStat.audits].sort((a, b) => {
+                const dateA = new Date(a.submitted_at || 0);
+                const dateB = new Date(b.submitted_at || 0);
+                return dateB - dateA;
+            });
+
+            let auditsTableHTML = `
+                <div class="nested-audits-container">
+                    <table class="nested-audits-table">
+                        <thead>
+                            <tr>
+                                <th>Audit ID</th>
+                                <th>Date</th>
+                                <th>Scorecard</th>
+                                <th>Auditor</th>
+                                <th>Score</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            sortedAudits.forEach(audit => {
+                // Use submitted_at for the date (audit submitted time)
+                const auditDate = formatDate(audit.submitted_at);
+                const scorecardName = audit._scorecard_name || 'Unknown';
+                const auditorEmail = audit.auditor_email || audit.auditorEmail || '-';
+                const auditorName = audit.auditor_name || auditorEmail.split('@')[0];
+                const score = audit.averageScore || audit.average_score || '-';
+                const auditId = audit.id || '-';
+                const scorecardTable = audit._scorecard_table || '';
+                
+                const auditLink = scorecardTable ? `audit-view.html?table=${encodeURIComponent(scorecardTable)}&id=${auditId}` : '#';
+
+                auditsTableHTML += `
+                    <tr>
+                        <td>${escapeHtml(auditId)}</td>
+                        <td>${escapeHtml(auditDate)}</td>
+                        <td>${escapeHtml(scorecardName)}</td>
+                        <td>${escapeHtml(auditorName)}</td>
+                        <td>${escapeHtml(score)}${score !== '-' ? '%' : ''}</td>
+                        <td>
+                            Pending
+                            ${isAuditUnderReversal(audit) ? '<span class="reversal-badge" title="This audit is under reversal and cannot be acknowledged until resolved">⚠ Under Reversal</span>' : ''}
+                        </td>
+                        <td>
+                            <a href="${auditLink}" class="audit-link" target="_blank">View Audit</a>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            auditsTableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            nestedRow.innerHTML = `<td colspan="7">${auditsTableHTML}</td>`;
+            return nestedRow;
+        }
+
+        // Toggle agent audits (expand/collapse)
+        function toggleAgentAudits(agentEmail) {
+            const emailKey = agentEmail.toLowerCase();
+            const isExpanded = expandedRows.has(emailKey);
+
+            if (isExpanded) {
+                expandedRows.delete(emailKey);
+            } else {
+                expandedRows.add(emailKey);
+            }
+
+            // Re-render table to show/hide nested row
+            renderTable();
+        }
+
+
+        // Format date to DD-MMM-YYYY format (e.g., 12-Aug-2025)
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '-';
+                
+                const day = date.getDate().toString().padStart(2, '0');
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const month = months[date.getMonth()];
+                const year = date.getFullYear();
+                
+                return `${day}-${month}-${year}`;
+            } catch (error) {
+                console.error('Error formatting date:', error);
+                return '-';
+            }
+        }
+
+        // Format last login time (shows exact timestamp)
+        function formatLastLogin(lastLoginString) {
+            if (!lastLoginString) return 'Never';
+            
+            try {
+                const lastLogin = new Date(lastLoginString);
+                if (isNaN(lastLogin.getTime())) return 'Never';
+                
+                const now = new Date();
+                const diffMs = now - lastLogin;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                
+                // Show relative time only for very recent (within 24 hours)
+                if (diffMins < 1) return 'Just now';
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                
+                // For anything older than 24 hours, show exact timestamp: DD-MMM-YYYY HH:MM
+                const day = lastLogin.getDate().toString().padStart(2, '0');
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const month = months[lastLogin.getMonth()];
+                const year = lastLogin.getFullYear();
+                const hours = lastLogin.getHours().toString().padStart(2, '0');
+                const minutes = lastLogin.getMinutes().toString().padStart(2, '0');
+                
+                return `${day}-${month}-${year} ${hours}:${minutes}`;
+            } catch (error) {
+                console.error('Error formatting last login:', error);
+                return 'Never';
+            }
+        }
+
+        // Format last acknowledged time (shows exact timestamp)
+        function formatLastAcknowledged(lastAcknowledgedString) {
+            if (!lastAcknowledgedString) return 'Never';
+            
+            try {
+                const lastAck = new Date(lastAcknowledgedString);
+                if (isNaN(lastAck.getTime())) return 'Never';
+                
+                const now = new Date();
+                const diffMs = now - lastAck;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                
+                // Show relative time only for very recent (within 24 hours)
+                if (diffMins < 1) return 'Just now';
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                
+                // For anything older than 24 hours, show exact timestamp: DD-MMM-YYYY HH:MM
+                const day = lastAck.getDate().toString().padStart(2, '0');
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const month = months[lastAck.getMonth()];
+                const year = lastAck.getFullYear();
+                const hours = lastAck.getHours().toString().padStart(2, '0');
+                const minutes = lastAck.getMinutes().toString().padStart(2, '0');
+                
+                return `${day}-${month}-${year} ${hours}:${minutes}`;
+            } catch (error) {
+                console.error('Error formatting last acknowledged:', error);
+                return 'Never';
+            }
+        }
+
+        // Date filter functions
+        function toggleDateDropdown() {
+            const dropdown = document.getElementById('dateDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
+            
+            // Close when clicking outside
+            document.addEventListener('click', function closeDropdown(e) {
+                if (!e.target.closest('.date-picker-dropdown')) {
+                    dropdown.classList.remove('active');
+                    document.removeEventListener('click', closeDropdown);
+                }
+            });
+        }
+
+        function applyDateFilter() {
+            const startDateEl = document.getElementById('startDate');
+            const endDateEl = document.getElementById('endDate');
+            const startDate = startDateEl?.value || '';
+            const endDate = endDateEl?.value || '';
+            
+            dateFilter.start = startDate || null;
+            dateFilter.end = endDate || null;
+
+            // Update button text
+            const dateBtnTextEl = document.getElementById('dateBtnText');
+            if (dateBtnTextEl) {
+                if (startDate || endDate) {
+                    const start = startDate ? formatDateForDisplay(startDate) : 'Start';
+                    const end = endDate ? formatDateForDisplay(endDate) : 'End';
+                    dateBtnTextEl.textContent = `${start} - ${end}`;
+                } else {
+                    dateBtnTextEl.textContent = 'Date Range';
+                }
+            }
+
+            // Clear active state of quick filter buttons
+            document.querySelectorAll('.quick-date-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Close dropdown
+            const dropdown = document.getElementById('dateDropdown');
+            if (dropdown) dropdown.classList.remove('active');
+
+            // Recalculate stats and refresh
+            calculateAgentStats().then(() => {
+                filterAgents();
+            });
+        }
+
+        function clearDateFilter() {
+            dateFilter.start = null;
+            dateFilter.end = null;
+
+            const startDateEl = document.getElementById('startDate');
+            const endDateEl = document.getElementById('endDate');
+            const dateBtnTextEl = document.getElementById('dateBtnText');
+
+            if (startDateEl) startDateEl.value = '';
+            if (endDateEl) endDateEl.value = '';
+            if (dateBtnTextEl) dateBtnTextEl.textContent = 'Date Range';
+
+            // Clear active state of quick filter buttons
+            document.querySelectorAll('.quick-date-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Close dropdown
+            const dropdown = document.getElementById('dateDropdown');
+            if (dropdown) dropdown.classList.remove('active');
+
+            // Recalculate stats and refresh
+            calculateAgentStats().then(() => {
+                filterAgents();
+            });
+        }
+
+        // Format date for display (DD-MMM-YYYY)
+        function formatDateForDisplay(dateString) {
+            if (!dateString) return '';
+            try {
+                const date = new Date(dateString);
+                const day = date.getDate().toString().padStart(2, '0');
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const month = months[date.getMonth()];
+                const year = date.getFullYear();
+                return `${day}-${month}-${year}`;
+            } catch (error) {
+                return dateString;
+            }
+        }
+
+        // Apply quick date filter
+        function applyQuickDateFilter(period) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            let startDate, endDate;
+            
+            switch(period) {
+                case 'today':
+                    startDate = new Date(today);
+                    endDate = new Date(today);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    startDate = yesterday;
+                    endDate = new Date(yesterday);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                case 'thisMonth':
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                case 'lastMonth':
+                    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    startDate = lastMonth;
+                    endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                default:
+                    return;
+            }
+            
+            // Format dates for input fields (YYYY-MM-DD)
+            const formatForInput = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            dateFilter.start = formatForInput(startDate);
+            dateFilter.end = formatForInput(endDate);
+            
+            const startDateEl = document.getElementById('startDate');
+            const endDateEl = document.getElementById('endDate');
+            if (startDateEl) startDateEl.value = dateFilter.start;
+            if (endDateEl) endDateEl.value = dateFilter.end;
+            
+            // Update button text
+            const dateBtnTextEl = document.getElementById('dateBtnText');
+            if (dateBtnTextEl) {
+                dateBtnTextEl.textContent = `${formatDateForDisplay(dateFilter.start)} - ${formatDateForDisplay(dateFilter.end)}`;
+            }
+            
+            // Update active button
+            document.querySelectorAll('.quick-date-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`${period}Btn`);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            // Recalculate stats and refresh
+            calculateAgentStats().then(() => {
+                filterAgents();
+            });
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            if (text == null) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
+
