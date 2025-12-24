@@ -69,7 +69,8 @@
             display: flex;
             gap: 0.5rem;
             align-items: center;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
         }
 
         .date-picker-dropdown {
@@ -188,9 +189,216 @@
             border-color: #1f9e4b;
         }
 
-        .search-input {
+        /* Multi-Select Dropdown Styles */
+        .multi-select-container {
+            position: relative;
+            width: auto;
+            min-width: 150px;
+            max-width: 200px;
+            flex-shrink: 0;
+        }
+
+        .multi-select-trigger {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            min-height: 2.5rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            width: 100%;
+        }
+
+        .multi-select-trigger:hover {
+            border-color: #1f9e4b;
+        }
+
+        .multi-select-trigger.active {
+            border-color: #1f9e4b;
+            box-shadow: 0 0 0 3px rgba(31, 158, 75, 0.1);
+        }
+
+        .multi-select-placeholder {
+            color: #9ca3af;
             flex: 1;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .multi-select-count {
+            background-color: #1f9e4b;
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.25rem;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 300px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 100%;
+            width: max-content;
+            max-width: 300px;
+        }
+
+        .multi-select-search {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 0.375rem 0.375rem 0 0;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f9fafb;
+            color: #374151;
+            outline: none;
+        }
+        
+        .multi-select-search:focus {
+            background-color: #ffffff;
+            border-bottom-color: #1f9e4b;
+        }
+
+        .multi-select-options {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0.25rem 0;
+        }
+
+        .multi-select-option {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            transition: background-color 0.15s ease;
+        }
+
+        .multi-select-option:hover {
+            background-color: #f3f4f6;
+        }
+
+        .multi-select-option.hidden {
+            display: none;
+        }
+
+        .multi-select-option input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+            accent-color: #1f9e4b;
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+
+        .multi-select-option label {
+            cursor: pointer;
+            flex: 1;
+            user-select: none;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        .multi-select-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-top: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+
+        .multi-select-action-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background-color: #ffffff;
+            color: #374151;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .multi-select-action-btn:hover {
+            background-color: #1f9e4b;
+            color: white;
+            border-color: #1f9e4b;
+        }
+
+        /* Dark mode support */
+        [data-theme="dark"] .multi-select-trigger {
+            background-color: var(--background-white);
+            border-color: var(--border-light);
+            color: var(--text-color);
+        }
+
+        [data-theme="dark"] .multi-select-dropdown {
+            background: var(--background-white);
+            border-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-search {
+            background-color: var(--gray-50);
+            color: var(--text-color);
+            border-bottom-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-option {
+            color: var(--text-color);
+        }
+
+        [data-theme="dark"] .multi-select-option:hover {
+            background-color: var(--gray-100);
+        }
+
+        [data-theme="dark"] .multi-select-actions {
+            background-color: var(--gray-50);
+            border-top-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-action-btn {
+            background-color: var(--background-white);
+            color: var(--text-color);
+            border-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-action-btn:hover {
+            background-color: #1f9e4b;
+            color: white;
+        }
+
+        .search-input {
+            flex: 0 1 auto;
             min-width: 200px;
+            max-width: 300px;
             padding: 0.5rem 0.75rem;
             border: 1px solid #d1d5db;
             border-radius: 0.375rem;
@@ -212,6 +420,9 @@
             font-family: 'Poppins', sans-serif;
             background: white;
             cursor: pointer;
+            flex-shrink: 0;
+            width: auto;
+            min-width: 150px;
         }
 
         .filter-select:focus {
@@ -643,9 +854,45 @@
                        class="search-input" 
                        placeholder="Search by agent name or email..."
                        oninput="filterAgents()">
-                <select id="channelFilter" class="filter-select" onchange="filterAgents()">
-                    <option value="">All Channels</option>
-                </select>
+                <div class="multi-select-container">
+                    <div class="multi-select-trigger" id="channelFilterTrigger" onclick="toggleMultiSelect('channelFilter')">
+                        <span class="multi-select-placeholder" id="channelFilterPlaceholder">Select channels...</span>
+                        <span class="multi-select-count" id="channelFilterCount" style="display: none;"></span>
+                        <svg style="width: 0.5rem; height: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div class="multi-select-dropdown" id="channelFilterDropdown" style="display: none;">
+                        <input type="text" class="multi-select-search" id="channelFilterSearch" placeholder="Search channels..." oninput="filterMultiSelectOptions('channelFilter')" onclick="event.stopPropagation()">
+                        <div class="multi-select-options" id="channelFilterOptions">
+                        </div>
+                        <div class="multi-select-actions">
+                            <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('channelFilter')">Select All</button>
+                            <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('channelFilter')">Clear</button>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="channelFilter" value="">
+                
+                <div class="multi-select-container">
+                    <div class="multi-select-trigger" id="teamSupervisorFilterTrigger" onclick="toggleMultiSelect('teamSupervisorFilter')">
+                        <span class="multi-select-placeholder" id="teamSupervisorFilterPlaceholder">Select supervisors...</span>
+                        <span class="multi-select-count" id="teamSupervisorFilterCount" style="display: none;"></span>
+                        <svg style="width: 0.5rem; height: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div class="multi-select-dropdown" id="teamSupervisorFilterDropdown" style="display: none;">
+                        <input type="text" class="multi-select-search" id="teamSupervisorFilterSearch" placeholder="Search supervisors..." oninput="filterMultiSelectOptions('teamSupervisorFilter')" onclick="event.stopPropagation()">
+                        <div class="multi-select-options" id="teamSupervisorFilterOptions">
+                        </div>
+                        <div class="multi-select-actions">
+                            <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('teamSupervisorFilter')">Select All</button>
+                            <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('teamSupervisorFilter')">Clear</button>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="teamSupervisorFilter" value="">
                 <select id="sortBy" class="filter-select" onchange="sortAgents()">
                     <option value="count-desc">Sort by: Pending Count (High to Low)</option>
                     <option value="count-asc">Sort by: Pending Count (Low to High)</option>
@@ -1057,7 +1304,6 @@
             const container = document.getElementById('agentStatsContainer');
             const tbody = document.getElementById('agentsTableBody');
             const summaryContainer = document.getElementById('statsSummary');
-            const channelFilter = document.getElementById('channelFilter');
 
             loadingState.style.display = 'none';
             container.style.display = 'block';
@@ -1090,26 +1336,71 @@
                 </div>
             `;
 
-            // Populate channel filter
+            // Populate channel multi-select filter
             const channels = [...new Set(allAgentStats.map(a => a.channel).filter(c => c && c !== '-'))].sort();
-            channelFilter.innerHTML = '<option value="">All Channels</option>';
-            channels.forEach(channel => {
-                const option = document.createElement('option');
-                option.value = channel;
-                option.textContent = channel;
-                channelFilter.appendChild(option);
+            const channelOptions = document.getElementById('channelFilterOptions');
+            if (channelOptions) {
+                channelOptions.innerHTML = channels.map(channel => `
+                    <div class="multi-select-option" data-value="${escapeHtml(channel)}">
+                        <input type="checkbox" id="channel_${escapeHtml(channel)}" value="${escapeHtml(channel)}" onchange="updateMultiSelect('channelFilter')">
+                        <label for="channel_${escapeHtml(channel)}">${escapeHtml(channel)}</label>
+                    </div>
+                `).join('');
+            }
+
+            // Populate team supervisor multi-select filter
+            const supervisors = [...new Set(allAgentStats
+                .map(a => a.teamSupervisor)
+                .filter(s => s && s !== null && s !== '-')
+            )].sort((a, b) => {
+                const nameA = getSupervisorName(a);
+                const nameB = getSupervisorName(b);
+                return nameA.localeCompare(nameB);
             });
+            
+            const supervisorOptions = document.getElementById('teamSupervisorFilterOptions');
+            if (supervisorOptions) {
+                supervisorOptions.innerHTML = supervisors.map(supervisorEmail => {
+                    const supervisorName = getSupervisorName(supervisorEmail);
+                    return `
+                        <div class="multi-select-option" data-value="${escapeHtml(supervisorEmail)}">
+                            <input type="checkbox" id="supervisor_${escapeHtml(supervisorEmail)}" value="${escapeHtml(supervisorEmail)}" onchange="updateMultiSelect('teamSupervisorFilter')">
+                            <label for="supervisor_${escapeHtml(supervisorEmail)}">${escapeHtml(supervisorName)}</label>
+                        </div>
+                    `;
+                }).join('');
+            }
 
             // Initial render
             filterAgents();
         }
 
-        // Filter agents based on search and channel
+        // Filter agents based on search, channel, and team supervisor
         function filterAgents() {
             const searchInput = document.getElementById('searchInput');
-            const channelFilter = document.getElementById('channelFilter');
+            const channelFilterInput = document.getElementById('channelFilter');
+            const teamSupervisorFilterInput = document.getElementById('teamSupervisorFilter');
             const searchTerm = (searchInput.value || '').toLowerCase().trim();
-            const selectedChannel = channelFilter.value;
+            
+            // Get selected channels (array from JSON)
+            let selectedChannels = [];
+            if (channelFilterInput && channelFilterInput.value) {
+                try {
+                    selectedChannels = JSON.parse(channelFilterInput.value);
+                } catch (e) {
+                    selectedChannels = [];
+                }
+            }
+            
+            // Get selected supervisors (array from JSON)
+            let selectedSupervisors = [];
+            if (teamSupervisorFilterInput && teamSupervisorFilterInput.value) {
+                try {
+                    selectedSupervisors = JSON.parse(teamSupervisorFilterInput.value);
+                } catch (e) {
+                    selectedSupervisors = [];
+                }
+            }
 
             filteredAgents = Array.from(agentStats.values()).filter(agent => {
                 // Exclude agents with 0 pending count
@@ -1121,9 +1412,15 @@
                     agent.name.toLowerCase().includes(searchTerm) ||
                     agent.email.toLowerCase().includes(searchTerm);
                 
-                const matchesChannel = !selectedChannel || agent.channel === selectedChannel;
+                const matchesChannel = selectedChannels.length === 0 || 
+                    (agent.channel && selectedChannels.includes(agent.channel));
 
-                return matchesSearch && matchesChannel;
+                const matchesSupervisor = selectedSupervisors.length === 0 || 
+                    (agent.teamSupervisor && selectedSupervisors.some(s => 
+                        agent.teamSupervisor && agent.teamSupervisor.toLowerCase() === s.toLowerCase()
+                    ));
+
+                return matchesSearch && matchesChannel && matchesSupervisor;
             });
 
             sortAgents();
@@ -1609,6 +1906,110 @@
                 filterAgents();
             });
         }
+
+        // Multi-select functions
+        window.toggleMultiSelect = function(filterId) {
+            const dropdown = document.getElementById(`${filterId}Dropdown`);
+            const trigger = document.getElementById(`${filterId}Trigger`);
+            
+            if (!dropdown || !trigger) return;
+            
+            // Close all other multi-selects
+            document.querySelectorAll('.multi-select-dropdown').forEach(dd => {
+                if (dd !== dropdown) {
+                    dd.style.display = 'none';
+                    const otherTrigger = dd.previousElementSibling;
+                    if (otherTrigger) otherTrigger.classList.remove('active');
+                }
+            });
+            
+            // Toggle current dropdown
+            const isOpen = dropdown.style.display !== 'none';
+            dropdown.style.display = isOpen ? 'none' : 'flex';
+            trigger.classList.toggle('active', !isOpen);
+        };
+        
+        window.updateMultiSelect = function(filterId) {
+            const options = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+            const selected = Array.from(options)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.value);
+            
+            const hiddenInput = document.getElementById(filterId);
+            if (hiddenInput) {
+                hiddenInput.value = JSON.stringify(selected);
+            }
+            
+            // Update UI
+            const placeholder = document.getElementById(`${filterId}Placeholder`);
+            const count = document.getElementById(`${filterId}Count`);
+            
+            // Get placeholder text based on filter type
+            const placeholderTexts = {
+                'channelFilter': 'Select channels...',
+                'teamSupervisorFilter': 'Select supervisors...'
+            };
+            
+            if (selected.length === 0) {
+                if (placeholder) {
+                    placeholder.style.display = 'inline';
+                    placeholder.textContent = placeholderTexts[filterId] || 'Select...';
+                }
+                if (count) count.style.display = 'none';
+            } else {
+                if (placeholder) placeholder.style.display = 'none';
+                if (count) {
+                    count.style.display = 'inline';
+                    count.textContent = selected.length;
+                }
+            }
+            
+            // Apply filters
+            filterAgents();
+        };
+        
+        window.filterMultiSelectOptions = function(filterId) {
+            const searchInput = document.getElementById(`${filterId}Search`);
+            const options = document.querySelectorAll(`#${filterId}Options .multi-select-option`);
+            const searchTerm = (searchInput?.value || '').toLowerCase();
+            
+            options.forEach(option => {
+                const label = option.querySelector('label');
+                const text = label ? label.textContent.toLowerCase() : '';
+                if (text.includes(searchTerm)) {
+                    option.classList.remove('hidden');
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+        };
+        
+        window.selectAllMultiSelect = function(filterId) {
+            const options = document.querySelectorAll(`#${filterId}Options .multi-select-option:not(.hidden) input[type="checkbox"]`);
+            options.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateMultiSelect(filterId);
+        };
+        
+        window.clearMultiSelect = function(filterId) {
+            const options = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+            options.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateMultiSelect(filterId);
+        };
+        
+        // Close multi-select dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.multi-select-container')) {
+                document.querySelectorAll('.multi-select-dropdown').forEach(dropdown => {
+                    dropdown.style.display = 'none';
+                    const trigger = dropdown.previousElementSibling;
+                    if (trigger) trigger.classList.remove('active');
+                });
+            }
+        });
 
         // Escape HTML to prevent XSS
         function escapeHtml(text) {
