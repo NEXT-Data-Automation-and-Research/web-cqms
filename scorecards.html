@@ -824,6 +824,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         return; // Access denied, user will be redirected
     }
     
+    // #region agent log
+    try {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const { data: { user }, error: authError } = await window.supabaseClient?.auth.getUser() || { data: { user: null }, error: null };
+        fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:821',message:'Page initialization - auth check',data:{hasSupabaseClient:!!window.supabaseClient,userEmail:userInfo.email,userRole:userInfo.role,hasAuthUser:!!user,authError:authError?.message,supabaseUrl:window.SupabaseConfig?.url?.substring(0,30)+'...'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    } catch(e) {}
+    // #endregion
+    
     await loadAvailableChannels();
     await loadScorecards();
     initializeEventListeners();
@@ -1894,6 +1902,10 @@ function detectChanges(oldScorecard, newData, newParameters) {
 async function handleScorecardSubmit(e) {
     e.preventDefault();
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:1894',message:'handleScorecardSubmit entry',data:{hasSupabaseClient:!!window.supabaseClient,userEmail:JSON.parse(localStorage.getItem('userInfo')||'{}').email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D,E'})}).catch(()=>{});
+    // #endregion
+    
     const scorecardId = document.getElementById('scorecardId').value;
     const isEdit = !!scorecardId;
     
@@ -2067,10 +2079,20 @@ async function handleScorecardSubmit(e) {
                 scorecardData.parent_scorecard_id = scorecardId;
                 
                 // Deactivate old version
-                await window.supabaseClient
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2070',message:'Before deactivating old scorecard version',data:{scorecardId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
+                const { error: deactivateError } = await window.supabaseClient
                     .from('scorecards')
                     .update({ is_active: false })
                     .eq('id', scorecardId);
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2073',message:'After deactivating old scorecard version',data:{hasError:!!deactivateError,errorMessage:deactivateError?.message,errorCode:deactivateError?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
+                if (deactivateError) throw deactivateError;
                 
                 // Create new audit table
                 // Ensure all parameters are properly formatted and sanitized
@@ -2100,11 +2122,19 @@ async function handleScorecardSubmit(e) {
                     full_parameters: parameters
                 });
                 
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2103',message:'Before create_audit_table RPC call',data:{table_name:scorecardData.table_name,paramCount:tableParams.length,isEdit:true,needsNewVersion:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
+                
                 const { data: rpcResult, error: rpcError } = await window.supabaseClient
                     .rpc('create_audit_table', {
                         table_name: scorecardData.table_name,
                         parameters: tableParams
                     });
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2109',message:'After create_audit_table RPC call',data:{hasError:!!rpcError,hasResult:!!rpcResult,success:rpcResult?.success,rpcResultError:rpcResult?.error,errorMessage:rpcError?.message,errorCode:rpcError?.code,errorDetails:rpcError?.details,errorHint:rpcError?.hint,fullRpcResult:JSON.stringify(rpcResult)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 
                 if (rpcError || !rpcResult?.success) {
                     // Log full error details for debugging
@@ -2117,7 +2147,17 @@ async function handleScorecardSubmit(e) {
                     
                     const errorMsg = rpcResult?.error || rpcError?.message || rpcError?.details || 'Failed to create audit table';
                     const errorHint = rpcError?.hint || '';
-                    const fullErrorMsg = errorHint ? `${errorMsg}\n\nHint: ${errorHint}` : errorMsg;
+                    
+                    // Provide helpful error message for permission issues
+                    let fullErrorMsg = errorHint ? `${errorMsg}\n\nHint: ${errorHint}` : errorMsg;
+                    if (errorMsg.includes('permission denied for schema public') || errorMsg.includes('permission denied')) {
+                        fullErrorMsg = `Permission Denied: The database function 'create_audit_table' does not have permission to create tables in the public schema.\n\n` +
+                            `This is a database configuration issue. The RPC function needs to be created with SECURITY DEFINER and the function owner must have CREATE privileges on the public schema.\n\n` +
+                            `Please contact your database administrator to:\n` +
+                            `1. Grant CREATE privileges on schema public to the function owner\n` +
+                            `2. Ensure the create_audit_table function is created with SECURITY DEFINER\n\n` +
+                            `Original error: ${errorMsg}`;
+                    }
                     
                     // Check if this is a table already exists error
                     if (errorMsg.includes('already exists') || errorMsg.includes('duplicate')) {
@@ -2180,11 +2220,20 @@ async function handleScorecardSubmit(e) {
                 // Insert new scorecard version
                 // Try with default_for_channels first, fallback without it if column doesn't exist
                 let newScorecard;
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2183',message:'Before scorecards insert (new version)',data:{table_name:scorecardData.table_name,hasDefaultChannels:!!scorecardData.default_for_channels},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
                 const { data, error } = await window.supabaseClient
                     .from('scorecards')
                     .insert([scorecardData])
                     .select()
                     .single();
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2189',message:'After scorecards insert (new version)',data:{hasError:!!error,errorMessage:error?.message,errorCode:error?.code,errorDetails:error?.details,hasData:!!data},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
                 
                 if (error) {
                     // If error is about missing column, retry without default_for_channels
@@ -2213,9 +2262,17 @@ async function handleScorecardSubmit(e) {
                     scorecard_id: newScorecard.id
                 }));
                 
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2216',message:'Before scorecard_parameters insert (new version)',data:{scorecardId:newScorecard?.id,paramCount:parametersWithScorecardId.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
                 const { error: paramsError } = await window.supabaseClient
                     .from('scorecard_parameters')
                     .insert(parametersWithScorecardId);
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2220',message:'After scorecard_parameters insert (new version)',data:{hasError:!!paramsError,errorMessage:paramsError?.message,errorCode:paramsError?.code,errorDetails:paramsError?.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
                 
                 if (paramsError) throw paramsError;
                 
@@ -2243,10 +2300,19 @@ async function handleScorecardSubmit(e) {
                 }
                 
                 // Try update with default_for_channels first, fallback without it if column doesn't exist
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2246',message:'Before scorecards update (edit, no new version)',data:{scorecardId,updateFields:Object.keys(updateData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
                 const { error: updateError } = await window.supabaseClient
                     .from('scorecards')
                     .update(updateData)
                     .eq('id', scorecardId);
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2251',message:'After scorecards update (edit, no new version)',data:{hasError:!!updateError,errorMessage:updateError?.message,errorCode:updateError?.code,errorDetails:updateError?.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
                 
                 if (updateError) {
                     // If error is about missing column, retry without default_for_channels
@@ -2344,11 +2410,19 @@ async function handleScorecardSubmit(e) {
                 full_parameters: parameters
             });
             
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2347',message:'Before create_audit_table RPC call (new scorecard)',data:{table_name:scorecardData.table_name,paramCount:tableParams.length,isEdit:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            
             const { data: rpcResult, error: rpcError } = await window.supabaseClient
                 .rpc('create_audit_table', {
                     table_name: scorecardData.table_name,
                     parameters: tableParams
                 });
+            
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2353',message:'After create_audit_table RPC call (new scorecard)',data:{hasError:!!rpcError,hasResult:!!rpcResult,success:rpcResult?.success,rpcResultError:rpcResult?.error,errorMessage:rpcError?.message,errorCode:rpcError?.code,errorDetails:rpcError?.details,errorHint:rpcError?.hint,fullRpcResult:JSON.stringify(rpcResult)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             
             if (rpcError || !rpcResult?.success) {
                 // Log full error details for debugging
@@ -2361,7 +2435,17 @@ async function handleScorecardSubmit(e) {
                 
                 const errorMsg = rpcResult?.error || rpcError?.message || rpcError?.details || 'Failed to create audit table';
                 const errorHint = rpcError?.hint || '';
-                const fullErrorMsg = errorHint ? `${errorMsg}\n\nHint: ${errorHint}` : errorMsg;
+                
+                // Provide helpful error message for permission issues
+                let fullErrorMsg = errorHint ? `${errorMsg}\n\nHint: ${errorHint}` : errorMsg;
+                if (errorMsg.includes('permission denied for schema public') || errorMsg.includes('permission denied')) {
+                    fullErrorMsg = `Permission Denied: The database function 'create_audit_table' does not have permission to create tables in the public schema.\n\n` +
+                        `This is a database configuration issue. The RPC function needs to be created with SECURITY DEFINER and the function owner must have CREATE privileges on the public schema.\n\n` +
+                        `Please contact your database administrator to:\n` +
+                        `1. Grant CREATE privileges on schema public to the function owner\n` +
+                        `2. Ensure the create_audit_table function is created with SECURITY DEFINER\n\n` +
+                        `Original error: ${errorMsg}`;
+                }
                 
                 // Check if this is a table already exists error
                 if (errorMsg.includes('already exists') || errorMsg.includes('duplicate')) {
@@ -2423,11 +2507,20 @@ async function handleScorecardSubmit(e) {
             
             // Try insert with default_for_channels first, fallback without it if column doesn't exist
             let newScorecard;
+            
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2426',message:'Before scorecards insert (new scorecard)',data:{table_name:scorecardData.table_name,hasDefaultChannels:!!scorecardData.default_for_channels},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            
             const { data, error: scorecardError } = await window.supabaseClient
                 .from('scorecards')
                 .insert([scorecardData])
                 .select()
                 .single();
+            
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2432',message:'After scorecards insert (new scorecard)',data:{hasError:!!scorecardError,errorMessage:scorecardError?.message,errorCode:scorecardError?.code,errorDetails:scorecardError?.details,hasData:!!data},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
             
             if (scorecardError) {
                 // If error is about missing column, retry without default_for_channels
@@ -2455,9 +2548,17 @@ async function handleScorecardSubmit(e) {
                 scorecard_id: newScorecard.id
             }));
             
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2458',message:'Before scorecard_parameters insert (new scorecard)',data:{scorecardId:newScorecard?.id,paramCount:parametersWithScorecardId.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            
             const { error: paramsError } = await window.supabaseClient
                 .from('scorecard_parameters')
                 .insert(parametersWithScorecardId);
+            
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2462',message:'After scorecard_parameters insert (new scorecard)',data:{hasError:!!paramsError,errorMessage:paramsError?.message,errorCode:paramsError?.code,errorDetails:paramsError?.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
             
             if (paramsError) throw paramsError;
             
@@ -2473,6 +2574,10 @@ async function handleScorecardSubmit(e) {
         await loadScorecards();
         
     } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'scorecards.html:2475',message:'Error caught in handleScorecardSubmit',data:{errorMessage:error?.message,errorStack:error?.stack,errorName:error?.name,isEdit,scorecardId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D,E'})}).catch(()=>{});
+        // #endregion
+        
         console.error('Error saving scorecard:', error);
         await window.confirmationDialog.show({
             title: 'Error',

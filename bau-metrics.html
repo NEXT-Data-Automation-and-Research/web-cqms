@@ -598,6 +598,7 @@
                             <th style="background-color: #374151;">Count of Error</th>
                             <th style="background-color: #374151;">Auditor</th>
                             <th style="background-color: #374151;">Rating</th>
+                            <th style="background-color: #374151;">Rating Feedback</th>
                         </tr>
                     </thead>
                     <tbody id="ratingBreakdownBody">
@@ -1005,6 +1006,9 @@ async function loadMetricsData() {
                         errorCount = Array.isArray(audit.errors) ? audit.errors.length : 0;
                     }
                     
+                    // Extract rating feedback
+                    const ratingFeedback = audit.audit_rating_feedback || audit.auditRatingFeedback || '';
+                    
                     detailedAuditRecords.push({
                         id: audit.id,
                         submitted_at: audit.submitted_at,
@@ -1016,6 +1020,7 @@ async function loadMetricsData() {
                         auditor_email: audit.auditor_email || audit.auditorEmail || '',
                         auditor_name: audit.auditor_name || audit.auditorName || '',
                         rating: starRating,
+                        rating_feedback: ratingFeedback,
                         table_name: audit._table_name,
                         scorecard_id: audit.scorecard_id || audit._scorecard_id || null
                     });
@@ -1425,6 +1430,22 @@ function renderRatingBreakdown(ratingBreakdown, days, detailedAuditRecords) {
         const rating = Math.floor(record.rating);
         ratingCell.innerHTML = `<span style="font-size: 1.125rem; color: #fbbf24;">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</span>`;
         row.appendChild(ratingCell);
+        
+        // Rating Feedback
+        const feedbackCell = document.createElement('td');
+        feedbackCell.style.maxWidth = '300px';
+        feedbackCell.style.wordWrap = 'break-word';
+        feedbackCell.style.fontSize = '0.875rem';
+        if (record.rating_feedback && record.rating_feedback.trim()) {
+            feedbackCell.textContent = record.rating_feedback.length > 150 
+                ? record.rating_feedback.substring(0, 150) + '...' 
+                : record.rating_feedback;
+            feedbackCell.title = record.rating_feedback; // Show full text on hover
+        } else {
+            feedbackCell.textContent = '-';
+            feedbackCell.style.color = '#9ca3af';
+        }
+        row.appendChild(feedbackCell);
         
         breakdownBody.appendChild(row);
     });
