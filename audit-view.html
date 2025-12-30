@@ -332,14 +332,6 @@
                 </div>
             </div>
             
-            <!-- Within Auditor Scope -->
-            <div style="display: flex; align-items: center; gap: 0.375rem;">
-                <input type="checkbox" id="withinAuditorScope" checked style="width: 0.75rem; height: 0.75rem; cursor: pointer;">
-                <label for="withinAuditorScope" style="font-size: 0.6094rem; color: #374151; font-family: 'Poppins', sans-serif; cursor: pointer;">
-                    I believe this can be resolved by the original auditor
-                </label>
-            </div>
-            
             <!-- Action Buttons -->
             <div style="display: flex; gap: 0.5625rem; justify-content: flex-end; padding-top: 0.375rem;">
                 <button type="button" onclick="toggleReversalForm()" style="padding: 0.4688rem 0.9375rem; background-color: #f3f4f6; color: #374151; border: 0.0352rem solid #d1d5db; border-radius: 0.2812rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
@@ -830,6 +822,7 @@ let currentAudit = null;
 let currentScorecardId = null;
 let currentTableName = null;
 let currentErrorFields = [];
+let currentAuditScorecard = null;
 let currentUserEmail = null;
 
 // Get current logged-in user email
@@ -857,6 +850,111 @@ function getCurrentUserInfo() {
         console.error('Error getting current user info:', error);
     }
     return null;
+}
+
+// Build reversal journey map/roadmap indicator
+function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
+    // Define all stages in order - compact checkout-style
+    const stages = [
+        { 
+            key: 'submitted', 
+            label: 'Submitted'
+        },
+        { 
+            key: 'team_lead_review', 
+            label: 'Team Lead Review'
+        },
+        { 
+            key: 'qa_review', 
+            label: 'QC Review'
+        },
+        { 
+            key: 'final_decision', 
+            label: 'Final Decision'
+        }
+    ];
+    
+    // Determine current stage index
+    let currentStageIndex = 0;
+    let currentStageKey = 'submitted';
+    
+    if (workflowState === 'team_lead_review' || workflowState === 'pending') {
+        currentStageIndex = 1;
+        currentStageKey = 'team_lead_review';
+    } else if (workflowState === 'team_lead_rejected') {
+        currentStageIndex = 1;
+        currentStageKey = 'team_lead_rejected';
+    } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+        currentStageIndex = 2;
+        currentStageKey = 'qa_review';
+    } else if (workflowState === 'approved' || workflowState === 'rejected') {
+        currentStageIndex = 3;
+        currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
+    } else if (workflowState === 'acknowledged') {
+        currentStageIndex = 3; // Acknowledged is after final decision
+        currentStageKey = 'acknowledged';
+    }
+    
+    // Build compact checkout-style journey map
+    let journeyMapHtml = '<div style="display: flex; align-items: flex-start; width: 100%; position: relative; padding: 0.5rem 0;">';
+    
+    stages.forEach((stage, index) => {
+        const isCompleted = index < currentStageIndex;
+        const isCurrent = index === currentStageIndex;
+        const isRejected = (stage.key === 'team_lead_review' && currentStageKey === 'team_lead_rejected') || 
+                          (stage.key === 'final_decision' && currentStageKey === 'rejected');
+        const isFuture = index > currentStageIndex;
+        
+        // Determine circle styles (like checkout progress)
+        let circleBg = '#ffffff';
+        let circleBorder = '#d1d5db';
+        let circleContent = '';
+        let labelColor = '#6b7280';
+        let labelWeight = '500';
+        
+        if (isCompleted) {
+            circleBg = '#16a34a';
+            circleBorder = '#16a34a';
+            circleContent = '<svg style="width: 0.75rem; height: 0.75rem; color: white;" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+            labelColor = '#16a34a';
+            labelWeight = '600';
+        } else if (isCurrent) {
+            circleBg = '#ffffff';
+            circleBorder = '#2563eb';
+            circleContent = `<span style="font-size: 0.625rem; font-weight: 700; color: #2563eb;">${index + 1}</span>`;
+            labelColor = '#2563eb';
+            labelWeight = '700';
+        } else if (isRejected) {
+            circleBg = '#dc2626';
+            circleBorder = '#dc2626';
+            circleContent = '<svg style="width: 0.75rem; height: 0.75rem; color: white;" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+            labelColor = '#dc2626';
+            labelWeight = '600';
+        } else {
+            circleContent = `<span style="font-size: 0.625rem; font-weight: 600; color: #6b7280;">${index + 1}</span>`;
+        }
+        
+        // Connector line color (green if previous step completed, grey otherwise)
+        const connectorColor = isCompleted ? '#16a34a' : '#e5e7eb';
+        
+        journeyMapHtml += `
+            <div style="display: flex; flex-direction: column; align-items: center; flex: 1; position: relative;">
+                ${index < stages.length - 1 ? `
+                <div style="position: absolute; top: 0.625rem; left: calc(50% + 0.625rem); width: calc(100% - 1.25rem); height: 0.125rem; background: ${connectorColor}; z-index: 0;"></div>
+                ` : ''}
+                <div style="width: 1.25rem; height: 1.25rem; border-radius: 50%; background: ${circleBg}; border: 0.125rem solid ${circleBorder}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: 0.375rem; position: relative; z-index: 1;">
+                    ${circleContent}
+                </div>
+                <span style="font-size: 0.5rem; font-weight: ${labelWeight}; color: ${labelColor}; text-align: center; font-family: 'Poppins', sans-serif; white-space: nowrap;">
+                    ${stage.label}
+                </span>
+            </div>
+        `;
+    });
+    
+    journeyMapHtml += '</div>';
+    
+    return journeyMapHtml;
 }
 
 // Check if current user is the audited employee
@@ -893,6 +991,44 @@ function isCurrentUserAuditor() {
     return auditAuditorEmail.toLowerCase() === currentUserEmail.toLowerCase();
 }
 
+// Check if current user is the original auditor of a specific audit
+function isCurrentUserOriginalAuditor(audit) {
+    if (!currentUserEmail || !audit) {
+        return false;
+    }
+    
+    // Compare emails (case-insensitive)
+    const auditAuditorEmail = audit.auditorEmail || audit.auditor_email || '';
+    return auditAuditorEmail.toLowerCase() === currentUserEmail.toLowerCase();
+}
+
+// Check if current user is a Team Lead
+function isCurrentUserTeamLead() {
+    const userInfo = getCurrentUserInfo();
+    if (!userInfo) {
+        return false;
+    }
+    
+    const role = (userInfo.role || '').toLowerCase();
+    return role.includes('team lead') || role.includes('teamlead') || role === 'team lead';
+}
+
+// Check if current user is Admin or Super Admin
+function isCurrentUserAdmin() {
+    if (!window.accessControl) {
+        // Fallback: check userInfo directly
+        const userInfo = getCurrentUserInfo();
+        if (!userInfo) {
+            return false;
+        }
+        
+        const role = (userInfo.role || '').toLowerCase();
+        return role === 'admin' || role === 'super admin';
+    }
+    
+    return window.accessControl.isAdminOrAbove();
+}
+
 // Helper function to check if acknowledgement status is considered "acknowledged" (locked, no edits/comments)
 function isAcknowledgedStatus(status) {
     if (!status) return false;
@@ -902,15 +1038,84 @@ function isAcknowledgedStatus(status) {
            statusLower === 'acknowledged - after reversal rejected';
 }
 
+// Get reversal workflow state from acknowledgement_status
+function getReversalWorkflowState(audit) {
+    try {
+        if (!audit) return null; // No audit, no workflow state
+        
+        // First check if a reversal was actually requested
+        const reversalRequestedAt = audit?.reversal_requested_at || audit?.reversalRequestedAt;
+        if (!reversalRequestedAt) {
+            return null; // No reversal requested, no workflow state
+        }
+        
+        const ackStatusRaw = audit?.acknowledgement_status || audit?.acknowledgementStatus;
+        if (!ackStatusRaw || typeof ackStatusRaw !== 'string') {
+            // No acknowledgement status, fall back to old logic
+            const approved = audit?.reversal_approved;
+            if (approved === null || approved === undefined) return 'pending';
+            if (approved === true || approved === 'true' || approved === 1 || approved === '1') return 'approved';
+            if (approved === false || approved === 'false' || approved === 0 || approved === '0') return 'rejected';
+            return 'pending';
+        }
+        
+        const ackStatus = ackStatusRaw.toLowerCase();
+        
+        if (ackStatus.includes('team_lead_review')) return 'team_lead_review';
+        if (ackStatus.includes('team_lead_rejected')) return 'team_lead_rejected';
+        if (ackStatus.includes('qa_review') || ackStatus.includes('auditor_review')) return 'qa_review';
+        if (ackStatus.includes('cqc_review')) return 'cqc_review';
+        if (ackStatus.includes('cqc_sent_back')) return 'cqc_sent_back';
+        if (ackStatus.includes('agent_re_review')) return 'agent_re_review';
+        if (ackStatus.includes('reversal_approved')) return 'approved';
+        if (ackStatus.includes('reversal_rejected')) return 'rejected';
+        if (ackStatus === 'acknowledged' || ackStatus.includes('acknowledged')) return 'acknowledged';
+        
+        // Fallback to old logic
+        const approved = audit?.reversal_approved;
+        if (approved === null || approved === undefined) return 'pending';
+        if (approved === true || approved === 'true' || approved === 1 || approved === '1') return 'approved';
+        if (approved === false || approved === 'false' || approved === 0 || approved === '0') return 'rejected';
+        
+        return 'pending';
+    } catch (error) {
+        console.error('Error in getReversalWorkflowState:', error, audit);
+        return null; // Safe fallback - return null instead of 'pending' to indicate no state
+    }
+}
+
 // Check if there's a pending reversal request
 function hasPendingReversalRequest() {
     if (!currentAudit) {
         return false;
     }
     
-    // The schema doesn't have reversal_status column
-    // Status is determined by reversal_approved and reversal_responded_at
     const reversalRequestedAt = currentAudit.reversal_requested_at || currentAudit.reversalRequestedAt;
+    if (!reversalRequestedAt) {
+        return false; // No reversal requested
+    }
+    
+    // Check workflow state
+    const workflowState = getReversalWorkflowState(currentAudit);
+    
+    // Pending states that prevent acknowledgment
+    const pendingStates = [
+        'pending',
+        'team_lead_review',
+        'qa_review',
+        'cqc_review'
+    ];
+    
+    // If Team Lead rejected, it's not pending anymore - agent can acknowledge
+    if (workflowState === 'team_lead_rejected') {
+        return false;
+    }
+    
+    if (pendingStates.includes(workflowState)) {
+        return true;
+    }
+    
+    // Fallback: check old logic
     const reversalRespondedAt = currentAudit.reversal_responded_at || currentAudit.reversalRespondedAt;
     const reversalApproved = currentAudit.reversal_approved || currentAudit.reversalApproved;
     
@@ -920,7 +1125,7 @@ function hasPendingReversalRequest() {
     }
     
     // Also check if reversal_approved is null (which means pending)
-    if (reversalRequestedAt && reversalApproved === null || reversalApproved === undefined) {
+    if (reversalRequestedAt && (reversalApproved === null || reversalApproved === undefined)) {
         return true;
     }
     
@@ -1098,7 +1303,7 @@ async function handleCloseAuditView() {
             const result = await window.confirmationDialog.show({
                 title: '⚠ Unsaved Comments',
                 message: 'You have added parameter comments but haven\'t submitted a reversal request yet. If you leave now, your comments will be lost (they are only saved when you submit a reversal request).\n\nPlease submit a reversal request to save your comments before leaving.',
-                confirmText: 'Submit Reversal',
+                confirmText: 'Request Reversal',
                 cancelText: 'Leave Anyway (Comments will be lost)'
             });
             
@@ -1239,6 +1444,199 @@ async function handleCloseAuditView() {
     return true;
 }
 
+// Function to fetch user by name
+async function getUserByName(userName) {
+    if (!userName || !window.supabaseClient) return null;
+    
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('users')
+            .select('*')
+            .ilike('name', userName)
+            .limit(1)
+            .single();
+        
+        if (error) {
+            // Try case-insensitive search if exact match fails
+            const { data: allUsers } = await window.supabaseClient
+                .from('users')
+                .select('*')
+                .limit(1000);
+            
+            const foundUser = allUsers?.find(u => 
+                u.name && u.name.toLowerCase().trim() === userName.toLowerCase().trim()
+            );
+            return foundUser || null;
+        }
+    
+        return data;
+    } catch (error) {
+        console.error('Error fetching user by name:', error);
+        return null;
+    }
+}
+
+// Function to show user profile modal
+function showUserProfileModal(userData, element) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('userProfileModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    if (!userData) {
+        return; // No user data to show
+    }
+    
+    // Get element position
+    const rect = element.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'userProfileModal';
+    modal.style.cssText = `
+        position: absolute;
+        top: ${rect.bottom + scrollTop + 5}px;
+        left: ${rect.left + scrollLeft}px;
+        background: white;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
+        padding: 0.75rem;
+        min-width: 12.5rem;
+        max-width: 18.75rem;
+        z-index: 10000;
+        border: 0.0625rem solid #e5e7eb;
+        font-family: 'Poppins', sans-serif;
+    `;
+    
+    // Get user avatar or initials
+    const avatarUrl = userData.avatar_url || userData.avatar;
+    const initials = userData.name ? userData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '?';
+    
+    // Build modal content
+    modal.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 0.5625rem;">
+            <div style="display: flex; align-items: center; gap: 0.5625rem; padding-bottom: 0.5625rem; border-bottom: 0.0625rem solid #e5e7eb;">
+                ${avatarUrl ? `
+                    <img src="${escapeHtml(avatarUrl)}" style="width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover;" alt="${escapeHtml(userData.name || '')}">
+                ` : `
+                    <div style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #1A733E; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
+                        ${initials}
+                    </div>
+                `}
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 600; font-size: 0.75rem; color: #1f2937; margin-bottom: 0.125rem;">${escapeHtml(userData.name || 'Unknown')}</div>
+                    <div style="font-size: 0.5625rem; color: #6b7280;">${escapeHtml(userData.email || '')}</div>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.375rem; font-size: 0.6094rem;">
+                ${userData.role ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-weight: 500;">Role:</span>
+                        <span style="color: #1f2937; font-weight: 600;">${escapeHtml(userData.role)}</span>
+                    </div>
+                ` : ''}
+                ${userData.department ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-weight: 500;">Department:</span>
+                        <span style="color: #1f2937; font-weight: 600;">${escapeHtml(userData.department)}</span>
+                    </div>
+                ` : ''}
+                ${userData.team ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-weight: 500;">Team:</span>
+                        <span style="color: #1f2937; font-weight: 600;">${escapeHtml(userData.team)}</span>
+                    </div>
+                ` : ''}
+                ${userData.channel ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-weight: 500;">Channel:</span>
+                        <span style="color: #1f2937; font-weight: 600;">${escapeHtml(userData.channel)}</span>
+                    </div>
+                ` : ''}
+                ${userData.designation ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-weight: 500;">Designation:</span>
+                        <span style="color: #1f2937; font-weight: 600;">${escapeHtml(userData.designation)}</span>
+                    </div>
+                ` : ''}
+                ${userData.employee_id ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-weight: 500;">Employee ID:</span>
+                        <span style="color: #1f2937; font-weight: 600;">${escapeHtml(userData.employee_id)}</span>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Position modal to stay within viewport
+    const modalRect = modal.getBoundingClientRect();
+    if (modalRect.right > window.innerWidth) {
+        modal.style.left = `${window.innerWidth - modalRect.width - 10}px`;
+    }
+    if (modalRect.bottom > window.innerHeight) {
+        modal.style.top = `${rect.top + scrollTop - modalRect.height - 5}px`;
+    }
+    
+    // Close modal when clicking outside or when mouse leaves
+    const closeModal = (e) => {
+        if (!modal.contains(e.target) && !element.contains(e.target)) {
+            modal.remove();
+            document.removeEventListener('click', closeModal);
+        }
+    };
+    
+    // Close on click outside
+    setTimeout(() => {
+        document.addEventListener('click', closeModal);
+    }, 100);
+    
+    // Close when mouse leaves the element and modal
+    element.addEventListener('mouseleave', (e) => {
+        const relatedTarget = e.relatedTarget;
+        if (!modal.contains(relatedTarget)) {
+            setTimeout(() => {
+                if (!element.matches(':hover') && !modal.matches(':hover')) {
+                    modal.remove();
+                }
+            }, 200);
+        }
+    });
+    
+    modal.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+            if (!element.matches(':hover') && !modal.matches(':hover')) {
+                modal.remove();
+            }
+        }, 200);
+    });
+}
+
+// Setup hover event listeners for user profile
+function setupUserProfileHovers() {
+    // Use event delegation for dynamically created elements
+    document.addEventListener('mouseenter', async function(e) {
+        // Check if e.target is an Element before calling closest
+        if (!e.target || typeof e.target.closest !== 'function') return;
+        const hoverElement = e.target.closest('.user-profile-hover');
+        if (!hoverElement) return;
+        
+        const userName = hoverElement.getAttribute('data-user-name');
+        if (!userName || userName === 'Team Lead') return;
+        
+        // Fetch user data
+        const userData = await getUserByName(userName);
+        if (userData) {
+            showUserProfileModal(userData, hoverElement);
+        }
+    }, true);
+}
+
 // Load audit on page load
 document.addEventListener('DOMContentLoaded', async function() {
     try {
@@ -1250,6 +1648,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Get current user email first
         currentUserEmail = getCurrentUserEmail();
+        
+        // Setup user profile hovers
+        setupUserProfileHovers();
         
         await loadAuditFromURL();
         
@@ -1512,14 +1913,22 @@ async function loadAuditFromURL() {
         // Store errorFields globally for reversal form
         currentErrorFields = errorFields;
         
+        // Store scorecard globally for score calculation
+        currentAuditScorecard = auditScorecard;
+        
         // Update currentAudit to the mapped version (with camelCase fields)
         currentAudit = audit;
 
         // Render the audit
-        renderAudit(audit, auditScorecard, errorFields);
+        try {
+        await renderAudit(audit, auditScorecard, errorFields);
 
         // Hide loading indicator
         document.getElementById('loadingIndicator').style.display = 'none';
+        } catch (renderError) {
+            console.error('Error rendering audit:', renderError);
+            showError('Error rendering audit: ' + (renderError.message || 'Unknown error'));
+        }
 
     } catch (error) {
         console.error('Error loading audit:', error);
@@ -2112,7 +2521,7 @@ function generateErrorDetails(audit, errorFields) {
 }
 
 // Render audit HTML
-function renderAudit(audit, auditScorecard, errorFields) {
+async function renderAudit(audit, auditScorecard, errorFields) {
     // Helper functions are now in audit-template.js
     // Use them from the global scope (formatDate, getCountryFlag, escapeHtml)
 
@@ -2211,19 +2620,37 @@ function renderAudit(audit, auditScorecard, errorFields) {
     const timeWindowAllowsReversal = checkIfReversalButtonShouldShow(auditSubmissionTime);
     
     // Get reversal and acknowledgement status for footer styling
-    // Note: reversal_status column doesn't exist - status is determined by reversal_approved
+    // Check workflow state first, then fall back to old logic
+    const workflowState = getReversalWorkflowState(audit);
     const reversalRequestedAt = audit.reversal_requested_at || audit.reversalRequestedAt;
     const reversalRespondedAt = audit.reversal_responded_at || audit.reversalRespondedAt;
     const reversalApproved = audit.reversal_approved || audit.reversalApproved;
-    // Determine status: null/undefined = pending, 'true' = approved, 'false' = rejected
+    
+    // Determine status: Check workflow state first, but only if reversal was actually submitted
     let reversalStatus = null;
-    if (reversalRequestedAt && !reversalRespondedAt) {
+    
+    // Only set reversal status if a reversal was actually requested
+    if (reversalRequestedAt) {
+        if (workflowState === 'team_lead_rejected') {
+            reversalStatus = 'Rejected'; // Team Lead rejected - show as rejected
+        } else if (workflowState === 'approved' || workflowState === 'reversal_approved') {
+            reversalStatus = 'Approved';
+        } else if (workflowState === 'rejected' || workflowState === 'reversal_rejected') {
+            reversalStatus = 'Rejected';
+        } else if (workflowState === 'team_lead_review' || workflowState === 'qa_review' || workflowState === 'pending') {
+            reversalStatus = 'Pending';
+        } else {
+            // Fallback to old logic
+            if (!reversalRespondedAt) {
         reversalStatus = 'Pending';
     } else if (reversalApproved === 'true' || reversalApproved === true) {
         reversalStatus = 'Approved';
     } else if (reversalApproved === 'false' || reversalApproved === false) {
         reversalStatus = 'Rejected';
     }
+        }
+    }
+    // If no reversalRequestedAt, reversalStatus remains null (no reversal submitted)
     
     const acknowledgementStatus = audit.acknowledgementStatus || audit.acknowledgement_status || '';
     const isAcknowledged = acknowledgementStatus === 'Acknowledged' || 
@@ -2258,7 +2685,7 @@ function renderAudit(audit, auditScorecard, errorFields) {
                             <line x1="12" y1="9" x2="12" y2="13"/>
                             <line x1="12" y1="17" x2="12.01" y2="17"/>
                         </svg>
-                        Submit Reversal
+                        Request Reversal
                     </button>
             `;
         }
@@ -2493,7 +2920,7 @@ function renderAudit(audit, auditScorecard, errorFields) {
     if (reversalFormContainer && auditContentDiv) {
         const buttonsSection = auditContentDiv.querySelector('.no-print[style*="border-top"]');
         if (buttonsSection && buttonsSection.parentElement) {
-            buttonsSection.parentElement.insertBefore(reversalFormContainer, buttonsSection.nextSibling);
+            buttonsSection.parentElement.insertBefore(reversalFormContainer, buttonsSection);
         } else {
             auditContentDiv.appendChild(reversalFormContainer);
         }
@@ -2509,9 +2936,18 @@ function renderAudit(audit, auditScorecard, errorFields) {
     // Handle reversal status UI updates
     handleReversalStatusUI(audit);
     
-    // Display submitted reversal form if reversal is pending
-    if (reversalStatus === 'Pending') {
-        displaySubmittedReversalForm(audit);
+    // Display reversal approval interface if reversal is pending
+    // The "Review & Process Reversal" section now contains all information
+    // Show it to everyone (read-only view for all users in audit-view.html)
+    // Note: workflowState is already declared above (line 2483)
+    
+    if (reversalStatus === 'Pending' || workflowState === 'team_lead_review' || workflowState === 'qa_review' || workflowState === 'approved' || workflowState === 'rejected' || workflowState === 'team_lead_rejected') {
+        // Check if there's a reversal request first
+        if (reversalRequestedAt) {
+            // Show the same read-only interface as edit-audit.html for agents
+            // This includes journey map, audit summary, table format for parameter comments with feedback, etc.
+            await displaySubmittedReversalForm(audit);
+        }
     }
     
     // Start timer countdown if reversal button is visible and reversal is not pending
@@ -2600,6 +3036,11 @@ function renderAudit(audit, auditScorecard, errorFields) {
 
 // Handle reversal status UI updates
 function handleReversalStatusUI(audit) {
+    if (!audit) {
+        console.warn('handleReversalStatusUI called with null/undefined audit');
+        return;
+    }
+    
     const acknowledgeBtn = document.getElementById('acknowledgeBtn');
     const reversalFormContainer = document.getElementById('reversalFormContainer');
     
@@ -2615,17 +3056,43 @@ function handleReversalStatusUI(audit) {
     }
     
     // Get the reversal status from audit data
-    // Note: reversal_status column doesn't exist - derive from reversal_approved
+    // Check workflow state first, then fall back to old logic
+    const workflowState = getReversalWorkflowState(currentAudit);
     const reversalRequestedAt = currentAudit?.reversal_requested_at || currentAudit?.reversalRequestedAt;
     const reversalRespondedAt = currentAudit?.reversal_responded_at || currentAudit?.reversalRespondedAt;
     const reversalApproved = currentAudit?.reversal_approved || currentAudit?.reversalApproved;
+    const teamLeadApproved = currentAudit?.team_lead_approved;
+    const teamLeadRejectionReason = currentAudit?.team_lead_rejection_reason || '';
+    
     let reversalStatus = null;
-    if (reversalRequestedAt && !reversalRespondedAt) {
+    
+    // Only set reversal status if a reversal was actually requested
+    if (!reversalRequestedAt) {
+        // No reversal requested, so no reversal status to show
+        reversalStatus = null;
+    } else if (workflowState === null || workflowState === undefined) {
+        // No workflow state (shouldn't happen if reversalRequestedAt exists, but be safe)
+        reversalStatus = null;
+    } else {
+        // Check workflow state first
+        if (workflowState === 'team_lead_rejected') {
+            reversalStatus = 'Rejected'; // Team Lead rejected - show as rejected
+        } else if (workflowState === 'approved' || workflowState === 'reversal_approved') {
+            reversalStatus = 'Approved';
+        } else if (workflowState === 'rejected' || workflowState === 'reversal_rejected') {
+            reversalStatus = 'Rejected';
+        } else if (workflowState === 'team_lead_review' || workflowState === 'qa_review' || workflowState === 'pending') {
+            reversalStatus = 'Pending';
+        } else {
+            // Fallback to old logic
+            if (!reversalRespondedAt) {
         reversalStatus = 'Pending';
     } else if (reversalApproved === 'true' || reversalApproved === true) {
         reversalStatus = 'Approved';
     } else if (reversalApproved === 'false' || reversalApproved === false) {
         reversalStatus = 'Rejected';
+            }
+        }
     }
     
     // Get the acknowledgement status from audit data
@@ -2645,11 +3112,18 @@ function handleReversalStatusUI(audit) {
         acknowledgeBtn.style.cursor = 'not-allowed';
     }
     
-    // If reversal is pending, disable acknowledge button (can't acknowledge while reversal is pending)
-    if (reversalStatus === 'Pending' && acknowledgeBtn && acknowledgementStatus !== 'Acknowledged') {
+    // If reversal is pending (and not rejected by Team Lead), disable acknowledge button
+    if (reversalStatus === 'Pending' && workflowState !== 'team_lead_rejected' && acknowledgeBtn && acknowledgementStatus !== 'Acknowledged') {
         acknowledgeBtn.disabled = true;
         acknowledgeBtn.style.opacity = '0.5';
         acknowledgeBtn.style.cursor = 'not-allowed';
+    }
+    
+    // If Team Lead rejected, allow acknowledgment (it's final)
+    if (workflowState === 'team_lead_rejected' && acknowledgeBtn && acknowledgementStatus !== 'Acknowledged') {
+        acknowledgeBtn.disabled = false;
+        acknowledgeBtn.style.opacity = '1';
+        acknowledgeBtn.style.cursor = 'pointer';
     }
     
     if (reversalStatus) {
@@ -2668,22 +3142,16 @@ function handleReversalStatusUI(audit) {
         `;
         
         if (reversalStatus === 'Pending') {
-            statusBanner.style.background = '#fef3c7';
-            statusBanner.style.color = '#92400e';
-            statusBanner.style.border = '0.0352rem solid #fbbf24';
-            statusBanner.innerHTML = `
-                <svg style="width: 0.9375rem; height: 0.9375rem; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                </svg>
-                <span>Reversal request is pending review by the quality team. This cannot be acknowledged until the reversal is processed.</span>
-            `;
-            // Disable the reversal button (user can't submit another reversal while one is pending)
+            // Don't show banner for pending reversals - the "Review & Process Reversal" section has more specific information
+            // Just disable the reversal button (user can't submit another reversal while one is pending)
             const reversalBtn = acknowledgeBtn?.parentElement?.querySelector('button[onclick="toggleReversalForm()"]');
             if (reversalBtn) {
                 reversalBtn.disabled = true;
                 reversalBtn.style.opacity = '0.5';
                 reversalBtn.style.cursor = 'not-allowed';
             }
+            // Don't create/show the status banner for pending status - return early
+            return;
         } else if (reversalStatus === 'Approved') {
             statusBanner.style.background = '#d1fae5';
             statusBanner.style.color = '#065f46';
@@ -2725,24 +3193,39 @@ function handleReversalStatusUI(audit) {
             statusBanner.style.color = '#991b1b';
             statusBanner.style.border = '0.0352rem solid #ef4444';
             
-            // Get auditor's response if available
-            const auditorResponse = currentAudit?.reasonForReversalResponseDelay || currentAudit?.response_from_auditor || '';
-            const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && auditorResponse && auditorResponse.trim();
+            // Check if rejected by Team Lead or QA
+            const isTeamLeadRejection = workflowState === 'team_lead_rejected';
+            const teamLeadReviewedBy = currentAudit?.team_lead_reviewed_by;
+            const rejectionMessage = isTeamLeadRejection 
+                ? `Reversal request has been rejected by your Team Lead${teamLeadReviewedBy ? ` (<span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>)` : ''}. Please review the audit and acknowledge or submit a new reversal if needed.`
+                : 'Reversal request has been rejected. Please review the audit and acknowledge or submit a new reversal if needed.';
+            
+            // Get rejection reason (Team Lead rejection reason or auditor response)
+            const rejectionReason = isTeamLeadRejection 
+                ? (teamLeadRejectionReason || '')
+                : (currentAudit?.reasonForReversalResponseDelay || currentAudit?.response_from_auditor || '');
+            
+            const shouldShowRejectionReason = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && rejectionReason && rejectionReason.trim();
+            const rejectionLabel = isTeamLeadRejection ? 'Rejection Reason from Team Lead:' : 'Response From Auditor:';
             
             statusBanner.innerHTML = `
                 <svg style="width: 0.9375rem; height: 0.9375rem; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                 </svg>
                 <div style="flex: 1;">
-                    <div>Reversal request has been rejected. Please review the audit and acknowledge or submit a new reversal if needed.</div>
-                    ${shouldShowResponse ? `
+                    <div>${rejectionMessage}</div>
+                    ${shouldShowRejectionReason ? `
                         <div style="margin-top: 0.5625rem; padding: 0.5625rem; background: rgba(255, 255, 255, 0.5); border-radius: 0.2812rem; border-left: 0.1875rem solid #ef4444;">
-                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From Auditor:</div>
-                            <div style="font-size: 0.6094rem; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(auditorResponse)}</div>
+                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">${rejectionLabel}</div>
+                            <div style="font-size: 0.6094rem; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(rejectionReason)}</div>
                         </div>
                     ` : ''}
                 </div>
             `;
+            
+            // Re-setup hover listeners after updating innerHTML
+            setupUserProfileHovers();
+            
             // After reversal is processed, enable both buttons again (new review cycle)
             // Don't hide buttons - allow user to acknowledge or submit new reversal
             if (acknowledgeBtn && acknowledgementStatus !== 'Acknowledged') {
@@ -2796,28 +3279,154 @@ function handleReversalStatusUI(audit) {
     }
 }
 
-// Display submitted reversal form details (read-only)
-function displaySubmittedReversalForm(audit) {
+// Display submitted reversal form details (read-only) - 100% same as edit-audit.html agent view
+async function displaySubmittedReversalForm(audit) {
     const auditContentDiv = document.getElementById('auditContent');
     if (!auditContentDiv) return;
     
     // Get reversal data from audit
-    const reversalType = audit.reversalType || audit.reversal_type || 'N/A';
-    const reversalJustification = audit.reversalJustificationFromAgent || audit.reversal_justification_from_agent || '';
-    const reversalMetrics = audit.reversalMetricsParameters || audit.reversal_metrics_parameters || '';
-    const withinAuditorScope = audit.withinAuditorScope || audit.within_auditor_scope;
     const reversalRequestedAt = audit.reversalRequestedAt || audit.reversal_requested_at;
     
-    // Parse reversal justification (may contain reason and justification combined)
+    // Only show if a reversal was actually submitted
+    if (!reversalRequestedAt) {
+        return; // No reversal submitted, don't show form
+    }
+    
+    // Get workflow state for journey map
+    const workflowState = getReversalWorkflowState(audit);
+    const teamLeadApproved = audit.team_lead_approved === true || audit.team_lead_approved === 'true';
+    
+    // Check if auditor is waiting for team lead review (same logic as edit-audit.html)
+    const isAuditor = isCurrentUserAuditor();
+    const isOriginalAuditor = isCurrentUserOriginalAuditor(audit);
+    const isAdmin = isCurrentUserAdmin();
+    const isTeamLead = isCurrentUserTeamLead();
+    // Check if user is team supervisor (async function if it exists, otherwise default to false)
+    let isTeamSupervisor = false;
+    if (typeof isCurrentUserTeamSupervisor === 'function') {
+        try {
+            isTeamSupervisor = await isCurrentUserTeamSupervisor();
+        } catch (e) {
+            // Function doesn't exist or error occurred, default to false
+            isTeamSupervisor = false;
+        }
+    }
+    
+    const isAuditorWaitingForTeamLead = (workflowState === 'team_lead_review' || workflowState === 'pending') && 
+                                        (isAuditor || isOriginalAuditor) && 
+                                        !isAdmin && 
+                                        !isTeamLead && 
+                                        !isTeamSupervisor;
+    
+    // Check if user is an agent (audited employee)
+    const isAgent = isCurrentUserAuditedEmployee();
+    
+    // Show banner for agents when reversal is under team lead review, or for auditors waiting for team lead
+    const shouldShowBanner = (isAgent && (workflowState === 'team_lead_review' || workflowState === 'pending')) || isAuditorWaitingForTeamLead;
+    
+    // Get scorecard for passing threshold (same as edit-audit.html)
+    const scorecard = currentAuditScorecard || {};
+    const passingThreshold = scorecard.passing_threshold || 85;
+    
+    // Calculate error counts (same as edit-audit.html agent view)
+    let totalErrorsCount = 0;
+    let criticalFailCount = 0;
+    let criticalCount = 0;
+    let significantCount = 0;
+    
+    if (currentErrorFields && currentErrorFields.length > 0) {
+        currentErrorFields.forEach(field => {
+            const count = audit[field.key] ? parseInt(audit[field.key]) : 0;
+            if (field.parameter_type === 'error' || !field.parameter_type) {
+                totalErrorsCount += count;
+            }
+            if (count > 0) {
+                if (field.severity === 'Critical Fail') {
+                    criticalFailCount += count;
+                } else if (field.severity === 'Critical') {
+                    criticalCount += count;
+                } else if (field.severity === 'Significant') {
+                    significantCount += count;
+                }
+            }
+        });
+    }
+    
+    // Get audit information (same as edit-audit.html agent view)
+    const currentScore = audit.averageScore || audit.average_score || 0;
+    const passingStatus = audit.passingStatus || audit.passing_status || '';
+    const employeeName = audit.employeeName || audit.employee_name || 'N/A';
+    const auditorName = audit.auditorName || audit.auditor_name || 'N/A';
+    const auditDate = audit.submittedAt || audit.auditTimestamp || audit.submitted_at || audit.audit_timestamp;
+    const reversalType = audit.reversalType || audit.reversal_type || 'N/A';
+    const scoreBeforeAppeal = audit.scoreBeforeAppeal || audit.score_before_appeal || currentScore;
+    
+    // Format audit date
+    let formattedDate = 'N/A';
+    if (auditDate) {
+        try {
+            const date = new Date(auditDate);
+            formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            formattedDate = auditDate;
+        }
+    }
+    
+    // Get parameter comments for agent to view
+    const parameterComments = audit.parameterComments || audit.parameter_comments || {};
+    const parametersWithComments = currentErrorFields.filter(field => {
+        const fieldComment = parameterComments[field.key];
+        if (!fieldComment) return false;
+        const commentText = fieldComment.comment || (Array.isArray(fieldComment.comments) ? fieldComment.comments.filter(c => c && c.trim()).join('\n') : '');
+        return commentText && commentText.trim();
+    });
+    
+    // Get reversal reason (same parsing as edit-audit.html)
+    const reversalJustification = audit.reversalJustificationFromAgent || audit.reversal_justification_from_agent || '';
     let reversalReason = '';
-    let detailedJustification = reversalJustification;
     if (reversalJustification && reversalJustification.includes(':')) {
         const parts = reversalJustification.split(':');
         if (parts.length >= 2) {
             reversalReason = parts[0].trim();
-            detailedJustification = parts.slice(1).join(':').trim();
         }
     }
+    
+    // Check if Team Lead has approved
+    const teamLeadReviewedBy = audit.team_lead_reviewed_by || audit.teamLeadReviewedBy || '';
+    const teamLeadReviewedAt = audit.team_lead_reviewed_at || audit.teamLeadReviewedAt;
+    
+    // Get reversal request details
+    const withinAuditorScope = audit.withinAuditorScope || audit.within_auditor_scope;
+    
+    // Format team lead review date
+    let formattedReviewDate = '';
+    if (teamLeadReviewedAt) {
+        try {
+            const date = new Date(teamLeadReviewedAt);
+            formattedReviewDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            formattedReviewDate = teamLeadReviewedAt;
+        }
+    }
+    
+    // Get auditor response if available
+    const auditorResponse = audit.response_from_auditor || audit.reasonForReversalResponseDelay || '';
+    const reversalRespondedAt = audit.reversal_responded_at || audit.reversalRespondedAt;
+    
+    // Build journey map/roadmap indicator
+    const journeyMapHtml = buildReversalJourneyMap(workflowState, teamLeadApproved, audit);
     
     // Format reversal requested date
     let requestedDateText = '';
@@ -2848,181 +3457,104 @@ function displaySubmittedReversalForm(audit) {
         }
     }
     
-    // Parse metrics parameters
-    const selectedParameters = reversalMetrics ? reversalMetrics.split(',').map(p => p.trim()).filter(p => p) : [];
-    
-    // Create read-only reversal form display
+    // Create read-only reversal form display (100% matching edit-audit.html agent view)
     const submittedFormHtml = `
-        <div id="submittedReversalForm" class="no-print" style="background: #fef3c7; border: 0.0703rem solid #fbbf24; border-radius: 0.375rem; padding: 0.75rem; margin: 1.125rem; box-shadow: 0 0.0703rem 0.2812rem rgba(0,0,0,0.1);">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5625rem;">
+        <div id="submittedReversalForm" class="no-print" style="background: white; border: 0.0625rem solid #e5e7eb; border-radius: 0.2812rem; padding: 0.75rem; box-shadow: 0 0.0625rem 0.1875rem rgba(0,0,0,0.1); margin-top: 0.5625rem;">
+            <div style="display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.5625rem; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 0.375rem;">
-                    <svg style="width: 0.9375rem; height: 0.9375rem; color: #f59e0b;" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    <svg style="width: 0.9375rem; height: 0.9375rem; color: #1A733E;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
-                    <h3 style="margin: 0; font-size: 0.75rem; font-weight: 700; color: #b45309; font-family: 'Poppins', sans-serif;">Submitted Reversal Request</h3>
+                    <h3 style="font-size: 0.8438rem; font-weight: 700; color: #111827; margin: 0; font-family: 'Poppins', sans-serif;">Review & Process Reversal</h3>
                 </div>
-                <span style="font-size: 0.5625rem; color: #92400e; font-family: 'Poppins', sans-serif;">Submitted ${requestedDateText}</span>
             </div>
             
-            <div style="display: grid; gap: 0.5625rem; background: white; border-radius: 0.2812rem; padding: 0.75rem; border: 0.0352rem solid #e5e7eb;">
-                <!-- Two-column grid for compact layout -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5625rem;">
-                    <!-- Reversal Type -->
-                    <div>
-                        <label style="display: block; font-size: 0.5625rem; font-weight: 600; color: #000000; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">
-                            Reversal Type
-                        </label>
-                        <div style="padding: 0.375rem; border: 0.0352rem solid #e5e7eb; border-radius: 0.2812rem; font-size: 0.6094rem; font-family: 'Poppins', sans-serif; background-color: #f9fafb; color: #374151;">
-                            ${escapeHtml(reversalType)}
-                        </div>
+            ${shouldShowBanner ? `
+            <!-- Waiting for Team Lead Review Banner (at top of interface) -->
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 0.1875rem solid #f59e0b; border-radius: 0.2812rem; padding: 0.5625rem 0.75rem; margin-bottom: 0.75rem; box-shadow: 0 0.0625rem 0.1875rem rgba(245, 158, 11, 0.1);">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; background: #f59e0b; border-radius: 50%; flex-shrink: 0;">
+                        <svg style="width: 0.875rem; height: 0.875rem; color: white;" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
                     </div>
-                    
-                    <!-- Reversal Reason -->
-                    ${reversalReason ? `
-                        <div>
-                            <label style="display: block; font-size: 0.5625rem; font-weight: 600; color: #000000; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">
-                                Reversal Reason
-                            </label>
-                            <div style="padding: 0.375rem; border: 0.0352rem solid #e5e7eb; border-radius: 0.2812rem; font-size: 0.6094rem; font-family: 'Poppins', sans-serif; background-color: #f9fafb; color: #374151;">
-                                ${escapeHtml(reversalReason)}
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-                
-                <!-- Affected Error Parameters with Justifications -->
-                ${selectedParameters.length > 0 ? `
-                    <div>
-                        <label style="display: block; font-size: 0.5625rem; font-weight: 600; color: #000000; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">
-                            Parameter Justifications
-                        </label>
-                        <div style="padding: 0.5625rem; border: 0.0352rem solid #e5e7eb; border-radius: 0.2812rem; font-size: 0.6094rem; font-family: 'Poppins', sans-serif; background-color: #f9fafb; color: #374151; max-height: 18.75rem; overflow-y: auto;">
-                            ${selectedParameters.map(param => {
-                                // Try to find matching comment from parameter comments
-                                // Use currentAudit which has the latest data, or fall back to audit parameter
-                                const auditData = currentAudit || audit;
-                                const parameterComments = auditData.parameterComments || auditData.parameter_comments || {};
-                                let paramComment = '';
-                                
-                                // Find the field key that matches this parameter label
-                                // currentErrorFields should be available, but if not, try to find from audit data
-                                let matchingField = null;
-                                if (currentErrorFields && currentErrorFields.length > 0) {
-                                    matchingField = currentErrorFields.find(f => f.label === param);
-                                }
-                                
-                                // If found matching field, get comment from parameter_comments using field key
-                                if (matchingField) {
-                                    const comment = parameterComments[matchingField.key];
-                                    if (comment && comment.comment) {
-                                        paramComment = comment.comment;
-                                    }
-                                }
-                                
-                                // If no comment found from parameter_comments, try to extract from detailedJustification
-                                if (!paramComment && detailedJustification) {
-                                    const lines = detailedJustification.split('\n\n');
-                                    for (const line of lines) {
-                                        if (line.trim().startsWith(param + ':')) {
-                                            paramComment = line.substring(param.length + 1).trim();
-                                            break;
-                                        }
-                                    }
-                                }
-                                
-                                // If still no comment found, try searching all parameter_comments for any comment that might match
-                                if (!paramComment && Object.keys(parameterComments).length > 0) {
-                                    // Try to find by matching parameter label with any comment
-                                    for (const [key, commentData] of Object.entries(parameterComments)) {
-                                        if (commentData && commentData.comment) {
-                                            // Check if this field's label matches the param
-                                            const field = currentErrorFields?.find(f => f.key === key);
-                                            if (field && field.label === param) {
-                                                paramComment = commentData.comment;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                return `
-                                    <div style="margin-bottom: 0.5625rem; padding: 0.5625rem; background: white; border-radius: 0.2812rem; border: 0.0352rem solid #e5e7eb;">
-                                        <div style="font-size: 0.6562rem; font-weight: 600; color: #1f2937; margin-bottom: 0.375rem; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
-                                <svg style="width: 0.75rem; height: 0.75rem; color: #10b981; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                                </svg>
-                                            ${escapeHtml(param)}
-                                        </div>
-                                        ${paramComment ? `
-                                            <div style="font-size: 0.5625rem; color: #000000; font-family: 'Poppins', sans-serif; white-space: pre-wrap; line-height: 1.6; padding-left: 1.125rem;">
-                                                ${escapeHtml(paramComment)}
-                                            </div>
-                                        ` : '<div style="font-size: 0.5625rem; color: #000000; font-family: \'Poppins\', sans-serif; padding-left: 1.125rem; font-style: italic;">No justification provided</div>'}
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                <!-- Within Auditor Scope -->
-                <div>
-                    <label style="display: block; font-size: 0.5625rem; font-weight: 600; color: #000000; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">
-                        Within Auditor Scope
-                    </label>
-                    <div style="padding: 0.375rem; border: 0.0352rem solid #e5e7eb; border-radius: 0.2812rem; font-size: 0.6094rem; font-family: 'Poppins', sans-serif; background-color: #f9fafb; color: #374151; display: flex; align-items: center; gap: 0.375rem;">
-                        ${withinAuditorScope === 'true' || withinAuditorScope === true ? `
-                            <svg style="width: 0.75rem; height: 0.75rem; color: #10b981;" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                            </svg>
-                            <span>Yes - I believe this can be resolved by the original auditor</span>
-                        ` : `
-                            <svg style="width: 0.75rem; height: 0.75rem; color: #000000;" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                            </svg>
-                            <span>No</span>
-                        `}
+                    <div style="flex: 1; min-width: 0;">
+                        <p style="font-size: 0.6875rem; font-weight: 700; color: #92400e; margin: 0 0 0.1875rem 0; font-family: 'Poppins', sans-serif; letter-spacing: 0.01em;">
+                            Awaiting Team Lead Review
+                        </p>
+                        <p style="font-size: 0.625rem; color: #78350f; margin: 0; line-height: 1.4; font-family: 'Poppins', sans-serif;">
+                            This reversal is pending Team Lead approval. Review will be available after approval.
+                        </p>
                     </div>
                 </div>
-                
-                <!-- Auditor's Response (if reversal has been responded to) -->
-                ${(() => {
-                    const reversalRespondedAt = audit.reversalRespondedAt || audit.reversal_responded_at;
-                    const auditorResponse = audit.reasonForReversalResponseDelay || audit.response_from_auditor || '';
-                    const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && reversalRespondedAt && auditorResponse && auditorResponse.trim();
-                    
-                    if (!shouldShowResponse) return '';
-                    
-                    return `
-                        <div>
-                            <label style="display: block; font-size: 0.5625rem; font-weight: 600; color: #000000; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">
-                                Response From Auditor
-                            </label>
-                            <div style="padding: 0.5625rem; border: 0.0352rem solid #e5e7eb; border-radius: 0.2812rem; font-size: 0.6094rem; font-family: 'Poppins', sans-serif; background-color: #f0f9ff; border-left: 0.1875rem solid #3b82f6; color: #1e40af; white-space: pre-wrap; line-height: 1.6;">
-                                ${escapeHtml(auditorResponse)}
-                            </div>
-                        </div>
-                    `;
-                })()}
             </div>
+            ` : ''}
+            
+            <!-- Reversal Journey Map / Roadmap - Compact Checkout Style (No Container) -->
+            ${journeyMapHtml}
+            
+            ${reversalReason ? `
+            <!-- Reversal Reason (Read-only, for context) -->
+            <div style="background: #eff6ff; border: 0.0625rem solid #bfdbfe; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Reversal Reason</p>
+                <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe;">${escapeHtml(reversalReason)}</p>
+            </div>
+            ` : ''}
+            
+            ${teamLeadApproved && teamLeadReviewedBy ? `
+            <!-- Team Lead Approval Status -->
+            <div style="background: #f0fdf4; border: 0.0625rem solid #bbf7d0; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #16a34a; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
+                    <svg style="width: 0.75rem; height: 0.75rem; color: #16a34a;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                    Approved by Team Lead
+                </p>
+                <p style="font-size: 0.6094rem; color: #166534; margin: 0; font-family: 'Poppins', sans-serif;">
+                    <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
+                    ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
+                </p>
+                    </div>
+            ` : ''}
+            
+            ${auditorResponse && reversalRespondedAt ? `
+            <!-- Auditor Response (Read-only) -->
+            <div style="background: #f0f9ff; border: 0.0625rem solid #bae6fd; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From Auditor</p>
+                <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
+                            </div>
+            ` : ''}
         </div>
     `;
     
-    // Insert submitted form after the footer bar
-    const footerBar = document.getElementById('footerBar');
-    if (footerBar && footerBar.parentElement) {
-        // Check if already exists, remove it first
-        const existingForm = document.getElementById('submittedReversalForm');
-        if (existingForm) {
-            existingForm.remove();
-        }
-        
-        // Insert after footer bar
-        footerBar.parentElement.insertAdjacentHTML('afterend', submittedFormHtml);
-    } else {
-        // Fallback: append to audit content
-        auditContentDiv.insertAdjacentHTML('beforeend', submittedFormHtml);
+    // Insert the reversal form right after the header section (before chat/error details) - matching edit-audit.html
+    // Remove existing form if it exists
+    const existingForm = document.getElementById('submittedReversalForm');
+    if (existingForm) {
+        existingForm.remove();
     }
+    
+    // Find the header section and insert right after it (matching edit-audit.html positioning)
+    const auditFormHeader = document.getElementById('auditFormHeader');
+    if (auditFormHeader && auditFormHeader.nextSibling) {
+        // Insert after header, before the main content
+        auditFormHeader.insertAdjacentHTML('afterend', submittedFormHtml);
+    } else if (auditFormHeader) {
+        // If header exists but no next sibling, append after it
+        auditFormHeader.insertAdjacentHTML('afterend', submittedFormHtml);
+    } else {
+        // Fallback: try to find auditMainContent and insert before it
+        const auditMainContent = document.getElementById('auditMainContent');
+        if (auditMainContent) {
+            auditMainContent.insertAdjacentHTML('beforebegin', submittedFormHtml);
+        } else {
+            // Last fallback: append to end of audit content
+            auditContentDiv.insertAdjacentHTML('beforeend', submittedFormHtml);
+        }
+    }
+    
+    // Setup user profile hover modals
+    setupUserProfileHovers();
 }
 
 // Start reversal timer countdown
@@ -5452,7 +5984,7 @@ function toggleReversalForm() {
     if (!formContainer.parentElement) {
         const buttonsSection = auditContentDiv.querySelector('.no-print[style*="border-top"]');
         if (buttonsSection) {
-            buttonsSection.parentElement.insertBefore(formContainer, buttonsSection.nextSibling);
+            buttonsSection.parentElement.insertBefore(formContainer, buttonsSection);
         } else {
             auditContentDiv.appendChild(formContainer);
         }
@@ -5461,11 +5993,11 @@ function toggleReversalForm() {
     if (formContainer.style.display === 'none' || !formContainer.style.display) {
         formContainer.style.display = 'block';
         
-        // Move form container to be after the action buttons if not already in auditContent
+        // Move form container to be before the action buttons if not already in auditContent
         if (auditContentDiv && formContainer.parentElement !== auditContentDiv) {
             const buttonsSection = auditContentDiv.querySelector('.no-print[style*="border-top"]');
             if (buttonsSection) {
-                buttonsSection.parentElement.insertBefore(formContainer, buttonsSection.nextSibling);
+                buttonsSection.parentElement.insertBefore(formContainer, buttonsSection);
             } else {
                 auditContentDiv.appendChild(formContainer);
             }
@@ -5606,16 +6138,6 @@ function populateParametersWithComments() {
     }).join('');
     
     container.innerHTML = commentsHtml;
-}
-
-// Select all parameters (kept for backward compatibility, but not used)
-function selectAllParameters() {
-    // Not used anymore - parameters are auto-selected based on comments
-}
-
-// Clear all parameters (kept for backward compatibility, but not used)
-function clearAllParameters() {
-    // Not used anymore - parameters are auto-selected based on comments
 }
 
 // Handle close button click - check acknowledgement before closing
@@ -7033,19 +7555,33 @@ document.addEventListener('DOMContentLoaded', function() {
             // Gather form data - use column names that match the database schema
             // Based on actual schema: fnchat_cfd table does NOT have reversal_status column
             // Status is tracked via reversal_approved and reversal_responded_at fields
+            // New workflow: Set initial state to team_lead_review
+            // Check if this is a resubmission after CQC send-back
+            // Note: getReversalWorkflowState function needs to be defined in audit-view.html too
+            const ackStatus = (currentAudit?.acknowledgement_status || currentAudit?.acknowledgementStatus || '').toLowerCase();
+            const isResubmission = ackStatus.includes('cqc_sent_back') || ackStatus.includes('agent_re_review');
+            
             const reversalData = {
-                reversal_requested_at: new Date().toISOString(),
+                reversal_requested_at: isResubmission ? currentAudit.reversal_requested_at : new Date().toISOString(), // Keep original timestamp on resubmission
                 reversal_type: reversalType,
                 // Combine reversal reason and detailed justification from parameter comments
                 reversal_justification_from_agent: `${reversalReason}: ${detailedJustification}`,
                 reversal_metrics_parameters: selectedParameters.join(', ') || null,
-                within_auditor_scope: document.getElementById('withinAuditorScope').checked ? 'true' : 'false',
+                // within_auditor_scope is now set by auditor during processing, not by agent
                 score_before_appeal: currentAudit.average_score || currentAudit.averageScore || null,
                 // Save parameter comments to database when reversal is submitted
-                parameter_comments: parameterComments
+                parameter_comments: parameterComments,
+                // Set workflow state: New reversals or resubmissions start at Team Lead review
+                acknowledgement_status: 'pending - team_lead_review',
+                acknowledgement_status_updated_at: new Date().toISOString(),
+                // Clear previous review data on resubmission
+                reversal_approved_by: null,
+                reversal_resolved_by: null,
+                reversal_responded_at: null,
+                reversal_approved: null
                 // Note: reversal_status column doesn't exist in the schema
-                // Status is determined by reversal_approved (null = pending, 'true' = approved, 'false' = rejected)
-                // reversal_responded_at is null until reviewed
+                // Status is determined by acknowledgement_status workflow state
+                // reversal_responded_at is null until final decision
             };
             
             // Don't set reversal_approved and reversal_responded_at to null explicitly
@@ -7109,7 +7645,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         change_reason: 'Reversal requested by audited employee',
                         metadata: {
                             reversal_metrics_parameters: selectedParameters,
-                            within_auditor_scope: document.getElementById('withinAuditorScope').checked,
+                            // within_auditor_scope is now set by auditor during processing, not by agent
                             parameter_comments: parameterComments
                         }
                     };
@@ -7186,16 +7722,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentAudit.within_auditor_scope = updatedAudit.within_auditor_scope;
                 }
                 
-                // Show success dialog
+                // Show pending dialog (not success - reversal is under review)
                 if (window.confirmationDialog) {
                     await window.confirmationDialog.show({
-                        title: 'Success',
-                        message: '✓ Reversal request submitted successfully!\n\nYour request will be reviewed by the quality team. You will be notified once a decision has been made.',
+                        title: 'Reversal Request Submitted',
+                        message: '⏳ Your reversal request has been submitted and is now under Team Lead review.\n\nYou will be notified once a decision has been made.',
                         confirmText: 'OK',
-                        type: 'success'
+                        type: 'info'
                     });
                 } else {
-                alert('✓ Reversal request submitted successfully!\n\nYour request will be reviewed by the quality team. You will be notified once a decision has been made.');
+                alert('⏳ Your reversal request has been submitted and is now under Team Lead review.\n\nYou will be notified once a decision has been made.');
                 }
                 
                 // Hide form and reload audit data

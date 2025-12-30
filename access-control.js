@@ -103,7 +103,8 @@ class AccessControl {
         allowedRoles: ['*'] // All authenticated users
       },
       'scorecards.html': {
-        minRoleLevel: 2 // Quality Analyst and above
+        allowedRoles: ['*'], // All authenticated users
+        allowAnonymous: true // Also allow unauthenticated users
       },
       'user-management.html': {
         minRoleLevel: 2 // Quality Analyst and above
@@ -398,11 +399,24 @@ class AccessControl {
    */
   async checkUserSpecificRule(userEmail, resourceName, resourceType) {
     try {
+      // #region agent log
+      console.log('[DEBUG] checkUserSpecificRule started', {userEmail, resourceName, resourceType, hasSupabase:!!window.supabaseClient});
+      try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:399',message:'checkUserSpecificRule started',data:{userEmail:userEmail,resourceName:resourceName,resourceType:resourceType,hasSupabase:!!window.supabaseClient},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+      // #endregion
       if (!window.supabaseClient) {
+        // #region agent log
+        console.log('[DEBUG] Supabase client not available, returning null');
+        try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:402',message:'Supabase client not available',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+        // #endregion
         return null
       }
 
-      const { data, error } = await window.supabaseClient
+      // #region agent log
+      console.log('[DEBUG] Starting user_access_rules query');
+      try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:405',message:'Starting user_access_rules query',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+      // #endregion
+      // Add timeout to prevent hanging
+      const queryPromise = window.supabaseClient
         .from('user_access_rules')
         .select('access_type, is_active')
         .eq('user_email', userEmail)
@@ -412,6 +426,17 @@ class AccessControl {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 5000)
+      )
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise])
+
+      // #region agent log
+      console.log('[DEBUG] user_access_rules query completed', {hasError:!!error,hasData:!!data,errorCode:error?.code});
+      try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:420',message:'user_access_rules query completed',data:{hasError:!!error,hasData:!!data,errorCode:error?.code,errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+      // #endregion
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.warn('Error checking user-specific rule:', error)
@@ -420,7 +445,12 @@ class AccessControl {
 
       return data || null
     } catch (error) {
+      // #region agent log
+      console.log('[DEBUG] Exception in checkUserSpecificRule', {error:error.message});
+      try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:423',message:'Exception in checkUserSpecificRule',data:{error:error.message,isTimeout:error.message==='Query timeout'},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'H'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+      // #endregion
       console.warn('Exception checking user-specific rule:', error)
+      // Return null on timeout or other errors (fail open for access control)
       return null
     }
   }
@@ -432,9 +462,31 @@ class AccessControl {
    * @returns {Object} { allowed: boolean, reason?: string }
    */
   async canAccessPage(pageName, context = null) {
+    // #region agent log
+    console.log('[DEBUG] canAccessPage started', {pageName});
+    try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:434',message:'canAccessPage started',data:{pageName:pageName},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'G'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+    // #endregion
     const user = this.getCurrentUser()
     
+    // Get access rule for this page to check if anonymous access is allowed
+    const rule = this.PAGE_ACCESS_RULES[pageName]
+    
+    // If no user, check if anonymous access is allowed
     if (!user) {
+      // #region agent log
+      console.log('[DEBUG] No user found in canAccessPage');
+      try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:437',message:'No user found',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'G'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+      // #endregion
+      
+      // Check if this page allows anonymous access
+      if (rule && rule.allowAnonymous === true) {
+        console.log(`[AccessControl] Anonymous access allowed for ${pageName}`)
+        return {
+          allowed: true,
+          reason: 'Anonymous access allowed'
+        }
+      }
+      
       return {
         allowed: false,
         reason: 'User not authenticated'
@@ -450,7 +502,15 @@ class AccessControl {
     }
 
     // First check user-specific rules (highest priority)
+    // #region agent log
+    console.log('[DEBUG] About to check user-specific rule');
+    try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:453',message:'About to check user-specific rule',data:{userEmail:user.email,pageName:pageName},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'G'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+    // #endregion
     const userRule = await this.checkUserSpecificRule(user.email, pageName, 'page')
+    // #region agent log
+    console.log('[DEBUG] User-specific rule check completed', {hasRule:!!userRule});
+    try { fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'access-control.js:454',message:'User-specific rule check completed',data:{hasRule:!!userRule},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'G'})}).catch(e=>console.error('[DEBUG] Log fetch failed:',e)); } catch(e){}
+    // #endregion
     if (userRule) {
       console.log(`[AccessControl] User-specific rule found for ${user.email} on ${pageName}:`, userRule)
       return {
@@ -462,8 +522,11 @@ class AccessControl {
     }
 
     // No user-specific rule, check role-based rules
-    // Get access rule for this page
-    const rule = this.PAGE_ACCESS_RULES[pageName]
+    // Note: rule was already retrieved above for anonymous check, but get it again if user exists
+    if (!rule) {
+      const ruleForUser = this.PAGE_ACCESS_RULES[pageName]
+      // Use the rule we already have or get it again
+    }
     
     console.log(`[AccessControl] Checking access for ${user.email} (${user.role}) to ${pageName}:`, rule)
     
