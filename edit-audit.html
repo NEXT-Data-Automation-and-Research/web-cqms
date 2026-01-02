@@ -1372,13 +1372,17 @@ async function loadAuditFromURL() {
         
         currentScorecardId = finalScorecardId;
 
-        // Fetch reversal_requests data if reversal exists (for new structure)
+        // Fetch reversal_requests and workflow_states data if reversal exists (for new structure)
         let reversalRequestData = null;
+        let processedByData = null;
+        let adminBypassData = false;
+        
         if (data.reversal_requested_at) {
             try {
+                // First get reversal_request
                 const { data: reversalRequest, error: rrError } = await window.supabaseClient
                     .from('reversal_requests')
-                    .select('final_decision_by_name, final_decision_by_email, final_decision_at, final_decision')
+                    .select('id, final_decision_by_name, final_decision_by_email, final_decision_at, final_decision, admin_bypass, current_state_id')
                     .eq('audit_id', auditId)
                     .eq('scorecard_table_name', tableName)
                     .order('requested_at', { ascending: false })
@@ -1387,6 +1391,24 @@ async function loadAuditFromURL() {
                 
                 if (!rrError && reversalRequest) {
                     reversalRequestData = reversalRequest;
+                    adminBypassData = reversalRequest.admin_bypass || false;
+                    
+                    // Get processed_by from current workflow state
+                    if (reversalRequest.current_state_id) {
+                        const { data: currentState, error: wsError } = await window.supabaseClient
+                            .from('reversal_workflow_states')
+                            .select('entered_by_name, entered_by_email')
+                            .eq('id', reversalRequest.current_state_id)
+                            .eq('is_current', true)
+                            .maybeSingle();
+                        
+                        if (!wsError && currentState) {
+                            processedByData = {
+                                name: currentState.entered_by_name,
+                                email: currentState.entered_by_email
+                            };
+                        }
+                    }
                 }
             } catch (err) {
                 console.warn('Error fetching reversal_requests data:', err);
@@ -1445,6 +1467,11 @@ async function loadAuditFromURL() {
             reversalApprovedBy: data.reversal_approved_by,
             // reversalResolvedBy: Use final_decision_by_name from reversal_requests (new structure) with fallback to audit table (old structure)
             reversalResolvedBy: reversalRequestData?.final_decision_by_name || data.reversal_resolved_by,
+            // reversalProcessedBy: Use entered_by_name from reversal_workflow_states (new structure) with fallback to audit table (old structure)
+            reversalProcessedBy: processedByData?.name || data.reversal_processed_by,
+            reversalProcessedByEmail: processedByData?.email || data.reversal_processed_by_email,
+            // adminBypass: Use from reversal_requests (new structure) with fallback to audit table (old structure)
+            adminBypass: adminBypassData !== undefined ? adminBypassData : (data.admin_bypass || false),
             // Team Lead review fields
             teamLeadApproved: data.team_lead_approved,
             team_lead_approved: data.team_lead_approved,
@@ -8932,9 +8959,8 @@ async function processReversalDecision(decision) {
                 delete window.teamLeadRejectionData;
             }
             
-            // Traceability: Store who processed
-            updateData.reversal_processed_by = currentUserName;
-            updateData.reversal_processed_by_email = currentUserEmailFromInfo;
+            // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
+            // Don't write to audit table anymore - will be stored in workflow states
             
             // Don't set reversal_approved yet - that's for QA's final decision
         } else if (actionType === 'admin_bypass') {
@@ -8942,9 +8968,8 @@ async function processReversalDecision(decision) {
             updateData.team_lead_reviewed_at = respondedAt.toISOString();
             updateData.team_lead_reviewed_by = currentUserName || currentUserEmailFromInfo || currentUserEmail || '';
             updateData.team_lead_approved = decision === 'approved';
-            updateData.admin_bypass = true; // Flag that admin bypassed team leader
-            updateData.reversal_processed_by = currentUserName;
-            updateData.reversal_processed_by_email = currentUserEmailFromInfo;
+            // admin_bypass is now stored in reversal_requests table, not audit table
+            // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
             
             // Optional: Store bypass reason if provided (could add UI for this later)
             // updateData.admin_bypass_reason = bypassReason || '';
@@ -8958,14 +8983,8 @@ async function processReversalDecision(decision) {
             // Set within_auditor_scope based on auditor's selection
             updateData.within_auditor_scope = withinAuditorScope;
             
-            // Traceability: Store who processed
-            updateData.reversal_processed_by = currentUserName;
-            updateData.reversal_processed_by_email = currentUserEmailFromInfo;
-            
-            // If admin processed, mark it
-            if (isAdmin) {
-                updateData.admin_bypass = false; // Not a bypass at this stage, but admin processed
-            }
+            // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
+            // admin_bypass is now stored in reversal_requests table
             
             // Get response from auditor if provided
             const delayReason = document.getElementById('reversalDelayReason')?.value || '';
@@ -9012,47 +9031,110 @@ async function processReversalDecision(decision) {
         
         if (updateError) throw updateError;
         
-        // Update reversal_requests table with final decision (if reversal exists)
-        if (actionType === 'qa_review' || actionType === 'final') {
-            try {
-                // Find the reversal_request for this audit
-                const { data: reversalRequest, error: rrFetchError } = await window.supabaseClient
-                    .from('reversal_requests')
-                    .select('id')
-                    .eq('audit_id', currentAudit.id)
-                    .eq('scorecard_table_name', currentTableName)
-                    .order('requested_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+        // Update reversal_requests and reversal_workflow_states (if reversal exists)
+        try {
+            // Find the reversal_request for this audit
+            const { data: reversalRequest, error: rrFetchError } = await window.supabaseClient
+                .from('reversal_requests')
+                .select('id, current_state_id')
+                .eq('audit_id', currentAudit.id)
+                .eq('scorecard_table_name', currentTableName)
+                .order('requested_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            
+            if (!rrFetchError && reversalRequest) {
+                // Prepare reversal_requests update data
+                const reversalUpdateData = {
+                    updated_at: new Date().toISOString()
+                };
                 
-                if (!rrFetchError && reversalRequest) {
-                    // Update reversal_requests with final decision info
-                    const reversalUpdateData = {
-                        final_decision: decision,
-                        final_decision_at: respondedAt.toISOString(),
-                        final_decision_by_name: currentUserName,
-                        final_decision_by_email: logUserEmail,
-                        new_score: decision === 'approved' ? newScore : null,
-                        new_passing_status: decision === 'approved' ? (isPassing ? 'Passing' : 'Not Passing') : null,
-                        sla_hours: parseFloat(slaHours.toFixed(2)),
-                        within_auditor_scope: withinAuditorScope,
-                        updated_at: new Date().toISOString()
-                    };
-                    
-                    const { error: rrUpdateError } = await window.supabaseClient
-                        .from('reversal_requests')
-                        .update(reversalUpdateData)
-                        .eq('id', reversalRequest.id);
-                    
-                    if (rrUpdateError) {
-                        console.warn('Error updating reversal_requests table:', rrUpdateError);
-                        // Don't throw - audit update succeeded, this is secondary
-                    }
+                // Add admin_bypass if this is an admin bypass action
+                if (actionType === 'admin_bypass') {
+                    reversalUpdateData.admin_bypass = true;
+                } else if (actionType === 'qa_review' && isAdmin) {
+                    // Admin processed at QA stage (not a bypass, but admin processed)
+                    reversalUpdateData.admin_bypass = false;
                 }
-            } catch (rrErr) {
-                console.warn('Error updating reversal_requests:', rrErr);
-                // Don't throw - audit update succeeded
+                
+                // Add final decision info if this is QA review or final decision
+                if (actionType === 'qa_review' || actionType === 'final') {
+                    reversalUpdateData.final_decision = decision;
+                    reversalUpdateData.final_decision_at = respondedAt.toISOString();
+                    reversalUpdateData.final_decision_by_name = currentUserName;
+                    reversalUpdateData.final_decision_by_email = logUserEmail;
+                    reversalUpdateData.new_score = decision === 'approved' ? newScore : null;
+                    reversalUpdateData.new_passing_status = decision === 'approved' ? (isPassing ? 'Passing' : 'Not Passing') : null;
+                    reversalUpdateData.sla_hours = parseFloat(slaHours.toFixed(2));
+                    reversalUpdateData.within_auditor_scope = withinAuditorScope;
+                }
+                
+                // Update reversal_requests
+                const { error: rrUpdateError } = await window.supabaseClient
+                    .from('reversal_requests')
+                    .update(reversalUpdateData)
+                    .eq('id', reversalRequest.id);
+                
+                if (rrUpdateError) {
+                    console.warn('Error updating reversal_requests table:', rrUpdateError);
+                    // Don't throw - audit update succeeded, this is secondary
+                }
+                
+                // Create/update workflow state for this action
+                // First, mark previous state as not current
+                if (reversalRequest.current_state_id) {
+                    await window.supabaseClient
+                        .from('reversal_workflow_states')
+                        .update({ is_current: false })
+                        .eq('id', reversalRequest.current_state_id);
+                }
+                
+                // Determine new workflow state based on action type
+                let newWorkflowState = '';
+                if (actionType === 'team_lead_review') {
+                    newWorkflowState = decision === 'approved' ? 'team_lead_approved' : 'team_lead_rejected';
+                } else if (actionType === 'admin_bypass') {
+                    newWorkflowState = decision === 'approved' ? 'team_lead_approved' : 'team_lead_rejected';
+                } else if (actionType === 'qa_review') {
+                    newWorkflowState = decision === 'approved' ? 'approved' : 'rejected';
+                } else {
+                    newWorkflowState = decision === 'approved' ? 'approved' : 'rejected';
+                }
+                
+                // Create new workflow state
+                const { data: newWorkflowStateData, error: wsError } = await window.supabaseClient
+                    .from('reversal_workflow_states')
+                    .insert({
+                        reversal_request_id: reversalRequest.id,
+                        state: newWorkflowState,
+                        entered_at: respondedAt.toISOString(),
+                        entered_by_email: logUserEmail,
+                        entered_by_name: currentUserName,
+                        previous_state_id: reversalRequest.current_state_id || null,
+                        is_current: true,
+                        notes: actionType === 'admin_bypass' 
+                            ? `Admin bypassed team lead approval - ${decision === 'approved' ? 'approved' : 'rejected'}`
+                            : actionType === 'team_lead_review'
+                            ? `Team Lead ${decision === 'approved' ? 'approved' : 'rejected'} reversal`
+                            : `QA review - ${decision === 'approved' ? 'approved' : 'rejected'} reversal`
+                    })
+                    .select()
+                    .single();
+                
+                if (!wsError && newWorkflowStateData) {
+                    // Update reversal_requests with new current_state_id
+                    await window.supabaseClient
+                        .from('reversal_requests')
+                        .update({ current_state_id: newWorkflowStateData.id })
+                        .eq('id', reversalRequest.id);
+                } else if (wsError) {
+                    console.warn('Error creating workflow state:', wsError);
+                    // Don't throw - audit update succeeded
+                }
             }
+        } catch (rrErr) {
+            console.warn('Error updating reversal_requests/workflow_states:', rrErr);
+            // Don't throw - audit update succeeded
         }
         
         // Log approval/rejection to activity log
