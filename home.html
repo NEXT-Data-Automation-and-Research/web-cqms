@@ -2937,6 +2937,66 @@ async function fetchAndCacheRecentUpdates(period) {
         const reversalFilterField = 'auditor_email';
         
         // Parallelize all reversal queries
+        // First, try loading from new reversal_requests table
+        let newStructureReversals = [];
+        try {
+          const { data: reversalRequests, error: rrError } = await window.supabaseClient
+            .from('reversal_requests')
+            .select('*')
+            .eq('requested_by_email', normalizedCurrentEmail)
+            .order('requested_at', { ascending: false })
+            .limit(50);
+          
+          if (!rrError && reversalRequests && reversalRequests.length > 0) {
+            // Get workflow states to filter for pending
+            const reversalIds = reversalRequests.map(rr => rr.id);
+            const { data: workflowStates } = await window.supabaseClient
+              .from('reversal_workflow_states')
+              .select('reversal_request_id, state')
+              .in('reversal_request_id', reversalIds)
+              .eq('is_current', true);
+            
+            const wsMap = new Map();
+            if (workflowStates) {
+              workflowStates.forEach(ws => wsMap.set(ws.reversal_request_id, ws.state));
+            }
+            
+            // Filter for pending reversals only
+            const pendingStates = ['submitted', 'team_lead_review', 'qa_review', 'cqc_review', 'cqc_sent_back', 'agent_re_review'];
+            const pendingReversals = reversalRequests.filter(rr => {
+              const state = wsMap.get(rr.id) || 'submitted';
+              return pendingStates.includes(state);
+            });
+            
+            // Get audit data for each pending reversal
+            for (const rr of pendingReversals) {
+              try {
+                const { data: auditData } = await window.supabaseClient
+                  .from(rr.scorecard_table_name)
+                  .select('id, employee_email, auditor_email, interaction_id')
+                  .eq('id', rr.audit_id)
+                  .single();
+                
+                if (auditData) {
+                  newStructureReversals.push({
+                    id: auditData.id,
+                    employee_email: auditData.employee_email,
+                    auditor_email: auditData.auditor_email,
+                    reversal_requested_at: rr.requested_at,
+                    reversal_responded_at: rr.final_decision_at,
+                    reversal_approved: rr.final_decision === 'approved' ? true : rr.final_decision === 'rejected' ? false : null,
+                    interaction_id: auditData.interaction_id
+                  });
+                }
+              } catch (err) {
+                console.warn(`Error loading audit for reversal ${rr.id}:`, err);
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Error loading from reversal_requests table:', err);
+        }
+        
         const reversalPromises = reversalScorecards.map(async (scorecard) => {
           try {
             // For auditors: Only get unprocessed reversals (reversal_approved is null) - same as reversal.html
@@ -2968,6 +3028,14 @@ async function fetchAndCacheRecentUpdates(period) {
               } else {
                 // If still error, table might not have reversal columns - skip this table silently
                 return [];
+              }
+            }
+            
+            // Filter out reversals already loaded from new structure
+            if (newStructureReversals.length > 0) {
+              const newStructureIds = new Set(newStructureReversals.map(r => r.id));
+              if (reversals) {
+                reversals = reversals.filter(r => !newStructureIds.has(r.id));
               }
             }
             

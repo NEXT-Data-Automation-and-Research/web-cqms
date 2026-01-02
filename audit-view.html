@@ -853,17 +853,44 @@ function getCurrentUserInfo() {
 }
 
 // Build reversal journey map/roadmap indicator
-function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
+async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
+    // Check if team lead approval is required (use same logic as edit-audit.html)
+    let requireTeamLeadApproval = false;
+    try {
+        const { data, error } = await window.supabaseClient
+            .rpc('get_reversal_setting', { p_setting_key: 'require_team_lead_approval' });
+        
+        if (!error && data !== null && data !== undefined) {
+            if (typeof data === 'boolean') {
+                requireTeamLeadApproval = data;
+            } else if (typeof data === 'string') {
+                requireTeamLeadApproval = data.toLowerCase() === 'true' || data === 'true';
+            } else if (typeof data === 'object' && data !== null) {
+                const value = data.value !== undefined ? data.value : data;
+                requireTeamLeadApproval = value === true || value === 'true' || (typeof value === 'string' && value.toLowerCase() === 'true');
+            }
+        }
+    } catch (err) {
+        console.warn('Exception checking team lead approval setting:', err);
+    }
     // Define all stages in order - compact checkout-style
+    // Conditionally include team_lead_review stage based on feature flag
     const stages = [
         { 
             key: 'submitted', 
             label: 'Submitted'
-        },
-        { 
+        }
+    ];
+    
+    // Only add team lead review stage if feature is enabled
+    if (requireTeamLeadApproval) {
+        stages.push({
             key: 'team_lead_review', 
             label: 'Team Lead Review'
-        },
+        });
+    }
+    
+    stages.push(
         { 
             key: 'qa_review', 
             label: 'QC Review'
@@ -872,27 +899,42 @@ function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
             key: 'final_decision', 
             label: 'Final Decision'
         }
-    ];
+    );
     
-    // Determine current stage index
+    // Determine current stage index (accounting for conditional team_lead_review stage)
     let currentStageIndex = 0;
     let currentStageKey = 'submitted';
     
-    if (workflowState === 'team_lead_review' || workflowState === 'pending') {
-        currentStageIndex = 1;
-        currentStageKey = 'team_lead_review';
-    } else if (workflowState === 'team_lead_rejected') {
-        currentStageIndex = 1;
-        currentStageKey = 'team_lead_rejected';
-    } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
-        currentStageIndex = 2;
-        currentStageKey = 'qa_review';
-    } else if (workflowState === 'approved' || workflowState === 'rejected') {
-        currentStageIndex = 3;
-        currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
-    } else if (workflowState === 'acknowledged') {
-        currentStageIndex = 3; // Acknowledged is after final decision
-        currentStageKey = 'acknowledged';
+    if (requireTeamLeadApproval) {
+        // Team lead review is enabled - use original index logic
+        if (workflowState === 'team_lead_review' || workflowState === 'pending') {
+            currentStageIndex = 1;
+            currentStageKey = 'team_lead_review';
+        } else if (workflowState === 'team_lead_rejected') {
+            currentStageIndex = 1;
+            currentStageKey = 'team_lead_rejected';
+        } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+            currentStageIndex = 2;
+            currentStageKey = 'qa_review';
+        } else if (workflowState === 'approved' || workflowState === 'rejected') {
+            currentStageIndex = 3;
+            currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
+        } else if (workflowState === 'acknowledged') {
+            currentStageIndex = 3; // Acknowledged is after final decision
+            currentStageKey = 'acknowledged';
+        }
+    } else {
+        // Team lead review is disabled - skip that stage
+        if (workflowState === 'qa_review' || workflowState === 'cqc_review' || workflowState === 'pending') {
+            currentStageIndex = 1; // qa_review is now at index 1 (after submitted)
+            currentStageKey = 'qa_review';
+        } else if (workflowState === 'approved' || workflowState === 'rejected') {
+            currentStageIndex = 2; // final_decision is now at index 2
+            currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
+        } else if (workflowState === 'acknowledged') {
+            currentStageIndex = 2; // Acknowledged is after final decision
+            currentStageKey = 'acknowledged';
+        }
     }
     
     // Build compact checkout-style journey map
@@ -944,10 +986,10 @@ function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
                 ` : ''}
                 <div style="width: 1.25rem; height: 1.25rem; border-radius: 50%; background: ${circleBg}; border: 0.125rem solid ${circleBorder}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: 0.375rem; position: relative; z-index: 1;">
                     ${circleContent}
-                </div>
+                    </div>
                 <span style="font-size: 0.5rem; font-weight: ${labelWeight}; color: ${labelColor}; text-align: center; font-family: 'Poppins', sans-serif; white-space: nowrap;">
-                    ${stage.label}
-                </span>
+                        ${stage.label}
+                    </span>
             </div>
         `;
     });
@@ -3426,7 +3468,7 @@ async function displaySubmittedReversalForm(audit) {
     const reversalRespondedAt = audit.reversal_responded_at || audit.reversalRespondedAt;
     
     // Build journey map/roadmap indicator
-    const journeyMapHtml = buildReversalJourneyMap(workflowState, teamLeadApproved, audit);
+    const journeyMapHtml = await buildReversalJourneyMap(workflowState, teamLeadApproved, audit);
     
     // Format reversal requested date
     let requestedDateText = '';
@@ -3529,11 +3571,11 @@ async function displaySubmittedReversalForm(audit) {
     
     // Insert the reversal form right after the header section (before chat/error details) - matching edit-audit.html
     // Remove existing form if it exists
-    const existingForm = document.getElementById('submittedReversalForm');
-    if (existingForm) {
-        existingForm.remove();
-    }
-    
+        const existingForm = document.getElementById('submittedReversalForm');
+        if (existingForm) {
+            existingForm.remove();
+        }
+        
     // Find the header section and insert right after it (matching edit-audit.html positioning)
     const auditFormHeader = document.getElementById('auditFormHeader');
     if (auditFormHeader && auditFormHeader.nextSibling) {
@@ -3549,12 +3591,12 @@ async function displaySubmittedReversalForm(audit) {
             auditMainContent.insertAdjacentHTML('beforebegin', submittedFormHtml);
         } else {
             // Last fallback: append to end of audit content
-            auditContentDiv.insertAdjacentHTML('beforeend', submittedFormHtml);
+        auditContentDiv.insertAdjacentHTML('beforeend', submittedFormHtml);
         }
     }
-    
-    // Setup user profile hover modals
-    setupUserProfileHovers();
+        
+        // Setup user profile hover modals
+        setupUserProfileHovers();
 }
 
 // Start reversal timer countdown

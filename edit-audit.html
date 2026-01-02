@@ -532,6 +532,20 @@ function isCurrentUserTeamLead() {
     return role.includes('team lead') || role.includes('teamlead') || role === 'team lead';
 }
 
+// ============================================================================
+// FEATURE FLAG: Team Lead Approval Requirement
+// ============================================================================
+// Set to true to require Team Lead approval before QC review
+// Set to false to skip Team Lead approval and go directly to QC review
+// ============================================================================
+const REQUIRE_TEAM_LEAD_APPROVAL = true; // Change this to true/false to enable/disable
+
+// Check if team lead approval is required (feature flag)
+async function checkTeamLeadApprovalRequired() {
+    // Hardcoded for easy control - just change REQUIRE_TEAM_LEAD_APPROVAL constant above
+    return REQUIRE_TEAM_LEAD_APPROVAL;
+}
+
 // Check if current user is the team supervisor of the audited employee
 async function isCurrentUserTeamSupervisor() {
     if (!currentAudit || !currentUserEmail) {
@@ -613,46 +627,72 @@ function getReversalWorkflowState(audit) {
 }
 
 // Build reversal journey map/roadmap indicator
-function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
+async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
+    // Check if team lead approval is required
+    const requireTeamLeadApproval = await checkTeamLeadApprovalRequired();
+    
     // Define all stages in order - compact checkout-style
+    // Conditionally include team_lead_review stage based on feature flag
     const stages = [
         { 
             key: 'submitted', 
             label: 'Submitted'
-        },
-        { 
+        }
+    ];
+    
+    // Only add team lead review stage if feature is enabled
+    if (requireTeamLeadApproval) {
+        stages.push({
             key: 'team_lead_review', 
             label: 'Team Lead Review'
-        },
+        });
+    }
+    
+    stages.push(
         { 
             key: 'qa_review', 
             label: 'QC Review'
         },
         { 
-            key: 'final_decision', 
+            key: 'final_decision',
             label: 'Final Decision'
         }
-    ];
+    );
     
-    // Determine current stage index
+    // Determine current stage index (accounting for conditional team_lead_review stage)
     let currentStageIndex = 0;
     let currentStageKey = 'submitted';
     
-    if (workflowState === 'team_lead_review' || workflowState === 'pending') {
-        currentStageIndex = 1;
-        currentStageKey = 'team_lead_review';
-    } else if (workflowState === 'team_lead_rejected') {
-        currentStageIndex = 1;
-        currentStageKey = 'team_lead_rejected';
-    } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
-        currentStageIndex = 2;
-        currentStageKey = 'qa_review';
-    } else if (workflowState === 'approved' || workflowState === 'rejected') {
-        currentStageIndex = 3;
-        currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
-    } else if (workflowState === 'acknowledged') {
-        currentStageIndex = 3; // Acknowledged is after final decision
-        currentStageKey = 'acknowledged';
+    if (requireTeamLeadApproval) {
+        // Team lead review is enabled - use original index logic
+        if (workflowState === 'team_lead_review' || workflowState === 'pending') {
+            currentStageIndex = 1;
+            currentStageKey = 'team_lead_review';
+        } else if (workflowState === 'team_lead_rejected') {
+            currentStageIndex = 1;
+            currentStageKey = 'team_lead_rejected';
+        } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+            currentStageIndex = 2;
+            currentStageKey = 'qa_review';
+        } else if (workflowState === 'approved' || workflowState === 'rejected') {
+            currentStageIndex = 3;
+            currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
+        } else if (workflowState === 'acknowledged') {
+            currentStageIndex = 3; // Acknowledged is after final decision
+            currentStageKey = 'acknowledged';
+        }
+    } else {
+        // Team lead review is disabled - skip that stage
+        if (workflowState === 'qa_review' || workflowState === 'cqc_review' || workflowState === 'pending') {
+            currentStageIndex = 1; // qa_review is now at index 1 (after submitted)
+            currentStageKey = 'qa_review';
+        } else if (workflowState === 'approved' || workflowState === 'rejected') {
+            currentStageIndex = 2; // final_decision is now at index 2
+            currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
+        } else if (workflowState === 'acknowledged') {
+            currentStageIndex = 2; // Acknowledged is after final decision
+            currentStageKey = 'acknowledged';
+        }
     }
     
     // Build compact checkout-style journey map
@@ -1641,33 +1681,11 @@ function generateErrorDetails(audit, errorFields, mode = 'view') {
             displayValue = count.toString();
         }
         
-        // Check if this parameter has changed (for highlighting)
-        // Note: Initial check uses audit values; dynamic updates will use form values
+        // Removed change visibility - only show database values
+        // No longer tracking unsaved changes to avoid confusion
         let hasChanged = false;
         let originalValue = null;
-        let currentValue = count; // Use audit value initially
         let changeTooltip = '';
-        
-        if (originalAuditState && originalAuditState.parameters) {
-            originalValue = originalAuditState.parameters[field.key] || 0;
-            // For initial render, use the audit value (count)
-            // Dynamic updates will be handled by updateParameterChangeHighlighting()
-            hasChanged = count !== originalValue;
-            
-            if (hasChanged) {
-                const originalDisplay = field.field_type === 'radio' 
-                    ? (originalValue === 1 ? '✓ YES' : '✗ NO')
-                    : originalValue.toString();
-                const currentDisplay = field.field_type === 'radio'
-                    ? (count === 1 ? '✓ YES' : '✗ NO')
-                    : count.toString();
-                
-                const scoreImpact = field.points * (count - originalValue);
-                const impactText = scoreImpact > 0 ? `+${scoreImpact.toFixed(1)}` : scoreImpact.toFixed(1);
-                
-                changeTooltip = `Parameter Changed\n\nParameter: ${field.label}\nOriginal: ${originalDisplay}\nNew: ${currentDisplay}\nScore Impact: ${impactText} points\nSeverity: ${field.severity}`;
-            }
-        }
         
         // Handle feedback - support both old format (string) and new format (JSON array)
         const feedbackData = audit[field.feedback];
@@ -1802,14 +1820,14 @@ function generateErrorDetails(audit, errorFields, mode = 'view') {
             : '1.5fr 0.8fr 0.8fr 0.8fr 4fr';
         
         // Highlight changed rows
-        const rowBgColor = hasChanged ? '#fef3c7' : 'transparent';
-        const rowBorderColor = hasChanged ? '#f59e0b' : 'transparent';
-        const rowBorderWidth = hasChanged ? '0.0625rem' : '0';
+        // Removed change highlighting - only show database values
+        const rowBgColor = 'transparent';
+        const rowBorderColor = 'transparent';
+        const rowBorderWidth = '0';
         
         return `
-            <div class="parameter-row ${hasChanged ? 'parameter-changed' : ''}" data-parameter-key="${field.key}" style="display: grid; grid-template-columns: ${gridColumns}; gap: 0.6469rem; align-items: start; padding: 0.3234rem; border-left: ${rowBorderWidth} solid ${rowBorderColor}; background: ${rowBgColor}; border-bottom: 0.0405rem solid ${dividerColor}; opacity: ${dividerOpacity}; width: 100%; min-width: 0; transition: all 0.2s ease; ${hasChanged ? 'position: relative;' : ''}" ${hasChanged ? `title="${changeTooltip}"` : ''}>
+            <div class="parameter-row" data-parameter-key="${field.key}" style="display: grid; grid-template-columns: ${gridColumns}; gap: 0.6469rem; align-items: start; padding: 0.3234rem; border-left: ${rowBorderWidth} solid ${rowBorderColor}; background: ${rowBgColor}; border-bottom: 0.0405rem solid ${dividerColor}; opacity: ${dividerOpacity}; width: 100%; min-width: 0; transition: all 0.2s ease;">
                 <div style="font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; min-width: 0; overflow: hidden; display: flex; align-items: center; gap: 0.25rem;">
-                    ${hasChanged ? '<span style="color: #f59e0b; font-size: 0.75rem;">●</span>' : ''}
                     ${field.label}
                 </div>
                 <div style="display: flex; justify-content: center; font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; min-width: 0;">
@@ -1822,13 +1840,7 @@ function generateErrorDetails(audit, errorFields, mode = 'view') {
                     ${isEditMode ? (
                         // Lock inputs if acknowledged or if auditor is waiting for team lead review
                         (isAcknowledged || isAuditorWaitingForTeamLead) ? (
-                            hasChanged ? `
-                                <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap;">
-                                    <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: #6b7280; text-decoration: line-through;">${field.field_type === 'radio' ? (originalValue === 1 ? '✓ YES' : '✗ NO') : originalValue}</span>
-                                    <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: ${count > 0 ? '#ef4444' : '#1f2937'}; margin-left: 0.25rem;">→</span>
-                                    <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: ${count > 0 ? '#ef4444' : '#1f2937'};">${field.field_type === 'radio' ? (count === 1 ? '✓ YES' : '✗ NO') : count}</span>
-                                </div>
-                            ` : `<div style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: ${count > 0 ? '#ef4444' : '#1f2937'};">${field.field_type === 'radio' ? (count === 1 ? '✓ YES' : '✗ NO') : count}</div>`
+                            `<div style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: ${count > 0 ? '#ef4444' : '#1f2937'};">${field.field_type === 'radio' ? (count === 1 ? '✓ YES' : '✗ NO') : count}</div>`
                         ) : (
                             field.field_type === 'radio' ? `
                                 <div style="display: flex; align-items: center; gap: 0.3234rem;">
@@ -1851,13 +1863,7 @@ function generateErrorDetails(audit, errorFields, mode = 'view') {
                             `
                         )
                     ) : (
-                        hasChanged ? `
-                            <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; justify-content: center;">
-                                <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: #6b7280; text-decoration: line-through;">${field.field_type === 'radio' ? (originalValue === 1 ? '✓ YES' : '✗ NO') : originalValue}</span>
-                                <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: #1f2937; margin-left: 0.25rem;">→</span>
-                                <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: #1f2937;">${field.field_type === 'radio' ? (count === 1 ? '✓ YES' : '✗ NO') : count}</span>
-                            </div>
-                        ` : `<div style="font-size: 0.5659rem; color: #1f2937; text-align: center; font-weight: 700; font-family: 'Poppins', sans-serif;">${displayValue}</div>`
+                        `<div style="font-size: 0.5659rem; color: #1f2937; text-align: center; font-weight: 700; font-family: 'Poppins', sans-serif;">${displayValue}</div>`
                     )}
                 </div>
                 <div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
@@ -6030,10 +6036,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Gather form data - use column names that match the database schema
             // Based on actual schema: fnchat_cfd table does NOT have reversal_status column
             // Status is tracked via reversal_approved and reversal_responded_at fields
-            // New workflow: Set initial state to team_lead_review
+            // Check if team lead approval is required (feature flag)
+            const requireTeamLeadApproval = await checkTeamLeadApprovalRequired();
+            
+            // New workflow: Set initial state based on feature flag
             // Check if this is a resubmission after CQC send-back
             const currentWorkflowState = getReversalWorkflowState(currentAudit);
             const isResubmission = currentWorkflowState === 'cqc_sent_back' || currentWorkflowState === 'agent_re_review';
+            
+            // Determine initial workflow state based on feature flag
+            const initialWorkflowState = requireTeamLeadApproval 
+                ? 'pending - team_lead_review'  // Go through Team Lead first
+                : 'pending - qa_review';        // Skip Team Lead, go directly to QC
             
             const reversalData = {
                 reversal_requested_at: isResubmission ? currentAudit.reversal_requested_at : new Date().toISOString(), // Keep original timestamp on resubmission
@@ -6045,8 +6059,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 score_before_appeal: currentAudit.average_score || currentAudit.averageScore || null,
                 // Save parameter comments to database when reversal is submitted
                 parameter_comments: parameterComments,
-                // Set workflow state: New reversals or resubmissions start at Team Lead review
-                acknowledgement_status: 'pending - team_lead_review',
+                // Set workflow state: Based on feature flag (team lead approval required or not)
+                acknowledgement_status: initialWorkflowState,
                 acknowledgement_status_updated_at: new Date().toISOString(),
                 // Clear previous review data on resubmission
                 reversal_approved_by: null,
@@ -6133,6 +6147,82 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Don't throw - continue with reversal submission
                 }
                 
+                // ALSO: Create reversal_requests record (new structure)
+                try {
+                    // Check if reversal_requests record already exists (for resubmissions)
+                    const { data: existingReversalRequest } = await window.supabaseClient
+                        .from('reversal_requests')
+                        .select('id')
+                        .eq('audit_id', currentAudit.id)
+                        .eq('scorecard_table_name', currentTableName)
+                        .maybeSingle();
+                    
+                    if (!existingReversalRequest) {
+                        // Create new reversal_requests record
+                        const reversalRequestData = {
+                            audit_id: currentAudit.id,
+                            scorecard_table_name: currentTableName,
+                            requested_at: isResubmission ? currentAudit.reversal_requested_at : new Date().toISOString(),
+                            requested_by_email: logUserEmail,
+                            requested_by_name: logUserName,
+                            reversal_type: reversalType,
+                            justification: `${reversalReason}: ${detailedJustification}`,
+                            metrics_parameters: selectedParameters.join(', ') || null,
+                            attachments: null, // Can be added later if needed
+                            original_score: currentAudit.average_score || currentAudit.averageScore || 0,
+                            original_passing_status: currentAudit.passing_status || currentAudit.passingStatus || 'Not Passing',
+                            original_parameters: fullAuditState.parameters, // Store actual parameter values, not parameter_comments!
+                            original_feedback: fullAuditState.feedback,
+                            within_auditor_scope: document.getElementById('withinAuditorScope')?.checked || false,
+                            sla_hours: null // Will be calculated during processing
+                        };
+                        
+                        const { data: newReversalRequest, error: rrError } = await window.supabaseClient
+                            .from('reversal_requests')
+                            .insert(reversalRequestData)
+                            .select()
+                            .single();
+                        
+                        if (rrError) {
+                            console.error('Error creating reversal_requests record:', rrError);
+                            // Don't throw - continue with reversal submission
+                        } else {
+                            console.log('Successfully created reversal_requests record:', newReversalRequest.id);
+                            
+                            // Create initial workflow state based on feature flag
+                            const initialState = requireTeamLeadApproval ? 'submitted' : 'qa_review';
+                            const { data: workflowState, error: wsError } = await window.supabaseClient
+                                .from('reversal_workflow_states')
+                                .insert({
+                                    reversal_request_id: newReversalRequest.id,
+                                    state: initialState,
+                                    entered_at: newReversalRequest.requested_at,
+                                    entered_by_email: logUserEmail,
+                                    entered_by_name: logUserName,
+                                    notes: requireTeamLeadApproval 
+                                        ? 'Reversal requested by agent - awaiting Team Lead review'
+                                        : 'Reversal requested by agent - sent directly to QC review',
+                                    is_current: true
+                                })
+                                .select()
+                                .single();
+                            
+                            if (!wsError && workflowState) {
+                                // Update reversal_request to point to current state
+                                await window.supabaseClient
+                                    .from('reversal_requests')
+                                    .update({ current_state_id: workflowState.id })
+                                    .eq('id', newReversalRequest.id);
+                            }
+                        }
+                    } else {
+                        console.log('Reversal_requests record already exists, skipping creation');
+                    }
+                } catch (rrErr) {
+                    console.error('Error creating reversal_requests record:', rrErr);
+                    // Don't throw - continue with reversal submission
+                }
+                
                 // THEN: Update the audit record with reversal data
                 // First, try with parameter_comments included
                 let result = await retryOnSchemaCacheError(async () => {
@@ -6189,15 +6279,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Show pending dialog (not success - reversal is under review)
+                const reviewMessage = requireTeamLeadApproval
+                    ? '⏳ Your reversal request has been submitted and is now under Team Lead review.\n\nYou will be notified once a decision has been made.'
+                    : '⏳ Your reversal request has been submitted and is now under QC review.\n\nYou will be notified once a decision has been made.';
+                
                 if (window.confirmationDialog) {
                     await window.confirmationDialog.show({
                         title: 'Reversal Request Submitted',
-                        message: '⏳ Your reversal request has been submitted and is now under Team Lead review.\n\nYou will be notified once a decision has been made.',
+                        message: reviewMessage,
                         confirmText: 'OK',
                         type: 'info'
                     });
                 } else {
-                alert('⏳ Your reversal request has been submitted and is now under Team Lead review.\n\nYou will be notified once a decision has been made.');
+                    alert(reviewMessage);
                 }
                 
                 // Hide form and reload audit data
@@ -6593,42 +6687,79 @@ async function captureOriginalAuditState() {
         return;
     }
     
-    // FIRST: Try to retrieve the original state from activity log (when reversal was requested)
-    // This ensures we have the true original state before any modifications (e.g., team lead changes)
-    let loggedOriginalState = null;
+    // PRIORITY 1: Try to retrieve from reversal_requests table (new structure)
+    let reversalRequestState = null;
     try {
-        const { data: reversalRequestLog, error: logFetchError } = await window.supabaseClient
-            .from('audit_activity_log')
-            .select('*')
+        const { data: reversalRequest, error: rrError } = await window.supabaseClient
+            .from('reversal_requests')
+            .select('original_parameters, original_feedback, original_score, original_passing_status')
             .eq('audit_id', currentAudit.id)
-            .eq('activity_type', 'reversal_requested')
-            .order('activity_timestamp', { ascending: false })
+            .eq('scorecard_table_name', currentTableName)
+            .order('requested_at', { ascending: false })
             .limit(1)
             .maybeSingle();
         
-        if (!logFetchError && reversalRequestLog) {
-            loggedOriginalState = {
-                parameters: reversalRequestLog.parameters_snapshot || {},
-                feedback: reversalRequestLog.feedback_snapshot || {},
-                score: reversalRequestLog.score_snapshot || 0,
-                passingStatus: reversalRequestLog.passing_status_snapshot || ''
-            };
-            console.log('✅ Retrieved original state from activity log for change tracking:', loggedOriginalState);
-        } else if (logFetchError) {
-            console.warn('⚠️ Could not retrieve original state from activity log:', logFetchError);
+        if (!rrError && reversalRequest && reversalRequest.original_parameters) {
+            // Check if original_parameters has actual parameter values (not parameter_comments structure)
+            const firstKey = Object.keys(reversalRequest.original_parameters)[0];
+            const firstValue = reversalRequest.original_parameters[firstKey];
+            const isParameterValues = typeof firstValue === 'number' || 
+                                     (typeof firstValue === 'object' && firstValue !== null && !firstValue.comments);
+            
+            if (isParameterValues) {
+                reversalRequestState = {
+                    parameters: reversalRequest.original_parameters || {},
+                    feedback: reversalRequest.original_feedback || {},
+                    score: reversalRequest.original_score || 0,
+                    passingStatus: reversalRequest.original_passing_status || ''
+                };
+                console.log('✅ Retrieved original state from reversal_requests table:', reversalRequestState);
+            }
+        } else if (rrError) {
+            console.warn('⚠️ Could not retrieve from reversal_requests:', rrError);
         }
-    } catch (logErr) {
-        console.warn('⚠️ Error retrieving original state from activity log:', logErr);
+    } catch (rrErr) {
+        console.warn('⚠️ Error retrieving from reversal_requests:', rrErr);
     }
     
-    // Use logged original state if available, otherwise fall back to current audit state
-    // (fallback is for backwards compatibility if log doesn't exist)
-    if (loggedOriginalState) {
+    // PRIORITY 2: Fallback to activity log (when reversal was requested)
+    let loggedOriginalState = null;
+    if (!reversalRequestState) {
+        try {
+            const { data: reversalRequestLog, error: logFetchError } = await window.supabaseClient
+                .from('audit_activity_log')
+                .select('*')
+                .eq('audit_id', currentAudit.id)
+                .eq('activity_type', 'reversal_requested')
+                .order('activity_timestamp', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            
+            if (!logFetchError && reversalRequestLog) {
+                loggedOriginalState = {
+                    parameters: reversalRequestLog.parameters_snapshot || {},
+                    feedback: reversalRequestLog.feedback_snapshot || {},
+                    score: reversalRequestLog.score_snapshot || 0,
+                    passingStatus: reversalRequestLog.passing_status_snapshot || ''
+                };
+                console.log('✅ Retrieved original state from activity log for change tracking:', loggedOriginalState);
+            } else if (logFetchError) {
+                console.warn('⚠️ Could not retrieve original state from activity log:', logFetchError);
+            }
+        } catch (logErr) {
+            console.warn('⚠️ Error retrieving original state from activity log:', logErr);
+        }
+    }
+    
+    // Use the best available source
+    if (reversalRequestState) {
+        originalAuditState = reversalRequestState;
+    } else if (loggedOriginalState) {
         originalAuditState = loggedOriginalState;
     } else {
         // Fallback: Use current audit state (for backwards compatibility)
         // Note: This may not be accurate if audit has been modified since reversal request
-        console.warn('⚠️ Using current audit state as baseline (activity log not found). This may show incorrect changes if audit was modified.');
+        console.warn('⚠️ Using current audit state as baseline (no snapshot found). This may show incorrect changes if audit was modified.');
         originalAuditState = {
             parameters: {},
             feedback: {},
@@ -7943,7 +8074,7 @@ async function displayReversalApprovalInterface(audit) {
     const teamLeadReviewedBy = !isTeamLeadReview ? (audit.team_lead_reviewed_by || audit.teamLeadReviewedBy || '') : '';
     
     // Build journey map/roadmap indicator
-    const journeyMapHtml = buildReversalJourneyMap(workflowState, teamLeadApproved, audit);
+    const journeyMapHtml = await buildReversalJourneyMap(workflowState, teamLeadApproved, audit);
     
     // Debug logging for isAuditorWaitingForTeamLead
     console.log('displayReversalApprovalInterface - isAuditorWaitingForTeamLead check:', {
@@ -8231,101 +8362,12 @@ function setupUserProfileHovers() {
 }
 
 // Update parameter change highlighting dynamically
+// Update parameter change highlighting dynamically - DISABLED
+// Removed to avoid confusion - only show database values, not unsaved form changes
 function updateParameterChangeHighlighting() {
-    if (!originalAuditState || !currentErrorFields) {
-        return;
-    }
-    
-    currentErrorFields.forEach(field => {
-        const fieldKey = field.key;
-        const row = document.querySelector(`.parameter-row[data-parameter-key="${fieldKey}"]`);
-        if (!row) return;
-        
-        let currentValue = 0;
-        
-        // Get current value from form
-        if (field.field_type === 'radio') {
-            const radioInput = document.querySelector(`input[name="${fieldKey}"]:checked`);
-            if (radioInput) {
-                currentValue = parseInt(radioInput.value) || 0;
-            }
-        } else {
-            const numberInput = document.getElementById(fieldKey);
-            if (numberInput) {
-                currentValue = parseInt(numberInput.value) || 0;
-            }
-        }
-        
-        const originalValue = originalAuditState.parameters[fieldKey] || 0;
-        const hasChanged = currentValue !== originalValue;
-        
-        // Update row highlighting
-        if (hasChanged) {
-            row.classList.add('parameter-changed');
-            row.style.background = '#fef3c7';
-            row.style.borderLeft = '0.0625rem solid #f59e0b';
-            row.style.padding = '0.3234rem';
-            
-            // Update tooltip with detailed information
-            const originalDisplay = field.field_type === 'radio' 
-                ? (originalValue === 1 ? '✓ YES' : '✗ NO')
-                : originalValue.toString();
-            const currentDisplay = field.field_type === 'radio'
-                ? (currentValue === 1 ? '✓ YES' : '✗ NO')
-                : currentValue.toString();
-            
-            const scoreImpact = field.points * (currentValue - originalValue);
-            const impactText = scoreImpact > 0 ? `+${scoreImpact.toFixed(1)}` : scoreImpact.toFixed(1);
-            
-            row.title = `Parameter Changed\n\nParameter: ${field.label}\nOriginal: ${originalDisplay}\nNew: ${currentDisplay}\nScore Impact: ${impactText} points\nSeverity: ${field.severity}`;
-            
-            // Update the count display to show old → new (only for read-only displays)
-            const countCell = row.children[3]; // Count column (4th column, 0-indexed)
-            if (countCell) {
-                // Only update if it's a read-only display (not input controls)
-                const hasInputs = countCell.querySelector('input, button');
-                if (!hasInputs && countCell.querySelector('div[style*="font-size"]')) {
-                    const originalDisplayText = field.field_type === 'radio' 
-                        ? (originalValue === 1 ? '✓ YES' : '✗ NO')
-                        : originalValue.toString();
-                    const currentDisplayText = field.field_type === 'radio'
-                        ? (currentValue === 1 ? '✓ YES' : '✗ NO')
-                        : currentValue.toString();
-                    
-                    countCell.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; justify-content: center;">
-                            <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: #6b7280; text-decoration: line-through;">${originalDisplayText}</span>
-                            <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: #1f2937; margin-left: 0.25rem;">→</span>
-                            <span style="font-size: 0.5659rem; font-weight: 700; font-family: 'Poppins', sans-serif; color: ${currentValue > 0 ? '#ef4444' : '#1f2937'};">${currentDisplayText}</span>
-                        </div>
-                    `;
-                }
-            }
-            
-            // Add indicator to label
-            const labelCell = row.children[0];
-            if (labelCell && !labelCell.querySelector('span[style*="color: #f59e0b"]')) {
-                const labelText = labelCell.textContent.trim();
-                labelCell.innerHTML = `<span style="color: #f59e0b; font-size: 0.75rem; margin-right: 0.25rem;">●</span>${labelText}`;
-            }
-        } else {
-            row.classList.remove('parameter-changed');
-            row.style.background = 'transparent';
-            row.style.borderLeft = '0';
-            row.style.padding = '0.3234rem 0';
-            row.title = '';
-            
-            // Remove indicator from label
-            const labelCell = row.children[0];
-            if (labelCell) {
-                const indicator = labelCell.querySelector('span[style*="color: #f59e0b"]');
-                if (indicator) {
-                    const labelText = labelCell.textContent.replace('●', '').trim();
-                    labelCell.textContent = labelText;
-                }
-            }
-        }
-    });
+    // Function disabled - no longer tracking unsaved changes
+    // Only database values are displayed, not form input changes
+    return;
 }
 
 

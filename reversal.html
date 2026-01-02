@@ -582,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         };
         
-        // Load reversals from all audit tables
+        // Load reversals from new reversal_requests table (with backward compatibility)
         async function loadReversals(onlyPending = true) {
             try {
                 const userInfo = getCurrentUserInfo();
@@ -605,29 +605,135 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 let combinedReversals = [];
                 
-                // Load from all scorecard tables
+                // STEP 1: Load from new reversal_requests table (primary source)
+                try {
+                    // First, get all reversal requests
+                    let reversalQuery = window.supabaseClient
+                        .from('reversal_requests')
+                        .select('*');
+                    
+                    // Filter by user role
+                    if (isAgent && userInfo.email) {
+                        reversalQuery = reversalQuery.eq('requested_by_email', userInfo.email);
+                    }
+                    
+                    reversalQuery = reversalQuery.order('requested_at', { ascending: false });
+                    
+                    const { data: reversalRequests, error: reversalError } = await reversalQuery;
+                    
+                    if (!reversalError && reversalRequests && reversalRequests.length > 0) {
+                        // Get workflow states for all reversal requests in one query
+                        const reversalIds = reversalRequests.map(rr => rr.id);
+                        const { data: workflowStates, error: wsError } = await window.supabaseClient
+                            .from('reversal_workflow_states')
+                            .select('*')
+                            .in('reversal_request_id', reversalIds)
+                            .eq('is_current', true);
+                        
+                        // Create a map of reversal_id -> workflow_state
+                        const workflowStateMap = new Map();
+                        if (!wsError && workflowStates) {
+                            workflowStates.forEach(ws => {
+                                workflowStateMap.set(ws.reversal_request_id, ws.state);
+                            });
+                        }
+                        
+                        // For each reversal request, get the audit data from the appropriate table
+                        for (const reversalReq of reversalRequests) {
+                            try {
+                                // Get workflow state
+                                const workflowState = workflowStateMap.get(reversalReq.id) || 'submitted';
+                                
+                                // Filter pending if needed
+                                if (onlyPending) {
+                                    const pendingStates = ['submitted', 'team_lead_review', 'qa_review', 'cqc_review', 'cqc_sent_back', 'agent_re_review'];
+                                    if (!pendingStates.includes(workflowState)) {
+                                        continue;
+                                    }
+                                }
+                                
+                                // Get audit data from the scorecard table
+                                const { data: auditData, error: auditError } = await window.supabaseClient
+                                    .from(reversalReq.scorecard_table_name)
+                                    .select('*')
+                                    .eq('id', reversalReq.audit_id)
+                                    .single();
+                                
+                                if (auditError || !auditData) {
+                                    console.warn(`Audit not found for reversal ${reversalReq.id}:`, auditError);
+                                    continue;
+                                }
+                                
+                                // Find scorecard info
+                                const scorecard = allScorecards.find(s => s.table_name === reversalReq.scorecard_table_name);
+                                
+                                // Merge reversal request data with audit data
+                                const mergedReversal = {
+                                    ...auditData,
+                                    // Override with reversal_requests data (new structure takes precedence)
+                                    reversal_requested_at: reversalReq.requested_at,
+                                    reversal_type: reversalReq.reversal_type,
+                                    reversal_justification_from_agent: reversalReq.justification,
+                                    reversal_metrics_parameters: reversalReq.metrics_parameters,
+                                    reversal_attachments: reversalReq.attachments,
+                                    score_before_appeal: reversalReq.original_score,
+                                    score_after_appeal: reversalReq.new_score,
+                                    reversal_approved: reversalReq.final_decision === 'approved' ? true : 
+                                                       reversalReq.final_decision === 'rejected' ? false : null,
+                                    reversal_responded_at: reversalReq.final_decision_at,
+                                    reversal_approved_by: reversalReq.final_decision_by_name,
+                                    reversal_processed_by_email: reversalReq.final_decision_by_email,
+                                    sla_in_hours: reversalReq.sla_hours,
+                                    within_auditor_scope: reversalReq.within_auditor_scope,
+                                    // Workflow state from new structure
+                                    reversal_workflow_state: workflowState,
+                                    // Scorecard info
+                                    _scorecard_id: scorecard?.id || null,
+                                    _scorecard_name: scorecard?.name || reversalReq.scorecard_table_name,
+                                    _scorecard_table: reversalReq.scorecard_table_name,
+                                    // Reversal request ID for reference
+                                    _reversal_request_id: reversalReq.id
+                                };
+                                
+                                // For agents: Additional filtering
+                                if (isAgent && userInfo.email) {
+                                    const auditEmployeeEmail = (mergedReversal.employee_email || '').toLowerCase().trim();
+                                    if (auditEmployeeEmail !== userInfo.email) {
+                                        continue;
+                                    }
+                                }
+                                
+                                combinedReversals.push(mergedReversal);
+                            } catch (err) {
+                                console.warn(`Error loading audit for reversal ${reversalReq.id}:`, err);
+                                continue;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Error loading from reversal_requests table:', err);
+                }
+                
+                // STEP 2: Load from old structure (backward compatibility for unmigrated reversals)
                 for (const scorecard of allScorecards) {
                     try {
+                        // Only load reversals that aren't already in our combined list
+                        const existingAuditIds = new Set(combinedReversals.map(r => r.id));
+                        
                         let query = window.supabaseClient
                             .from(scorecard.table_name)
                             .select('*')
-                            .not('reversal_requested_at', 'is', null);
+                            .not('reversal_requested_at', 'is', null)
+                            .not('id', 'in', `(${Array.from(existingAuditIds).map(id => `'${id}'`).join(',')})`);
                         
-                        // For agents: Only show reversals they requested (filter by employee_email)
+                        // For agents: Only show reversals they requested
                         if (isAgent && userInfo.email) {
                             query = query.eq('employee_email', userInfo.email);
                         }
                         
                         // Filter based on user role and view mode
-                        // Note: We'll do most filtering client-side for workflow states
-                        // since acknowledgement_status filtering is complex
                         if (onlyPending) {
-                            if (isAgent) {
-                                // For agents: We already filtered by email above, so load all their reversals
-                                // We'll filter by acknowledgement status client-side
-                            } else {
-                                // For Team Leads, CQC, and Auditors: Load all pending reversals
-                                // We'll filter by workflow state client-side based on role
+                            if (!isAgent) {
                                 query = query.is('reversal_approved', null);
                             }
                         }
@@ -644,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (data && data.length > 0) {
                             let filteredData = data;
                             
-                            // For agents: Additional client-side filtering to ensure exact email match
+                            // For agents: Additional client-side filtering
                             if (isAgent && userInfo.email) {
                                 filteredData = filteredData.filter(audit => {
                                     const auditEmployeeEmail = (audit.employee_email || '').toLowerCase().trim();
@@ -656,9 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ...audit,
                                 _scorecard_id: scorecard.id,
                                 _scorecard_name: scorecard.name,
-                                _scorecard_table: scorecard.table_name,
-                                // Normalize reversal_status for consistent display
-                                reversal_status: getReversalStatus(audit)
+                                _scorecard_table: scorecard.table_name
                             }));
                             combinedReversals = combinedReversals.concat(reversalsWithScorecard);
                         }
@@ -765,12 +869,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Helper function to get reversal workflow state from acknowledgement_status
-        // Supports new journey map: Team Lead → QA → Final Decision
+        // Helper function to get reversal workflow state
+        // First checks new structure (reversal_workflow_state), then falls back to acknowledgement_status parsing
         function getReversalWorkflowState(reversal) {
+            // Priority 1: Use workflow state from new structure if available
+            if (reversal.reversal_workflow_state) {
+                return reversal.reversal_workflow_state;
+            }
+            
+            // Priority 2: Parse from acknowledgement_status (old structure)
             const ackStatus = (reversal.acknowledgement_status || reversal.acknowledgementStatus || '').toLowerCase();
             
-            // New workflow states (from acknowledgement_status)
             if (ackStatus.includes('team_lead_review')) return 'team_lead_review';
             if (ackStatus.includes('team_lead_rejected')) return 'team_lead_rejected';
             if (ackStatus.includes('qa_review') || ackStatus.includes('auditor_review')) return 'qa_review';
@@ -781,14 +890,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (ackStatus.includes('reversal_rejected')) return 'rejected';
             if (ackStatus === 'acknowledged' || ackStatus.includes('acknowledged')) return 'acknowledged';
             
-            // Fallback to old logic if acknowledgement_status doesn't have workflow info
+            // Priority 3: Fallback to old logic using reversal_approved
             const approved = reversal.reversal_approved;
             if (approved === null || approved === undefined) return 'pending';
             if (approved === true || approved === 'true' || approved === 1 || approved === '1') return 'approved';
             if (approved === false || approved === 'false' || approved === 0 || approved === '0') return 'rejected';
             
             return 'pending';
-            }
+        }
             
         // Helper function to check if a workflow state is considered "pending"
         // Includes all pending sub-statuses like team_lead_review, cqc_review, etc.
