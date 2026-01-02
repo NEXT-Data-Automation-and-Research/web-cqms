@@ -628,11 +628,53 @@ function getReversalWorkflowState(audit) {
 
 // Build reversal journey map/roadmap indicator
 async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
-    // Check if team lead approval is required
-    const requireTeamLeadApproval = await checkTeamLeadApprovalRequired();
+    // Check if this reversal actually went through Team Lead Review
+    // This should be shown if:
+    // 1. The workflow state includes team_lead_review or team_lead_approved/rejected
+    // 2. OR team_lead_reviewed_by is populated (indicating it went through TL review)
+    // 3. OR there's a team_lead_review state in reversal_workflow_states
+    const hasTeamLeadReview = 
+        workflowState === 'team_lead_review' || 
+        workflowState === 'team_lead_approved' || 
+        workflowState === 'team_lead_rejected' ||
+        (audit && (audit.team_lead_reviewed_by || audit.teamLeadReviewedBy)) ||
+        (audit && (audit.team_lead_approved !== null && audit.team_lead_approved !== undefined)) ||
+        (audit && audit.acknowledgement_status && audit.acknowledgement_status.toLowerCase().includes('team_lead'));
+    
+    // Also check reversal_workflow_states if available
+    let hasTeamLeadReviewInWorkflow = false;
+    if (audit && audit.id && currentTableName) {
+        try {
+            const { data: reversalRequest, error: rrError } = await window.supabaseClient
+                .from('reversal_requests')
+                .select('id')
+                .eq('audit_id', audit.id)
+                .eq('scorecard_table_name', currentTableName)
+                .order('requested_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            
+            if (!rrError && reversalRequest) {
+                const { data: workflowStates, error: wsError } = await window.supabaseClient
+                    .from('reversal_workflow_states')
+                    .select('state')
+                    .eq('reversal_request_id', reversalRequest.id)
+                    .in('state', ['team_lead_review', 'team_lead_approved', 'team_lead_rejected']);
+                
+                if (!wsError && workflowStates && workflowStates.length > 0) {
+                    hasTeamLeadReviewInWorkflow = true;
+                }
+            }
+        } catch (err) {
+            console.warn('Error checking workflow states for Team Lead Review:', err);
+        }
+    }
+    
+    // Show Team Lead Review stage if the reversal actually went through it
+    const showTeamLeadReview = hasTeamLeadReview || hasTeamLeadReviewInWorkflow;
     
     // Define all stages in order - compact checkout-style
-    // Conditionally include team_lead_review stage based on feature flag
+    // Include team_lead_review stage if the reversal actually went through it
     const stages = [
         { 
             key: 'submitted', 
@@ -640,8 +682,8 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
         }
     ];
     
-    // Only add team lead review stage if feature is enabled
-    if (requireTeamLeadApproval) {
+    // Add team lead review stage if this reversal went through it
+    if (showTeamLeadReview) {
         stages.push({
             key: 'team_lead_review', 
             label: 'Team Lead Review'
@@ -663,8 +705,8 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
     let currentStageIndex = 0;
     let currentStageKey = 'submitted';
     
-    if (requireTeamLeadApproval) {
-        // Team lead review is enabled - use original index logic
+    if (showTeamLeadReview) {
+        // Team lead review stage exists - use index logic with TL review
         if (workflowState === 'team_lead_review' || workflowState === 'pending') {
             currentStageIndex = 1;
             currentStageKey = 'team_lead_review';
@@ -682,7 +724,7 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
             currentStageKey = 'acknowledged';
         }
     } else {
-        // Team lead review is disabled - skip that stage
+        // Team lead review stage doesn't exist - skip that stage
         if (workflowState === 'qa_review' || workflowState === 'cqc_review' || workflowState === 'pending') {
             currentStageIndex = 1; // qa_review is now at index 1 (after submitted)
             currentStageKey = 'qa_review';
