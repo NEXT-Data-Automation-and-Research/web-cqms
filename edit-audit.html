@@ -1330,6 +1330,27 @@ async function loadAuditFromURL() {
         
         currentScorecardId = finalScorecardId;
 
+        // Fetch reversal_requests data if reversal exists (for new structure)
+        let reversalRequestData = null;
+        if (data.reversal_requested_at) {
+            try {
+                const { data: reversalRequest, error: rrError } = await window.supabaseClient
+                    .from('reversal_requests')
+                    .select('final_decision_by_name, final_decision_by_email, final_decision_at, final_decision')
+                    .eq('audit_id', auditId)
+                    .eq('scorecard_table_name', tableName)
+                    .order('requested_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                
+                if (!rrError && reversalRequest) {
+                    reversalRequestData = reversalRequest;
+                }
+            } catch (err) {
+                console.warn('Error fetching reversal_requests data:', err);
+            }
+        }
+
         // Map snake_case to camelCase
         const audit = {
             ...data,
@@ -1380,7 +1401,8 @@ async function loadAuditFromURL() {
             reversalJustificationFromAgent: data.reversal_justification_from_agent,
             reversalAttachments: data.reversal_attachments,
             reversalApprovedBy: data.reversal_approved_by,
-            reversalResolvedBy: data.reversal_resolved_by,
+            // reversalResolvedBy: Use final_decision_by_name from reversal_requests (new structure) with fallback to audit table (old structure)
+            reversalResolvedBy: reversalRequestData?.final_decision_by_name || data.reversal_resolved_by,
             // Team Lead review fields
             teamLeadApproved: data.team_lead_approved,
             team_lead_approved: data.team_lead_approved,
@@ -6064,7 +6086,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 acknowledgement_status_updated_at: new Date().toISOString(),
                 // Clear previous review data on resubmission
                 reversal_approved_by: null,
-                reversal_resolved_by: null,
+                // reversal_resolved_by is deprecated - cleared in reversal_requests instead
                 reversal_responded_at: null,
                 reversal_approved: null
                 // Note: reversal_status column doesn't exist in the schema
@@ -8889,7 +8911,8 @@ async function processReversalDecision(decision) {
             updateData.reversal_approved = decision === 'approved';
             updateData.reversal_responded_at = respondedAt.toISOString();
             updateData.reversal_approved_by = currentUserName;
-            updateData.reversal_resolved_by = currentUserName;
+            // reversal_resolved_by is deprecated - now stored in reversal_requests.final_decision_by_name
+            // Keep for backward compatibility but don't write to it anymore
             // Set within_auditor_scope based on auditor's selection
             updateData.within_auditor_scope = withinAuditorScope;
             
@@ -8921,7 +8944,8 @@ async function processReversalDecision(decision) {
             updateData.reversal_approved = decision === 'approved';
             updateData.reversal_responded_at = respondedAt.toISOString();
             updateData.reversal_approved_by = approvedBy;
-            updateData.reversal_resolved_by = currentUserName;
+            // reversal_resolved_by is deprecated - now stored in reversal_requests.final_decision_by_name
+            // Keep for backward compatibility but don't write to it anymore
             if (delayReason) {
                 updateData.response_from_auditor = delayReason;
             }
@@ -8945,6 +8969,49 @@ async function processReversalDecision(decision) {
             .select();
         
         if (updateError) throw updateError;
+        
+        // Update reversal_requests table with final decision (if reversal exists)
+        if (actionType === 'qa_review' || actionType === 'final') {
+            try {
+                // Find the reversal_request for this audit
+                const { data: reversalRequest, error: rrFetchError } = await window.supabaseClient
+                    .from('reversal_requests')
+                    .select('id')
+                    .eq('audit_id', currentAudit.id)
+                    .eq('scorecard_table_name', currentTableName)
+                    .order('requested_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                
+                if (!rrFetchError && reversalRequest) {
+                    // Update reversal_requests with final decision info
+                    const reversalUpdateData = {
+                        final_decision: decision,
+                        final_decision_at: respondedAt.toISOString(),
+                        final_decision_by_name: currentUserName,
+                        final_decision_by_email: logUserEmail,
+                        new_score: decision === 'approved' ? newScore : null,
+                        new_passing_status: decision === 'approved' ? (isPassing ? 'Passing' : 'Not Passing') : null,
+                        sla_hours: parseFloat(slaHours.toFixed(2)),
+                        within_auditor_scope: withinAuditorScope,
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    const { error: rrUpdateError } = await window.supabaseClient
+                        .from('reversal_requests')
+                        .update(reversalUpdateData)
+                        .eq('id', reversalRequest.id);
+                    
+                    if (rrUpdateError) {
+                        console.warn('Error updating reversal_requests table:', rrUpdateError);
+                        // Don't throw - audit update succeeded, this is secondary
+                    }
+                }
+            } catch (rrErr) {
+                console.warn('Error updating reversal_requests:', rrErr);
+                // Don't throw - audit update succeeded
+            }
+        }
         
         // Log approval/rejection to activity log
         try {

@@ -11734,6 +11734,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     reversal_justification_from_agent: auditData.reversalJustificationFromAgent || null,
                     reversal_attachments: auditData.reversalAttachments || null,
                     reversal_approved_by: auditData.reversalApprovedBy || null,
+                    // reversal_resolved_by is deprecated - now stored in reversal_requests.final_decision_by_name
+                    // Keep for backward compatibility but don't write to it anymore
                     reversal_resolved_by: auditData.reversalResolvedBy || null,
                     // Acknowledgement tracking fields
                     acknowledgement_status: auditData.acknowledgementStatus || 'Pending',

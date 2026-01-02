@@ -1794,7 +1794,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     reversal_sla_hours: parseFloat(slaHours),
                     reversal_response_delay_reason: delayReason || null,
                     reversal_approved_by: approvedBy || null,
-                    reversal_resolved_by: resolvedBy || null,
+                    // reversal_resolved_by is deprecated - now stored in reversal_requests.final_decision_by_name
+                    // Keep for backward compatibility but don't write to it anymore
                     score_after_appeal: scoreAfterAppeal,
                     passed_after_appeal: passedAfterAppeal
                 };
