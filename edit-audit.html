@@ -2929,7 +2929,7 @@ function handleReversalStatusUI(audit) {
                     <div>✓ Reversal request has been approved. Score updated to ${currentAudit?.score_after_appeal || 'N/A'}%. Please review the updated audit and acknowledge or submit a new reversal if needed.</div>
                     ${shouldShowResponse ? `
                         <div style="margin-top: 0.5625rem; padding: 0.5625rem; background: rgba(255, 255, 255, 0.5); border-radius: 0.2812rem; border-left: 0.1875rem solid #10b981;">
-                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From Auditor:</div>
+                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From QC:</div>
                             <div style="font-size: 0.6094rem; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(auditorResponse)}</div>
                         </div>
                     ` : ''}
@@ -2965,7 +2965,7 @@ function handleReversalStatusUI(audit) {
                     <div>Reversal request has been rejected. Please review the audit and acknowledge or submit a new reversal if needed.</div>
                     ${shouldShowResponse ? `
                         <div style="margin-top: 0.5625rem; padding: 0.5625rem; background: rgba(255, 255, 255, 0.5); border-radius: 0.2812rem; border-left: 0.1875rem solid #ef4444;">
-                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From Auditor:</div>
+                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From QC:</div>
                             <div style="font-size: 0.6094rem; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(auditorResponse)}</div>
                         </div>
                     ` : ''}
@@ -8097,7 +8097,7 @@ async function displayReversalApprovalInterface(audit) {
             ${auditorResponse && reversalRespondedAt ? `
             <!-- Auditor Response (Read-only) -->
             <div style="background: #f0f9ff; border: 0.0625rem solid #bae6fd; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From Auditor</p>
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From QC</p>
                 <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
             </div>
             ` : ''}
@@ -8147,7 +8147,7 @@ async function displayReversalApprovalInterface(audit) {
                 <div style="margin-bottom: 0.5625rem;">
                     <div>
                         <label style="display: block; font-size: 0.6562rem; font-weight: 600; color: #374151; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif;">
-                            Response From Auditor <span style="color: #ef4444;">*</span>
+                            Response From QC <span style="color: #ef4444;">*</span>
                         </label>
                         <textarea id="reversalDelayReason" required rows="3" placeholder="Please provide your response or comments..." style="width: 100%; padding: 0.375rem 0.5625rem; border: 0.0625rem solid #d1d5db; border-radius: 0.2812rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; resize: vertical; box-sizing: border-box; background: white; cursor: text;"></textarea>
                     </div>
@@ -8628,10 +8628,10 @@ async function approveReversal() {
         return;
     }
     
-    // Validate that response from auditor is provided
+    // Validate that response from QC is provided
     const responseFromAuditor = document.getElementById('reversalDelayReason')?.value?.trim() || '';
     if (!responseFromAuditor) {
-        alert('Error: Response From Auditor is required. Please provide your response before approving.');
+        alert('Error: Response From QC is required. Please provide your response before approving.');
         const responseField = document.getElementById('reversalDelayReason');
         if (responseField) {
             responseField.focus();
@@ -8667,10 +8667,10 @@ async function rejectReversal() {
         }
     }
     
-    // Validate that response from auditor is provided
+    // Validate that response from QC is provided
     const responseFromAuditor = document.getElementById('reversalDelayReason')?.value?.trim() || '';
     if (!responseFromAuditor) {
-        alert('Error: Response From Auditor is required. Please provide your response before rejecting.');
+        alert('Error: Response From QC is required. Please provide your response before rejecting.');
         const responseField = document.getElementById('reversalDelayReason');
         if (responseField) {
             responseField.focus();
@@ -9029,7 +9029,7 @@ async function processReversalDecision(decision) {
             // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
             // admin_bypass is now stored in reversal_requests table
             
-            // Get response from auditor if provided
+            // Get response from QC if provided
             const delayReason = document.getElementById('reversalDelayReason')?.value || '';
             if (delayReason) {
                 updateData.response_from_auditor = delayReason;

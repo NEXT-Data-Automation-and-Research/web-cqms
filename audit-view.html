@@ -3263,7 +3263,7 @@ function handleReversalStatusUI(audit) {
                     <div>✓ Reversal request has been approved. Score updated to ${currentAudit?.score_after_appeal || 'N/A'}%. Please review the updated audit and acknowledge or submit a new reversal if needed.</div>
                     ${shouldShowResponse ? `
                         <div style="margin-top: 0.5625rem; padding: 0.5625rem; background: rgba(255, 255, 255, 0.5); border-radius: 0.2812rem; border-left: 0.1875rem solid #10b981;">
-                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From Auditor:</div>
+                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From QC:</div>
                             <div style="font-size: 0.6094rem; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(auditorResponse)}</div>
                         </div>
                     ` : ''}
@@ -3300,7 +3300,7 @@ function handleReversalStatusUI(audit) {
                 : (currentAudit?.reasonForReversalResponseDelay || currentAudit?.response_from_auditor || '');
             
             const shouldShowRejectionReason = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && rejectionReason && rejectionReason.trim();
-            const rejectionLabel = isTeamLeadRejection ? 'Rejection Reason from Team Lead:' : 'Response From Auditor:';
+            const rejectionLabel = isTeamLeadRejection ? 'Rejection Reason from Team Lead:' : 'Response From QC:';
             
             statusBanner.innerHTML = `
                 <svg style="width: 0.9375rem; height: 0.9375rem; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
@@ -3614,7 +3614,7 @@ async function displaySubmittedReversalForm(audit) {
             ${auditorResponse && reversalRespondedAt ? `
             <!-- Auditor Response (Read-only) -->
             <div style="background: #f0f9ff; border: 0.0625rem solid #bae6fd; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From Auditor</p>
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From QC</p>
                 <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
                             </div>
             ` : ''}
