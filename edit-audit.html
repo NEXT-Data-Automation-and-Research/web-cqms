@@ -898,6 +898,42 @@ function isCurrentUserAdmin() {
     return window.accessControl.isAdminOrAbove();
 }
 
+// Check if current user is authorized to process reversals in QA Review Stage
+// Only users with team "QC" AND role "Super Admin" are authorized
+async function isCurrentUserAuthorizedForQAReview() {
+    const userInfo = getCurrentUserInfo();
+    if (!userInfo || !userInfo.email) {
+        return false;
+    }
+    
+    // Check role first (must be Super Admin)
+    const role = (userInfo.role || '').toLowerCase();
+    if (role !== 'super admin') {
+        return false;
+    }
+    
+    // Fetch team from database (team might not be in localStorage)
+    try {
+        const { data: userData, error } = await window.supabaseClient
+            .from('users')
+            .select('team')
+            .eq('email', userInfo.email)
+            .maybeSingle();
+        
+        if (error || !userData) {
+            console.warn('Error fetching user team for QA review check:', error);
+            return false;
+        }
+        
+        // Check if team is "QC" (case-insensitive)
+        const team = (userData.team || '').trim();
+        return team.toLowerCase() === 'qc';
+    } catch (error) {
+        console.error('Error checking QA review authorization:', error);
+        return false;
+    }
+}
+
 // Helper function to check if acknowledgement status is considered "acknowledged" (locked, no edits/comments)
 function isAcknowledgedStatus(status) {
     if (!status) return false;
@@ -1013,20 +1049,20 @@ function shouldShowReversalApprovalInterface() {
         userRole: userInfo?.role
     });
     
-    // Only allow:
-    // 1. Original auditor of the audit
-    // 2. Admins and above
-    if (isOriginalAuditor || isAdmin) {
-        console.log('shouldShowReversalApprovalInterface: User is original auditor or admin - showing interface');
+    // Show interface for:
+    // 1. Team leads (for team_lead_review stage only)
+    // 2. Anyone at qa_review/cqc_review stage (authorization check happens in displayReversalApprovalInterface to determine edit vs view)
+    // 3. Agents (read-only view)
+    if ((workflowState === 'team_lead_review' || workflowState === 'pending') && isTeamLead) {
+        // Team leads can review at team_lead_review stage
+        console.log('shouldShowReversalApprovalInterface: User is team lead - showing interface for team lead review');
         return true;
     }
     
-    // For team_lead_review state, also allow team leads (they can approve/reject before it goes to QA)
-    // But they cannot process the final reversal decision
-    if ((workflowState === 'team_lead_review' || workflowState === 'pending') && isTeamLead) {
-        // Check if user is team supervisor (async check happens in displayReversalApprovalInterface)
-        // For now, allow team leads to see the interface
-        console.log('shouldShowReversalApprovalInterface: User is team lead - showing interface for team lead review');
+    if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+        // Show interface to everyone at QA review stage (read-only for unauthorized, editable for authorized)
+        // Authorization check happens in displayReversalApprovalInterface
+        console.log('shouldShowReversalApprovalInterface: QA review stage - showing interface (authorization check in displayReversalApprovalInterface)');
         return true;
     }
     
@@ -1560,6 +1596,9 @@ async function loadAuditFromURL() {
             reversalProcessedByEmail: processedByData?.email || data.reversal_processed_by_email,
             // adminBypass: Use from reversal_requests (new structure) with fallback to audit table (old structure)
             adminBypass: adminBypassData !== undefined ? adminBypassData : (data.admin_bypass || false),
+            // reversalProcessedBy: Use entered_by_name from reversal_workflow_states (new structure) with fallback to audit table (old structure)
+            reversalProcessedBy: processedByData?.name || data.reversal_processed_by,
+            reversalProcessedByEmail: processedByData?.email || data.reversal_processed_by_email,
             // Team Lead review fields
             teamLeadApproved: data.team_lead_approved,
             team_lead_approved: data.team_lead_approved,
@@ -7514,18 +7553,11 @@ async function displayReversalApprovalInterface(audit) {
         }
     }
     
-    // For qa_review stage, show if user is original auditor, admin, or agent (read-only)
-    if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
-        if (!isOriginalAuditor && !isAdmin && !isAgent) {
-            console.log('User is not authorized to view this reversal. Hiding review interface.', {
-                workflowState,
-                isOriginalAuditor,
-                isAdmin,
-                isAgent
-            });
-            return;
-        }
-    }
+    // Check if user is authorized for QA review (team "QC" AND role "Super Admin")
+    const isAuthorizedForQA = await isCurrentUserAuthorizedForQAReview();
+    
+    // For qa_review stage, show interface to everyone (read-only for unauthorized users, editable for authorized)
+    // No need to return early - we'll show read-only view for unauthorized users
     
     // Debug logging
     console.log('Display reversal approval interface:', {
@@ -7856,8 +7888,9 @@ async function displayReversalApprovalInterface(audit) {
                 </div>
             </div>
         `;
-    } else if (isAgent) {
-        // Agent Read-Only View - Show same information as team leads/auditors but read-only
+    } else if (isAgent || (workflowState === 'qa_review' || workflowState === 'cqc_review') && !isAuthorizedForQA) {
+        // Agent Read-Only View OR Unauthorized User Read-Only View at QA Review Stage
+        // Show same information as team leads/auditors but read-only
         // Calculate error counts (same as team lead view)
         let totalErrorsCount = 0;
         let criticalFailCount = 0;
@@ -8268,8 +8301,8 @@ async function displayReversalApprovalInterface(audit) {
         
         decisionSectionHtml = `
             
-            ${!isAgent && !isAuditorWaitingForTeamLead ? `
-            <!-- Decision Section (only for auditors/admins, not agents, and only when not waiting for team lead) -->
+            ${!isAgent && !isAuditorWaitingForTeamLead && isAuthorizedForQA ? `
+            <!-- Decision Section (only for authorized QA reviewers with team "QC" and role "Super Admin", not agents, and only when not waiting for team lead) -->
             <div style="border-top: 0.0625rem solid #e5e7eb; padding-top: 0.75rem;">
                 <div style="margin-bottom: 0.5625rem;">
                     <div>
@@ -8334,6 +8367,12 @@ async function displayReversalApprovalInterface(audit) {
         headingText = 'Reversal Request Info';
     } else if (isTeamLeadReview) {
         headingText = 'Team Lead Review - Reversal Request';
+    } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+        if (isAuthorizedForQA) {
+            headingText = 'QC Review - Reversal Request';
+        } else {
+            headingText = 'Reversal Request Info (Read-Only)';
+        }
     } else {
         headingText = 'Review & Process Reversal';
     }
@@ -8826,10 +8865,28 @@ async function processReversalDecision(decision) {
     const isTeamSupervisor = await isCurrentUserTeamSupervisor();
     const canReviewAsTeamLead = (isTeamLead || isTeamSupervisor) && (workflowState === 'team_lead_review' || workflowState === 'pending');
     
-    // Check permissions: Only original auditor, admins, or team leads (for team_lead_review stage) can process
-    if (!isOriginalAuditor && !isAdmin && !canReviewAsTeamLead) {
-        alert('Error: Only the original auditor of this audit, Admins, or Team Leads can process reversals.');
-        return;
+    // Check if user is authorized for QA review (team "QC" AND role "Super Admin")
+    const isAuthorizedForQA = await isCurrentUserAuthorizedForQAReview();
+    
+    // Check permissions based on workflow state
+    if (workflowState === 'team_lead_review' || workflowState === 'pending') {
+        // Team lead review stage - only team leads or admins can process
+        if (!canReviewAsTeamLead && !isAdmin) {
+            alert('Error: Only Team Leads, Team Supervisors, or Admins can process reversals at this stage.');
+            return;
+        }
+    } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+        // QA Review stage - only users with team "QC" AND role "Super Admin" can process
+        if (!isAuthorizedForQA) {
+            alert('Error: Only users with team "QC" and role "Super Admin" can review and process reversals at this stage.');
+            return;
+        }
+    } else {
+        // Other stages - original auditor, admins, or team leads can process
+        if (!isOriginalAuditor && !isAdmin && !canReviewAsTeamLead) {
+            alert('Error: Only the original auditor of this audit, Admins, or Team Leads can process reversals.');
+            return;
+        }
     }
     
     // Determine what action this is based on workflow state and user role
@@ -8862,18 +8919,14 @@ async function processReversalDecision(decision) {
             return;
         }
     } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
-        // QA/Auditor review stage - only original auditor or admin can process
-        if (isOriginalAuditor || isAdmin) {
-            actionType = 'qa_review';
-            // Can edit audit parameters and then approve/reject
-            if (decision === 'approved') {
-                nextWorkflowState = 'pending - reversal_approved'; // Agent needs to acknowledge
-            } else {
-                nextWorkflowState = 'pending - reversal_rejected'; // Agent needs to acknowledge
-            }
+        // QA Review stage - only authorized users (team "QC" AND role "Super Admin") can process
+        // isAuthorizedForQA already checked above
+        actionType = 'qa_review';
+        // Can edit audit parameters and then approve/reject
+        if (decision === 'approved') {
+            nextWorkflowState = 'pending - reversal_approved'; // Agent needs to acknowledge
         } else {
-            alert('Error: Only the original auditor of this audit or Admins can review reversals at this stage.');
-            return;
+            nextWorkflowState = 'pending - reversal_rejected'; // Agent needs to acknowledge
         }
     } else if (workflowState === 'cqc_sent_back' || workflowState === 'agent_re_review') {
         // Agent needs to resubmit - this should trigger a new reversal request
@@ -8897,6 +8950,40 @@ async function processReversalDecision(decision) {
     if (actionType === 'qa_review' && decision === 'approved' && !hasParameterChanges()) {
         alert('Error: You cannot approve a reversal without making any changes to the audit parameters. Please adjust the parameters first.');
         return;
+    }
+    
+    // CRITICAL: Validate that Response From QC is provided for ALL users (including admins)
+    // This validation cannot be bypassed and applies to everyone
+    if (actionType === 'qa_review' || actionType === 'final' || actionType === 'admin_bypass') {
+        // For QA/Auditor review, admin bypass, or final decision - require Response From QC
+        const responseFromAuditor = document.getElementById('reversalDelayReason')?.value?.trim() || '';
+        if (!responseFromAuditor) {
+            alert('Error: Response From QC is required. Please provide your response before processing this reversal. This field is mandatory for all users including admins.');
+            const responseField = document.getElementById('reversalDelayReason');
+            if (responseField) {
+                responseField.focus();
+                responseField.style.borderColor = '#dc2626';
+                setTimeout(() => {
+                    responseField.style.borderColor = '#d1d5db';
+                }, 3000);
+            }
+            return;
+        }
+    } else if (actionType === 'team_lead_review') {
+        // For Team Lead review - require Team Lead Response
+        const responseFromTeamLead = document.getElementById('teamLeadResponse')?.value?.trim() || '';
+        if (!responseFromTeamLead) {
+            alert('Error: Response From Team Lead is required. Please provide your response before processing this reversal.');
+            const responseField = document.getElementById('teamLeadResponse');
+            if (responseField) {
+                responseField.focus();
+                responseField.style.borderColor = '#dc2626';
+                setTimeout(() => {
+                    responseField.style.borderColor = '#d1d5db';
+                }, 3000);
+            }
+            return;
+        }
     }
     
     try {
@@ -8981,7 +9068,9 @@ async function processReversalDecision(decision) {
         
         // Get reversal decision details
         const approvedBy = document.getElementById('reversalApprovedBy')?.value || currentUserName;
-        const delayReason = document.getElementById('reversalDelayReason')?.value || null;
+        // Note: delayReason is validated above in processReversalDecision before reaching here
+        // This is just to get the value for saving - validation ensures it exists
+        const delayReason = document.getElementById('reversalDelayReason')?.value?.trim() || '';
         const withinAuditorScope = document.getElementById('withinAuditorScope')?.checked ? 'true' : 'false';
         
         // Calculate SLA
@@ -9099,8 +9188,13 @@ async function processReversalDecision(decision) {
             // admin_bypass is now stored in reversal_requests table, not audit table
             // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
             
-            // Optional: Store bypass reason if provided (could add UI for this later)
-            // updateData.admin_bypass_reason = bypassReason || '';
+            // Get response from QC - REQUIRED (validation already done above)
+            const delayReasonValue = delayReason?.trim() || '';
+            if (!delayReasonValue) {
+                throw new Error('Response From QC is required but was not provided. This should not happen as validation should have caught this.');
+            }
+            updateData.response_from_auditor = delayReasonValue;
+            updateData.sla_in_hours = parseFloat(slaHours.toFixed(2));
         } else if (actionType === 'qa_review') {
             // QA/Auditor review - can edit audit parameters and make final decision
             updateData.reversal_approved = decision === 'approved';
@@ -9114,11 +9208,12 @@ async function processReversalDecision(decision) {
             // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
             // admin_bypass is now stored in reversal_requests table
             
-            // Get response from QC if provided
-            const delayReason = document.getElementById('reversalDelayReason')?.value || '';
-            if (delayReason) {
-                updateData.response_from_auditor = delayReason;
+            // Get response from QC - REQUIRED (validation already done above, but ensure it's saved)
+            const delayReason = document.getElementById('reversalDelayReason')?.value?.trim() || '';
+            if (!delayReason) {
+                throw new Error('Response From QC is required but was not provided. This should not happen as validation should have caught this.');
             }
+            updateData.response_from_auditor = delayReason;
             updateData.sla_in_hours = parseFloat(slaHours.toFixed(2));
             
             // If approved, update score and passing status
@@ -9135,9 +9230,12 @@ async function processReversalDecision(decision) {
             updateData.reversal_approved_by = approvedBy;
             // reversal_resolved_by is deprecated - now stored in reversal_requests.final_decision_by_name
             // Keep for backward compatibility but don't write to it anymore
-            if (delayReason) {
-                updateData.response_from_auditor = delayReason;
+            // Get response from QC - REQUIRED (validation already done above, but ensure it's not null/empty)
+            const delayReasonValue = delayReason?.trim() || '';
+            if (!delayReasonValue) {
+                throw new Error('Response From QC is required but was not provided. This should not happen as validation should have caught this.');
             }
+            updateData.response_from_auditor = delayReasonValue;
             updateData.sla_in_hours = parseFloat(slaHours.toFixed(2));
         
         // If approved, update score and passing status
