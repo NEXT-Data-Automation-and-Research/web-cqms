@@ -3411,46 +3411,60 @@ function displayConversationMessages(conversation) {
     const parts = conversation.conversation_parts?.conversation_parts || [];
     
     // Update conversation heading with client name
+    // BUT: If there's a reversal request and user is an agent, show "Reversal Request Info" instead
     const transcriptHeading = document.querySelector('h3');
     if (transcriptHeading) {
-        // Extract client name from conversation
-        let clientName = 'Transcript';
-        // Try to get client name from source.author
-        if (conversation.source?.author?.name) {
-            clientName = conversation.source.author.name;
-        }
-        // Try contacts
-        else if (conversation.contacts?.contacts && conversation.contacts.contacts.length > 0) {
-            const contact = conversation.contacts.contacts[0];
-            if (contact.name) {
-                clientName = contact.name;
+        const isAgent = isCurrentUserAuditedEmployee();
+        const hasReversal = currentAudit && (currentAudit.reversalRequestedAt || currentAudit.reversal_requested_at);
+        
+        // For agents with reversal requests, show "Reversal Request Info" instead of client name
+        if (isAgent && hasReversal) {
+            const icon = transcriptHeading.querySelector('svg');
+            if (icon) {
+                transcriptHeading.innerHTML = icon.outerHTML + ' Reversal Request Info';
+            } else {
+                transcriptHeading.textContent = 'Reversal Request Info';
             }
-        }
-        // Try to find first user/contact in conversation parts
-        else if (parts.length > 0) {
-            for (const part of parts) {
-                if (part.author && (part.author.type === 'user' || part.author.type === 'contact')) {
-                    if (part.author.name) {
-                        clientName = part.author.name;
-                        break;
+        } else {
+            // Extract client name from conversation
+            let clientName = 'Transcript';
+            // Try to get client name from source.author
+            if (conversation.source?.author?.name) {
+                clientName = conversation.source.author.name;
+            }
+            // Try contacts
+            else if (conversation.contacts?.contacts && conversation.contacts.contacts.length > 0) {
+                const contact = conversation.contacts.contacts[0];
+                if (contact.name) {
+                    clientName = contact.name;
+                }
+            }
+            // Try to find first user/contact in conversation parts
+            else if (parts.length > 0) {
+                for (const part of parts) {
+                    if (part.author && (part.author.type === 'user' || part.author.type === 'contact')) {
+                        if (part.author.name) {
+                            clientName = part.author.name;
+                            break;
+                        }
                     }
                 }
             }
-        }
-        
-        // Update client name input field
-        const clientNameInput = document.getElementById('clientName');
-        if (clientNameInput && clientName && clientName !== 'Transcript') {
-            clientNameInput.value = clientName;
-        }
-        
-        // Update heading text (keep the icon)
-        const icon = transcriptHeading.querySelector('svg');
-        if (icon) {
-            // Keep the SVG icon and replace "Transcript" with client name
-            transcriptHeading.innerHTML = icon.outerHTML + ' ' + escapeHtml(clientName);
-        } else {
-            transcriptHeading.textContent = clientName;
+            
+            // Update client name input field
+            const clientNameInput = document.getElementById('clientName');
+            if (clientNameInput && clientName && clientName !== 'Transcript') {
+                clientNameInput.value = clientName;
+            }
+            
+            // Update heading text (keep the icon)
+            const icon = transcriptHeading.querySelector('svg');
+            if (icon) {
+                // Keep the SVG icon and replace "Transcript" with client name
+                transcriptHeading.innerHTML = icon.outerHTML + ' ' + escapeHtml(clientName);
+            } else {
+                transcriptHeading.textContent = clientName;
+            }
         }
     }
     
@@ -8185,7 +8199,7 @@ async function displayReversalApprovalInterface(audit) {
     // Determine if we should show the "Awaiting Team Lead Review" banner
     // Show for: agents, auditors (waiting), team leads/admins (when in team_lead_review state)
     const shouldShowBanner = (workflowState === 'team_lead_review' || workflowState === 'pending') && 
-                              (isAgent || isAuditorWaitingForTeamLead || isTeamLeadReview || (isAdmin && !isTeamLeadReview));
+                              (isAgent || isAuditorWaitingForTeamLead || isTeamLeadReview || (isAdmin && (workflowState === 'team_lead_review' || workflowState === 'pending')));
     
     // Determine heading text based on user role
     let headingText = '';
