@@ -933,24 +933,52 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
     
     if (showTeamLeadReview) {
         // Team lead review stage exists - use index logic with TL review
-        if (workflowState === 'team_lead_review' || workflowState === 'pending') {
-            currentStageIndex = 1;
-            currentStageKey = 'team_lead_review';
-        } else if (workflowState === 'team_lead_rejected') {
+        // Check if team lead has already approved - if so, move to QC Review stage
+        const isTeamLeadApproved = teamLeadApproved === true || teamLeadApproved === 'true' || teamLeadApproved === 1 || teamLeadApproved === '1' ||
+                                   (audit && (audit.team_lead_approved === true || audit.team_lead_approved === 'true' || audit.team_lead_approved === 1 || audit.team_lead_approved === '1'));
+        
+        console.log('buildReversalJourneyMap (audit-view) - Stage determination:', {
+            workflowState,
+            teamLeadApproved,
+            isTeamLeadApproved,
+            auditTeamLeadApproved: audit?.team_lead_approved,
+            ackStatus: audit?.acknowledgement_status
+        });
+        
+        if (workflowState === 'team_lead_rejected') {
             currentStageIndex = 1;
             currentStageKey = 'team_lead_rejected';
+            console.log('Journey Map: Team Lead Rejected - Stage 1');
         } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+            // Already at QA review stage
             currentStageIndex = 2;
             currentStageKey = 'qa_review';
+            console.log('Journey Map: QA Review - Stage 2');
+        } else if (isTeamLeadApproved) {
+            // Team lead has approved - move to QC Review stage (even if workflowState hasn't updated yet)
+            currentStageIndex = 2;
+            currentStageKey = 'qa_review';
+            console.log('Journey Map: Team Lead Approved - Moving to Stage 2 (QA Review)');
+        } else if (workflowState === 'team_lead_review' || workflowState === 'pending') {
+            // Still waiting for team lead review
+            currentStageIndex = 1;
+            currentStageKey = 'team_lead_review';
+            console.log('Journey Map: Waiting for Team Lead - Stage 1');
         } else if (workflowState === 'approved' || workflowState === 'rejected') {
             // Final Decision is completed - mark it as completed, not current
             currentStageIndex = 4; // One past the last stage (Final Decision is at index 3)
             currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
+            console.log('Journey Map: Final Decision - Stage 4');
         } else if (workflowState === 'acknowledged') {
             // Acknowledged is after final decision - Final Decision is completed
             currentStageIndex = 4; // One past the last stage (Final Decision is at index 3)
             currentStageKey = 'acknowledged';
+            console.log('Journey Map: Acknowledged - Stage 4');
+        } else {
+            console.log('Journey Map: Default - Stage 0 (Submitted)');
         }
+        
+        console.log('Journey Map Final State (audit-view):', { currentStageIndex, currentStageKey, totalStages: stages.length });
     } else {
         // Team lead review stage doesn't exist - skip that stage
         if (workflowState === 'qa_review' || workflowState === 'cqc_review' || workflowState === 'pending') {
@@ -1132,8 +1160,21 @@ function getReversalWorkflowState(audit) {
         if (ackStatusRaw && typeof ackStatusRaw === 'string') {
             const ackStatus = ackStatusRaw.toLowerCase();
             
+            // Check if team lead has approved - if so, move to QA review stage
+            const teamLeadApproved = audit?.team_lead_approved === true || audit?.team_lead_approved === 'true' || 
+                                     audit?.team_lead_approved === 1 || audit?.team_lead_approved === '1';
+            const teamLeadRejected = audit?.team_lead_approved === false || audit?.team_lead_approved === 'false' || 
+                                     audit?.team_lead_approved === 0 || audit?.team_lead_approved === '0';
+            
+            // If team lead rejected, return rejected state
+            if (teamLeadRejected || ackStatus.includes('team_lead_rejected')) return 'team_lead_rejected';
+            
+            // If team lead approved, move to QA review (even if ackStatus still says team_lead_review)
+            if (teamLeadApproved && (ackStatus.includes('team_lead_review') || ackStatus === 'pending' || ackStatus.includes('pending'))) {
+                return 'qa_review';
+            }
+            
             if (ackStatus.includes('team_lead_review')) return 'team_lead_review';
-            if (ackStatus.includes('team_lead_rejected')) return 'team_lead_rejected';
             if (ackStatus.includes('qa_review') || ackStatus.includes('auditor_review')) return 'qa_review';
             if (ackStatus.includes('cqc_review')) return 'cqc_review';
             if (ackStatus.includes('cqc_sent_back')) return 'cqc_sent_back';
@@ -3496,7 +3537,9 @@ async function displaySubmittedReversalForm(audit) {
     
     // Get workflow state for journey map
     const workflowState = getReversalWorkflowState(audit);
-    const teamLeadApproved = audit.team_lead_approved === true || audit.team_lead_approved === 'true';
+    // Check if Team Lead has approved (for journey map)
+    const teamLeadApproved = audit.team_lead_approved === true || audit.team_lead_approved === 'true' || 
+                             audit.team_lead_approved === 1 || audit.team_lead_approved === '1';
     
     // Check if auditor is waiting for team lead review (same logic as edit-audit.html)
     const isAuditor = isCurrentUserAuditor();
