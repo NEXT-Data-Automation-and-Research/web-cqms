@@ -1110,7 +1110,8 @@ function isAcknowledgedStatus(status) {
            statusLower === 'acknowledged - after reversal rejected';
 }
 
-// Get reversal workflow state from acknowledgement_status
+// Get reversal workflow state - checks reversal_requests table first, then falls back to acknowledgement_status
+// This function is synchronous for backward compatibility, but can be enhanced to be async if needed
 function getReversalWorkflowState(audit) {
     try {
         if (!audit) return null; // No audit, no workflow state
@@ -1121,29 +1122,28 @@ function getReversalWorkflowState(audit) {
             return null; // No reversal requested, no workflow state
         }
         
-        const ackStatusRaw = audit?.acknowledgement_status || audit?.acknowledgementStatus;
-        if (!ackStatusRaw || typeof ackStatusRaw !== 'string') {
-            // No acknowledgement status, fall back to old logic
-            const approved = audit?.reversal_approved;
-            if (approved === null || approved === undefined) return 'pending';
-            if (approved === true || approved === 'true' || approved === 1 || approved === '1') return 'approved';
-            if (approved === false || approved === 'false' || approved === 0 || approved === '0') return 'rejected';
-            return 'pending';
+        // Priority 1: Check if workflow state was already loaded from reversal_requests (cached on audit object)
+        if (audit.reversal_workflow_state) {
+            return audit.reversal_workflow_state;
         }
         
-        const ackStatus = ackStatusRaw.toLowerCase();
+        // Priority 2: Parse from acknowledgement_status
+        const ackStatusRaw = audit?.acknowledgement_status || audit?.acknowledgementStatus;
+        if (ackStatusRaw && typeof ackStatusRaw === 'string') {
+            const ackStatus = ackStatusRaw.toLowerCase();
+            
+            if (ackStatus.includes('team_lead_review')) return 'team_lead_review';
+            if (ackStatus.includes('team_lead_rejected')) return 'team_lead_rejected';
+            if (ackStatus.includes('qa_review') || ackStatus.includes('auditor_review')) return 'qa_review';
+            if (ackStatus.includes('cqc_review')) return 'cqc_review';
+            if (ackStatus.includes('cqc_sent_back')) return 'cqc_sent_back';
+            if (ackStatus.includes('agent_re_review')) return 'agent_re_review';
+            if (ackStatus.includes('reversal_approved')) return 'approved';
+            if (ackStatus.includes('reversal_rejected')) return 'rejected';
+            if (ackStatus === 'acknowledged' || ackStatus.includes('acknowledged')) return 'acknowledged';
+        }
         
-        if (ackStatus.includes('team_lead_review')) return 'team_lead_review';
-        if (ackStatus.includes('team_lead_rejected')) return 'team_lead_rejected';
-        if (ackStatus.includes('qa_review') || ackStatus.includes('auditor_review')) return 'qa_review';
-        if (ackStatus.includes('cqc_review')) return 'cqc_review';
-        if (ackStatus.includes('cqc_sent_back')) return 'cqc_sent_back';
-        if (ackStatus.includes('agent_re_review')) return 'agent_re_review';
-        if (ackStatus.includes('reversal_approved')) return 'approved';
-        if (ackStatus.includes('reversal_rejected')) return 'rejected';
-        if (ackStatus === 'acknowledged' || ackStatus.includes('acknowledged')) return 'acknowledged';
-        
-        // Fallback to old logic
+        // Priority 3: Fallback to old logic using reversal_approved
         const approved = audit?.reversal_approved;
         if (approved === null || approved === undefined) return 'pending';
         if (approved === true || approved === 'true' || approved === 1 || approved === '1') return 'approved';
@@ -1154,6 +1154,49 @@ function getReversalWorkflowState(audit) {
         console.error('Error in getReversalWorkflowState:', error, audit);
         return null; // Safe fallback - return null instead of 'pending' to indicate no state
     }
+}
+
+// Async function to load workflow state from reversal_requests table and attach to audit object
+async function loadReversalWorkflowState(audit) {
+    if (!audit || !audit.id || !currentTableName) {
+        return audit;
+    }
+    
+    try {
+        // Check if workflow state is already cached
+        if (audit.reversal_workflow_state) {
+            return audit;
+        }
+        
+        // Query reversal_requests table to get current workflow state
+        const { data: reversalRequest, error: rrError } = await window.supabaseClient
+            .from('reversal_requests')
+            .select('id, current_state_id')
+            .eq('audit_id', audit.id)
+            .eq('scorecard_table_name', currentTableName)
+            .order('requested_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        
+        if (!rrError && reversalRequest && reversalRequest.current_state_id) {
+            // Get the current workflow state
+            const { data: workflowState, error: wsError } = await window.supabaseClient
+                .from('reversal_workflow_states')
+                .select('state')
+                .eq('id', reversalRequest.current_state_id)
+                .maybeSingle();
+            
+            if (!wsError && workflowState) {
+                // Cache the workflow state on the audit object
+                audit.reversal_workflow_state = workflowState.state;
+                console.log('Loaded workflow state from reversal_requests:', workflowState.state);
+            }
+        }
+    } catch (error) {
+        console.warn('Error loading reversal workflow state:', error);
+    }
+    
+    return audit;
 }
 
 // Check if there's a pending reversal request
@@ -1201,6 +1244,50 @@ function hasPendingReversalRequest() {
         return true;
     }
     
+    return false;
+}
+
+// Check if reversal approval interface should be shown
+// Shows for: Original Auditor of the audit, Admins and above, Team Leads (for team_lead_review stage only)
+// Note: This function is synchronous but checks are done asynchronously in displayReversalApprovalInterface
+function shouldShowReversalApprovalInterface() {
+    if (!hasPendingReversalRequest()) {
+        console.log('shouldShowReversalApprovalInterface: No pending reversal request');
+        return false;
+    }
+    
+    const workflowState = getReversalWorkflowState(currentAudit);
+    const isOriginalAuditor = isCurrentUserOriginalAuditor(currentAudit);
+    const isAdmin = isCurrentUserAdmin();
+    const isTeamLead = isCurrentUserTeamLead();
+    const userInfo = getCurrentUserInfo();
+    
+    console.log('shouldShowReversalApprovalInterface:', {
+        workflowState,
+        isOriginalAuditor,
+        isAdmin,
+        isTeamLead,
+        userRole: userInfo?.role
+    });
+    
+    // Only allow:
+    // 1. Original auditor of the audit
+    // 2. Admins and above
+    if (isOriginalAuditor || isAdmin) {
+        console.log('shouldShowReversalApprovalInterface: User is original auditor or admin - showing interface');
+        return true;
+    }
+    
+    // For team_lead_review state, also allow team leads (they can approve/reject before it goes to QA)
+    // But they cannot process the final reversal decision
+    if ((workflowState === 'team_lead_review' || workflowState === 'pending') && isTeamLead) {
+        // Check if user is team supervisor (async check happens in displayReversalApprovalInterface)
+        // For now, allow team leads to see the interface
+        console.log('shouldShowReversalApprovalInterface: User is team lead - showing interface for team lead review');
+        return true;
+    }
+    
+    console.log('shouldShowReversalApprovalInterface: No conditions met - NOT showing interface');
     return false;
 }
 
@@ -3032,15 +3119,33 @@ async function renderAudit(audit, auditScorecard, errorFields) {
     
     // Display reversal approval interface if reversal is pending
     // The "Review & Process Reversal" section now contains all information
-    // Show it to everyone (read-only view for all users in audit-view.html)
+    // Show it to everyone (agents see read-only, team leads/auditors/admins see editable)
     // Note: workflowState is already declared above (line 2483)
     
     if (reversalStatus === 'Pending' || workflowState === 'team_lead_review' || workflowState === 'qa_review' || workflowState === 'approved' || workflowState === 'rejected' || workflowState === 'team_lead_rejected') {
         // Check if there's a reversal request first
         if (reversalRequestedAt) {
-            // Show the same read-only interface as edit-audit.html for agents
-            // This includes journey map, audit summary, table format for parameter comments with feedback, etc.
-            await displaySubmittedReversalForm(audit);
+            // Load workflow state from reversal_requests table before displaying
+            await loadReversalWorkflowState(audit);
+            const updatedWorkflowState = getReversalWorkflowState(audit);
+            
+            // Show interface for everyone:
+            // - Agents: read-only view of their submitted reversal
+            // - Team leads/auditors/admins: editable interface for processing
+            const isAgent = isCurrentUserAuditedEmployee();
+            if (isAgent || updatedWorkflowState === 'team_lead_review' || shouldShowReversalApprovalInterface()) {
+                setTimeout(async () => {
+                    // For agents, show read-only reversal form with journey map
+                    if (isAgent) {
+                        await displaySubmittedReversalForm(audit);
+                    } else {
+                        // For team leads/auditors/admins, show approval interface
+                        // Note: displayReversalApprovalInterface should be added from edit-audit.html if needed
+                        // For now, also show the submitted form which includes journey map
+                        await displaySubmittedReversalForm(audit);
+                    }
+                }, 200);
+            }
         }
     }
     
@@ -3385,6 +3490,9 @@ async function displaySubmittedReversalForm(audit) {
     if (!reversalRequestedAt) {
         return; // No reversal submitted, don't show form
     }
+    
+    // Load workflow state from reversal_requests table if not already cached
+    await loadReversalWorkflowState(audit);
     
     // Get workflow state for journey map
     const workflowState = getReversalWorkflowState(audit);
@@ -7756,6 +7864,98 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } catch (logErr) {
                     console.error('Error creating activity log entry:', logErr);
+                    // Don't throw - continue with reversal submission
+                }
+                
+                // ALSO: Create reversal_requests record (new structure)
+                try {
+                    // Check if reversal_requests record already exists (for resubmissions)
+                    const { data: existingReversalRequest } = await window.supabaseClient
+                        .from('reversal_requests')
+                        .select('id')
+                        .eq('audit_id', currentAudit.id)
+                        .eq('scorecard_table_name', currentTableName)
+                        .maybeSingle();
+                    
+                    if (!existingReversalRequest) {
+                        // Create new reversal_requests record
+                        const reversalRequestData = {
+                            audit_id: currentAudit.id,
+                            scorecard_table_name: currentTableName,
+                            requested_at: isResubmission ? currentAudit.reversal_requested_at : new Date().toISOString(),
+                            requested_by_email: logUserEmail,
+                            requested_by_name: logUserName,
+                            reversal_type: reversalType,
+                            justification: `${reversalReason}: ${detailedJustification}`,
+                            metrics_parameters: selectedParameters.join(', ') || null,
+                            attachments: null, // Can be added later if needed
+                            original_score: currentAudit.average_score || currentAudit.averageScore || 0,
+                            original_passing_status: currentAudit.passing_status || currentAudit.passingStatus || 'Not Passing',
+                            original_parameters: fullAuditState.parameters, // Store actual parameter values, not parameter_comments!
+                            original_feedback: fullAuditState.feedback,
+                            within_auditor_scope: document.getElementById('withinAuditorScope')?.checked || false,
+                            sla_hours: null // Will be calculated during processing
+                        };
+                        
+                        const { data: newReversalRequest, error: rrError } = await window.supabaseClient
+                            .from('reversal_requests')
+                            .insert(reversalRequestData)
+                            .select()
+                            .single();
+                        
+                        if (rrError) {
+                            console.error('Error creating reversal_requests record:', rrError);
+                            // Don't throw - continue with reversal submission
+                        } else {
+                            console.log('Successfully created reversal_requests record:', newReversalRequest.id);
+                            
+                            // Create initial workflow state - start with 'submitted' then transition to 'team_lead_review'
+                            // First create 'submitted' state
+                            const { data: submittedState, error: submittedError } = await window.supabaseClient
+                                .from('reversal_workflow_states')
+                                .insert({
+                                    reversal_request_id: newReversalRequest.id,
+                                    state: 'submitted',
+                                    entered_at: newReversalRequest.requested_at,
+                                    entered_by_email: logUserEmail,
+                                    entered_by_name: logUserName,
+                                    notes: 'Reversal requested by agent',
+                                    is_current: false
+                                })
+                                .select()
+                                .single();
+                            
+                            if (!submittedError && submittedState) {
+                                // Then create 'team_lead_review' state (current)
+                                const { data: workflowState, error: wsError } = await window.supabaseClient
+                                    .from('reversal_workflow_states')
+                                    .insert({
+                                        reversal_request_id: newReversalRequest.id,
+                                        state: 'team_lead_review',
+                                        entered_at: newReversalRequest.requested_at,
+                                        entered_by_email: logUserEmail,
+                                        entered_by_name: logUserName,
+                                        notes: 'Reversal requested by agent - awaiting Team Lead review',
+                                        previous_state_id: submittedState.id,
+                                        is_current: true
+                                    })
+                                    .select()
+                                    .single();
+                                
+                                if (!wsError && workflowState) {
+                                    // Update reversal_request to point to current state
+                                    await window.supabaseClient
+                                        .from('reversal_requests')
+                                        .update({ current_state_id: workflowState.id })
+                                        .eq('id', newReversalRequest.id);
+                                }
+                            }
+                        }
+                    } else {
+                        console.log('Reversal_requests record already exists, skipping creation');
+                    }
+                } catch (rrErr) {
+                    console.error('Error creating reversal_requests record:', rrErr);
                     // Don't throw - continue with reversal submission
                 }
                 

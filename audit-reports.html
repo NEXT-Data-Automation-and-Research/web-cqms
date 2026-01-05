@@ -3673,6 +3673,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="display: flex; gap: 0.375rem; flex-shrink: 0; align-items: center; pointer-events: auto;">
                     ${acknowledgmentStatusChip}
                     <button 
+                        onclick="event.stopPropagation(); copyAuditLink('${audit.id}', '${audit._scorecard_id || ''}', '${audit._scorecard_table || ''}', this)"
+                        style="background: none; border: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; transition: opacity 0.2s ease;"
+                        onmouseover="this.style.opacity='0.7'"
+                        onmouseout="this.style.opacity='1'"
+                        title="Copy audit link"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" height="1.125rem" viewBox="0 -960 960 960" width="1.125rem" fill="#1f9e4b">
+                            <path d="M440-280H280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80ZM320-440v-80h320v80H320Zm200 160v-80h160q50 0 85-35t35-85q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280H520Z"/>
+                        </svg>
+                        <span class="copy-link-text" style="display: none;"></span>
+                    </button>
+                    <button 
                         onclick="event.stopPropagation(); viewAuditDetails('${audit.id}')"
                         style="padding: 0.375rem 0.75rem; background-color: #1A733E; color: white; border: none; border-radius: 0.1875rem; font-size: 0.5625rem; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;"
                         onmouseover="this.style.backgroundColor='#15582E'"
@@ -4602,6 +4614,72 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Copy audit link to clipboard
+    window.copyAuditLink = async function(auditId, scorecardId, tableName, buttonElement) {
+        try {
+            const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+            const auditUrl = `${baseUrl}audit-view.html?id=${auditId}&scorecard=${scorecardId}&table=${tableName}`;
+            
+            // Copy to clipboard
+            await navigator.clipboard.writeText(auditUrl);
+            
+            // Update button to show "Copied!" feedback
+            const textSpan = buttonElement.querySelector('.copy-link-text');
+            const svgIcon = buttonElement.querySelector('svg');
+            if (textSpan && svgIcon) {
+                textSpan.textContent = 'Copied!';
+                textSpan.style.display = 'inline';
+                textSpan.style.marginLeft = '0.375rem';
+                textSpan.style.fontSize = '0.5625rem';
+                textSpan.style.color = '#10b981';
+                textSpan.style.fontWeight = '600';
+                svgIcon.setAttribute('fill', '#10b981');
+                
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    textSpan.textContent = '';
+                    textSpan.style.display = 'none';
+                    textSpan.style.marginLeft = '0';
+                    svgIcon.setAttribute('fill', '#1f9e4b');
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Failed to copy link:', error);
+            // Fallback for older browsers
+            const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+            const auditUrl = `${baseUrl}audit-view.html?id=${auditId}&scorecard=${scorecardId}&table=${tableName}`;
+            const textArea = document.createElement('textarea');
+            textArea.value = auditUrl;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                const textSpan = buttonElement.querySelector('.copy-link-text');
+                const svgIcon = buttonElement.querySelector('svg');
+                if (textSpan && svgIcon) {
+                    textSpan.textContent = 'Copied!';
+                    textSpan.style.display = 'inline';
+                    textSpan.style.marginLeft = '0.375rem';
+                    textSpan.style.fontSize = '0.5625rem';
+                    textSpan.style.color = '#10b981';
+                    textSpan.style.fontWeight = '600';
+                    svgIcon.setAttribute('fill', '#10b981');
+                    setTimeout(() => {
+                        textSpan.textContent = '';
+                        textSpan.style.display = 'none';
+                        textSpan.style.marginLeft = '0';
+                        svgIcon.setAttribute('fill', '#1f9e4b');
+                    }, 2000);
+                }
+            } catch (err) {
+                alert('Failed to copy link. Please copy manually: ' + auditUrl);
+            }
+            document.body.removeChild(textArea);
+        }
+    };
+    
     // View audit details
     window.viewAuditDetails = function(auditId) {
         const audit = allAudits.find(a => a.id === auditId);
@@ -5179,6 +5257,114 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Error in audit reports functionality:', error);
     }
 });
+
+// Utility function to find audits with approved reversals but no Response From QC
+// Can be called from browser console: findApprovedReversalsWithoutQCResponse()
+async function findApprovedReversalsWithoutQCResponse() {
+    console.log('🔍 Searching for audits with approved reversals but no Response From QC...');
+    
+    try {
+        // Get all active scorecards
+        const { data: scorecards, error: scError } = await window.supabaseClient
+            .from('scorecards')
+            .select('id, name, table_name')
+            .eq('is_active', true);
+        
+        if (scError) {
+            console.error('Error loading scorecards:', scError);
+            return [];
+        }
+        
+        if (!scorecards || scorecards.length === 0) {
+            console.log('No active scorecards found.');
+            return [];
+        }
+        
+        const results = [];
+        
+        // Check each scorecard table
+        for (const scorecard of scorecards) {
+            try {
+                // Query for audits with approved reversals
+                // We'll filter for missing response_from_auditor client-side since Supabase doesn't support OR with null checks easily
+                const { data: audits, error: auditError } = await window.supabaseClient
+                    .from(scorecard.table_name)
+                    .select('id, employee_name, employee_email, auditor_email, interaction_id, reversal_requested_at, reversal_approved, reversal_approved_by, reversal_responded_at, response_from_auditor, score_after_appeal, submitted_at')
+                    .eq('reversal_approved', true)
+                    .not('reversal_requested_at', 'is', null)
+                    .order('reversal_responded_at', { ascending: false });
+                
+                if (auditError) {
+                    // Some tables might not have these columns - skip silently
+                    if (auditError.message?.includes('column') || auditError.message?.includes('Could not find')) {
+                        continue;
+                    }
+                    console.warn(`Error querying ${scorecard.name} (${scorecard.table_name}):`, auditError);
+                    continue;
+                }
+                
+                if (audits && audits.length > 0) {
+                    // Filter to ensure response_from_auditor is truly null or empty
+                    const filteredAudits = audits.filter(audit => {
+                        const response = audit.response_from_auditor;
+                        return !response || response.trim() === '';
+                    });
+                    
+                    if (filteredAudits.length > 0) {
+                        results.push({
+                            scorecard: scorecard.name,
+                            table_name: scorecard.table_name,
+                            count: filteredAudits.length,
+                            audits: filteredAudits
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn(`Error processing scorecard ${scorecard.name}:`, err);
+                continue;
+            }
+        }
+        
+        // Display results
+        console.log('\n📊 RESULTS:');
+        console.log('='.repeat(80));
+        
+        if (results.length === 0) {
+            console.log('✅ No audits found with approved reversals missing Response From QC.');
+        } else {
+            let totalCount = 0;
+            results.forEach(result => {
+                totalCount += result.count;
+                console.log(`\n📋 ${result.scorecard} (${result.table_name}): ${result.count} audit(s)`);
+                result.audits.forEach(audit => {
+                    console.log(`   • Audit ID: ${audit.id}`);
+                    console.log(`     Employee: ${audit.employee_name || 'N/A'} (${audit.employee_email || 'N/A'})`);
+                    console.log(`     Auditor: ${audit.auditor_email || 'N/A'}`);
+                    console.log(`     Interaction ID: ${audit.interaction_id || 'N/A'}`);
+                    console.log(`     Reversal Requested: ${audit.reversal_requested_at ? new Date(audit.reversal_requested_at).toLocaleString() : 'N/A'}`);
+                    console.log(`     Reversal Responded: ${audit.reversal_responded_at ? new Date(audit.reversal_responded_at).toLocaleString() : 'N/A'}`);
+                    console.log(`     Approved By: ${audit.reversal_approved_by || 'N/A'}`);
+                    console.log(`     Score After Appeal: ${audit.score_after_appeal || 'N/A'}%`);
+                    console.log(`     Response From QC: ${audit.response_from_auditor || '(EMPTY)'}`);
+                    console.log('');
+                });
+            });
+            console.log(`\n📈 Total: ${totalCount} audit(s) across ${results.length} scorecard(s)`);
+        }
+        
+        console.log('='.repeat(80));
+        
+        // Also return results for programmatic use
+        return results;
+        
+    } catch (error) {
+        console.error('❌ Error finding approved reversals without QC response:', error);
+        return [];
+    }
+}
+
+// Make function available globally
+window.findApprovedReversalsWithoutQCResponse = findApprovedReversalsWithoutQCResponse;
 </script>
 
 </body>

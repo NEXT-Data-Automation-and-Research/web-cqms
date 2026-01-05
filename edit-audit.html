@@ -366,7 +366,64 @@
 <main class="main-content" role="main">
 <div class="full-width-container">
 
-    <!-- Edit Form - No reversal form needed in edit mode -->
+    <!-- Reversal Request Form (hidden by default) -->
+    <div id="reversalFormContainer" class="no-print" style="display: none; background: #fff3cd; border: 0.0703rem solid #ffc107; border-radius: 0.375rem; padding: 0.75rem; margin: 1.125rem; box-shadow: 0 0.0703rem 0.2812rem rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.5625rem;">
+            <svg style="width: 0.9375rem; height: 0.9375rem; color: #f59e0b;" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            <h3 style="margin: 0; font-size: 0.75rem; font-weight: 700; color: #b45309; font-family: 'Poppins', sans-serif;">Submit Reversal Request</h3>
+        </div>
+        
+        <p style="font-size: 0.6094rem; color: #92400e; margin-bottom: 0.75rem; line-height: 1.5; font-family: 'Poppins', sans-serif;">
+            If you believe this audit contains errors or inaccuracies, please add comments to the parameters using the comment icon next to each parameter's feedback, then select the affected parameters below.
+        </p>
+        
+        <form id="reversalForm" style="display: grid; gap: 0.5625rem;">
+            <!-- Two-column grid for compact layout -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5625rem;">
+                <!-- Reversal Type -->
+                <div>
+                    <label for="reversalType" style="display: block; font-size: 0.5625rem; font-weight: 600; color: #374151; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif;">
+                        Reversal Type <span style="color: #ef4444;">*</span>
+                    </label>
+                    <select id="reversalType" required style="width: 100%; padding: 0.375rem; border: 0.0352rem solid #d1d5db; border-radius: 0.2812rem; font-size: 0.6094rem; font-family: 'Poppins', sans-serif; background-color: white;">
+                        <option value="Revision Requested" selected>Revision Requested</option>
+                    </select>
+                </div>
+                
+                <!-- Reversal Reason Dropdown -->
+                <div>
+                    <label for="reversalReasonDropdown" style="display: block; font-size: 0.5625rem; font-weight: 600; color: #374151; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif;">
+                        Reversal Reason <span style="color: #ef4444;">*</span>
+                    </label>
+                    <select id="reversalReasonDropdown" required style="width: 100%; padding: 0.375rem; border: 0.0352rem solid #d1d5db; border-radius: 0.2812rem; font-size: 0.6094rem; font-family: 'Poppins', sans-serif; background-color: white;">
+                        <option value="">Select reason...</option>
+                        <option value="Error in Scoring">Error in Scoring</option>
+                        <option value="Incorrect Parameter Applied">Incorrect Parameter Applied</option>
+                        <option value="Misinterpretation">Misinterpretation of Interaction</option>
+                        <option value="Technical Issue">Technical Issue</option>
+                        <option value="Policy Clarification">Policy Clarification Needed</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 0.5625rem; justify-content: flex-end; padding-top: 0.375rem;">
+                <button type="button" onclick="toggleReversalForm()" style="padding: 0.4688rem 0.9375rem; background-color: #f3f4f6; color: #374151; border: 0.0352rem solid #d1d5db; border-radius: 0.2812rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+                    Cancel
+                </button>
+                <button type="submit" style="padding: 0.4688rem 0.9375rem; background-color: #ef4444; color: white; border: none; border-radius: 0.2812rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.375rem;">
+                    <svg style="width: 0.75rem; height: 0.75rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13"/>
+                        <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                    Submit Reversal Request
+                </button>
+            </div>
+        </form>
+    </div>
 
     <!-- Audit Content Container -->
     <div id="auditContainer" style="width: 100%; box-sizing: border-box;">
@@ -1383,15 +1440,42 @@ async function loadAuditFromURL() {
         
         if (data.reversal_requested_at) {
             try {
-                // First get reversal_request
-                const { data: reversalRequest, error: rrError } = await window.supabaseClient
+                // First get reversal_request - try with team_lead_response first
+                let reversalRequest = null;
+                let rrError = null;
+                
+                const { data: rrData, error: rrErr } = await window.supabaseClient
                     .from('reversal_requests')
-                    .select('id, final_decision_by_name, final_decision_by_email, final_decision_at, final_decision, admin_bypass, current_state_id')
+                    .select('id, final_decision_by_name, final_decision_by_email, final_decision_at, final_decision, admin_bypass, current_state_id, team_lead_response')
                     .eq('audit_id', auditId)
                     .eq('scorecard_table_name', tableName)
                     .order('requested_at', { ascending: false })
                     .limit(1)
                     .maybeSingle();
+                
+                // Check if error is about missing column
+                if (rrErr && (rrErr.message?.includes('Could not find') || rrErr.message?.includes('column'))) {
+                    // Retry without team_lead_response column
+                    console.warn('team_lead_response column not found, retrying without it:', rrErr.message);
+                    const { data: rrDataRetry, error: rrErrRetry } = await window.supabaseClient
+                        .from('reversal_requests')
+                        .select('id, final_decision_by_name, final_decision_by_email, final_decision_at, final_decision, admin_bypass, current_state_id')
+                        .eq('audit_id', auditId)
+                        .eq('scorecard_table_name', tableName)
+                        .order('requested_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    
+                    if (!rrErrRetry && rrDataRetry) {
+                        reversalRequest = rrDataRetry;
+                        // team_lead_response will be null/undefined
+                    } else {
+                        rrError = rrErrRetry;
+                    }
+                } else {
+                    reversalRequest = rrData;
+                    rrError = rrErr;
+                }
                 
                 if (!rrError && reversalRequest) {
                     reversalRequestData = reversalRequest;
@@ -1483,6 +1567,9 @@ async function loadAuditFromURL() {
             team_lead_reviewed_by: data.team_lead_reviewed_by,
             teamLeadReviewedAt: data.team_lead_reviewed_at,
             team_lead_reviewed_at: data.team_lead_reviewed_at,
+            // Team Lead response: Use from reversal_requests (new structure) - not stored in audit table
+            responseFromTeamLead: reversalRequestData?.team_lead_response || null,
+            response_from_team_lead: reversalRequestData?.team_lead_response || null,
             // Acknowledgement tracking fields
             acknowledgementStatus: data.acknowledgement_status,
             acknowledgementStatusUpdatedAt: data.acknowledgement_status_updated_at,
@@ -2921,12 +3008,22 @@ function handleReversalStatusUI(audit) {
             const auditorResponse = currentAudit?.reasonForReversalResponseDelay || currentAudit?.response_from_auditor || '';
             const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && auditorResponse && auditorResponse.trim();
             
+            // Get team lead response if available
+            const teamLeadResponse = currentAudit?.response_from_team_lead || currentAudit?.responseFromTeamLead || '';
+            const shouldShowTeamLeadResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && teamLeadResponse && teamLeadResponse.trim();
+            
             statusBanner.innerHTML = `
                 <svg style="width: 0.9375rem; height: 0.9375rem; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
                 <div style="flex: 1;">
                     <div>✓ Reversal request has been approved. Score updated to ${currentAudit?.score_after_appeal || 'N/A'}%. Please review the updated audit and acknowledge or submit a new reversal if needed.</div>
+                    ${shouldShowTeamLeadResponse ? `
+                        <div style="margin-top: 0.5625rem; padding: 0.5625rem; background: rgba(255, 255, 255, 0.5); border-radius: 0.2812rem; border-left: 0.1875rem solid #f59e0b;">
+                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From Team Lead:</div>
+                            <div style="font-size: 0.6094rem; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(teamLeadResponse)}</div>
+                        </div>
+                    ` : ''}
                     ${shouldShowResponse ? `
                         <div style="margin-top: 0.5625rem; padding: 0.5625rem; background: rgba(255, 255, 255, 0.5); border-radius: 0.2812rem; border-left: 0.1875rem solid #10b981;">
                             <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From QC:</div>
@@ -2957,12 +3054,22 @@ function handleReversalStatusUI(audit) {
             const auditorResponse = currentAudit?.reasonForReversalResponseDelay || currentAudit?.response_from_auditor || '';
             const shouldShowResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && auditorResponse && auditorResponse.trim();
             
+            // Get team lead response if available
+            const teamLeadResponse = currentAudit?.response_from_team_lead || currentAudit?.responseFromTeamLead || '';
+            const shouldShowTeamLeadResponse = (isCurrentUserQualityAnalyst() || isCurrentUserAuditedEmployee() || isCurrentUserAuditor()) && teamLeadResponse && teamLeadResponse.trim();
+            
             statusBanner.innerHTML = `
                 <svg style="width: 0.9375rem; height: 0.9375rem; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                 </svg>
                 <div style="flex: 1;">
                     <div>Reversal request has been rejected. Please review the audit and acknowledge or submit a new reversal if needed.</div>
+                    ${shouldShowTeamLeadResponse ? `
+                        <div style="margin-top: 0.5625rem; padding: 0.5625rem; background: rgba(255, 255, 255, 0.5); border-radius: 0.2812rem; border-left: 0.1875rem solid #f59e0b;">
+                            <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From Team Lead:</div>
+                            <div style="font-size: 0.6094rem; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(teamLeadResponse)}</div>
+                        </div>
+                    ` : ''}
                     ${shouldShowResponse ? `
                         <div style="margin-top: 0.5625rem; padding: 0.5625rem; background: rgba(255, 255, 255, 0.5); border-radius: 0.2812rem; border-left: 0.1875rem solid #ef4444;">
                             <div style="font-size: 0.5625rem; font-weight: 600; margin-bottom: 0.2812rem; text-transform: uppercase; letter-spacing: 0.05em;">Response From QC:</div>
@@ -7557,14 +7664,14 @@ async function displayReversalApprovalInterface(audit) {
             ` : ''}
             
             ${parametersWithComments.length > 0 ? `
-            <!-- Parameter Comments (Editable for Team Lead) - Table Format -->
+            <!-- Parameter Comments (Read-only for Team Lead) - Table Format -->
             <div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4852rem; flex-wrap: wrap; gap: 0.4852rem;">
                     <h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;">
                         <svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
                         Agent's Comments on Parameters
                     </h3>
-                    <span style="font-size: 0.4852rem; color: #6b7280; font-weight: 500; font-family: 'Poppins', sans-serif;">(You can modify these before approving)</span>
+                    <span style="font-size: 0.4852rem; color: #6b7280; font-weight: 500; font-family: 'Poppins', sans-serif;">(Read-only)</span>
                 </div>
                 
                 <div style="background: var(--background-white); border-radius: 0.4852rem; box-shadow: 0 0.0405rem 0.1213rem 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
@@ -7687,7 +7794,7 @@ async function displayReversalApprovalInterface(audit) {
                                         ${feedbackHtml}
                                     </div>
                                     <div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; min-width: 0; overflow: hidden;">
-                                        <textarea id="teamLeadParamComment_${field.key}" rows="2" placeholder="Enter your comment..." style="width: 100%; padding: 0.2425rem 0.3234rem; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; resize: vertical; box-sizing: border-box;">${escapeHtml(commentText)}</textarea>
+                                        <textarea id="teamLeadParamComment_${field.key}" rows="2" readonly disabled style="width: 100%; padding: 0.2425rem 0.3234rem; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; resize: none; box-sizing: border-box; background-color: #f3f4f6; color: #374151; cursor: not-allowed;">${escapeHtml(commentText)}</textarea>
                                     </div>
                                 </div>
                             `;
@@ -7699,6 +7806,16 @@ async function displayReversalApprovalInterface(audit) {
             
             <!-- Decision Section for Team Lead -->
             <div style="border-top: 0.0625rem solid #e5e7eb; padding-top: 0.75rem;">
+                <!-- Response from Team Lead -->
+                <div style="margin-bottom: 0.75rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.6562rem; font-weight: 600; color: #374151; margin-bottom: 0.2812rem; font-family: 'Poppins', sans-serif;">
+                            Response From Team Lead <span style="color: #ef4444;">*</span>
+                        </label>
+                        <textarea id="teamLeadResponse" required rows="3" placeholder="Please provide your response or comments..." style="width: 100%; padding: 0.375rem 0.5625rem; border: 0.0625rem solid #d1d5db; border-radius: 0.2812rem; font-size: 0.6562rem; font-family: 'Poppins', sans-serif; resize: vertical; box-sizing: border-box; background: white; cursor: text;"></textarea>
+                    </div>
+                </div>
+                
                 <!-- Action Buttons (shown first) -->
                 <div style="display: flex; gap: 0.5625rem; justify-content: flex-end; margin-bottom: 0.75rem;">
                     <button onclick="teamLeadRejectReversal()" id="teamLeadRejectBtn" style="padding: 0.375rem 0.75rem; background: #dc2626; color: white; border: none; border-radius: 0.2812rem; font-size: 0.6562rem; font-weight: 600; font-family: 'Poppins', sans-serif; cursor: pointer; transition: background 0.2s;">
@@ -7814,6 +7931,7 @@ async function displayReversalApprovalInterface(audit) {
         const teamLeadApproved = audit.team_lead_approved;
         const teamLeadReviewedBy = audit.team_lead_reviewed_by || audit.teamLeadReviewedBy || '';
         const teamLeadReviewedAt = audit.team_lead_reviewed_at || audit.teamLeadReviewedAt;
+        const teamLeadResponse = audit.response_from_team_lead || audit.responseFromTeamLead || '';
         
         // Get reversal request details
         const reversalRequestedAt = audit.reversalRequestedAt || audit.reversal_requested_at;
@@ -8094,6 +8212,14 @@ async function displayReversalApprovalInterface(audit) {
                 </div>
             ` : ''}
             
+            ${teamLeadResponse ? `
+            <!-- Response From Team Lead (Read-only) -->
+            <div style="background: #fef3c7; border: 0.0625rem solid #fcd34d; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #92400e; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From Team Lead</p>
+                <p style="font-size: 0.6562rem; color: #92400e; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #fde68a; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadResponse)}</p>
+            </div>
+            ` : ''}
+            
             ${auditorResponse && reversalRespondedAt ? `
             <!-- Auditor Response (Read-only) -->
             <div style="background: #f0f9ff; border: 0.0625rem solid #bae6fd; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
@@ -8117,6 +8243,7 @@ async function displayReversalApprovalInterface(audit) {
         const teamLeadApproved = audit.team_lead_approved;
         const teamLeadReviewedBy = audit.team_lead_reviewed_by || audit.teamLeadReviewedBy || '';
         const teamLeadReviewedAt = audit.team_lead_reviewed_at || audit.teamLeadReviewedAt;
+        const teamLeadResponse = audit.response_from_team_lead || audit.responseFromTeamLead || '';
         
         // Get reversal request details
         const reversalRequestedAt = audit.reversalRequestedAt || audit.reversal_requested_at;
@@ -8507,40 +8634,19 @@ function updateParameterChangeHighlighting() {
 
 // Team Lead: Approve reversal request
 async function teamLeadApproveReversal() {
-    // Get modified parameter comments if team leader edited them
-    const modifiedParameterComments = {};
-    const parameterComments = currentAudit?.parameterComments || currentAudit?.parameter_comments || {};
-    let hasModifiedComments = false;
-    
-    currentErrorFields.forEach(field => {
-        const commentTextarea = document.getElementById(`teamLeadParamComment_${field.key}`);
-        if (commentTextarea) {
-            const modifiedComment = commentTextarea.value.trim();
-            const originalComment = parameterComments[field.key];
-            let originalCommentText = '';
-            
-            if (originalComment) {
-                if (originalComment.comment && originalComment.comment.trim()) {
-                    originalCommentText = originalComment.comment.trim();
-                } else if (originalComment.comments && Array.isArray(originalComment.comments)) {
-                    originalCommentText = originalComment.comments.filter(c => c && c.trim()).map(c => c.trim()).join('\n');
-                }
-            }
-            
-            if (modifiedComment !== originalCommentText) {
-                hasModifiedComments = true;
-                // Store as array format (for consistency with existing structure)
-                modifiedParameterComments[field.key] = {
-                    comments: modifiedComment ? [modifiedComment] : [],
-                    commented_at: new Date().toISOString(),
-                    commented_by: getCurrentUserEmail() || ''
-                };
-            }
+    // Validate that response from Team Lead is provided
+    const responseFromTeamLead = document.getElementById('teamLeadResponse')?.value?.trim() || '';
+    if (!responseFromTeamLead) {
+        alert('Error: Response From Team Lead is required. Please provide your response before approving.');
+        const responseField = document.getElementById('teamLeadResponse');
+        if (responseField) {
+            responseField.focus();
+            responseField.style.borderColor = '#dc2626';
+            setTimeout(() => {
+                responseField.style.borderColor = '#d1d5db';
+            }, 3000);
         }
-    });
-    
-    if (hasModifiedComments) {
-        window.teamLeadModifiedParameterComments = modifiedParameterComments;
+        return;
     }
     
     await processReversalDecision('approved');
@@ -8576,6 +8682,21 @@ function teamLeadCancelRejection() {
 
 // Team Lead: Confirm rejection (validate and process)
 async function teamLeadConfirmRejectReversal() {
+    // Validate that response from Team Lead is provided
+    const responseFromTeamLead = document.getElementById('teamLeadResponse')?.value?.trim() || '';
+    if (!responseFromTeamLead) {
+        alert('Error: Response From Team Lead is required. Please provide your response before rejecting.');
+        const responseField = document.getElementById('teamLeadResponse');
+        if (responseField) {
+            responseField.focus();
+            responseField.style.borderColor = '#dc2626';
+            setTimeout(() => {
+                responseField.style.borderColor = '#d1d5db';
+            }, 3000);
+        }
+        return;
+    }
+    
     const rejectionReason = document.getElementById('teamLeadRejectionReason')?.value || '';
     const comments = document.getElementById('teamLeadComments')?.value || '';
     
@@ -8945,44 +9066,8 @@ async function processReversalDecision(decision) {
             updateData.team_lead_reviewed_by = currentUserName || currentUserEmailFromInfo || currentUserEmail || '';
             updateData.team_lead_approved = decision === 'approved';
             
-            // If team leader modified parameter comments, merge them and rebuild justification
-            if (decision === 'approved' && window.teamLeadModifiedParameterComments) {
-                const existingComments = updateData.parameter_comments || {};
-                // Merge: keep existing structure, update only modified fields
-                Object.keys(window.teamLeadModifiedParameterComments).forEach(key => {
-                    existingComments[key] = window.teamLeadModifiedParameterComments[key];
-                });
-                updateData.parameter_comments = existingComments;
-                
-                // Rebuild justification from reversal reason + modified parameter comments
-                const reversalJustification = currentAudit?.reversalJustificationFromAgent || currentAudit?.reversal_justification_from_agent || '';
-                let reversalReason = '';
-                if (reversalJustification && reversalJustification.includes(':')) {
-                    const parts = reversalJustification.split(':');
-                    if (parts.length >= 2) {
-                        reversalReason = parts[0].trim();
-                    }
-                }
-                
-                // Build new justification from reason + modified comments
-                const justificationParts = [];
-                currentErrorFields.forEach(field => {
-                    const modifiedComment = existingComments[field.key];
-                    if (modifiedComment) {
-                        const commentText = modifiedComment.comment || (Array.isArray(modifiedComment.comments) ? modifiedComment.comments.filter(c => c && c.trim()).join('\n') : '');
-                        if (commentText && commentText.trim()) {
-                            justificationParts.push(`${field.label}: ${commentText.trim()}`);
-                        }
-                    }
-                });
-                
-                const newJustification = reversalReason 
-                    ? `${reversalReason}: ${justificationParts.join('\n\n')}`
-                    : justificationParts.join('\n\n');
-                
-                updateData.reversal_justification_from_agent = newJustification;
-                delete window.teamLeadModifiedParameterComments;
-            }
+            // Note: Team lead response is saved to reversal_requests table, not audit table
+            // (removed updateData.response_from_team_lead to avoid schema errors)
             
             // If rejected, include rejection reason (final rejection, stops here)
             if (decision === 'rejected') {
@@ -9100,6 +9185,14 @@ async function processReversalDecision(decision) {
                     reversalUpdateData.admin_bypass = false;
                 }
                 
+                // Add team lead response if this is team lead review
+                if (actionType === 'team_lead_review') {
+                    const teamLeadResponse = document.getElementById('teamLeadResponse')?.value || '';
+                    if (teamLeadResponse) {
+                        reversalUpdateData.team_lead_response = teamLeadResponse;
+                    }
+                }
+                
                 // Add final decision info if this is QA review or final decision
                 if (actionType === 'qa_review' || actionType === 'final') {
                     reversalUpdateData.final_decision = decision;
@@ -9112,14 +9205,42 @@ async function processReversalDecision(decision) {
                     reversalUpdateData.within_auditor_scope = withinAuditorScope;
                 }
                 
-                // Update reversal_requests
-                const { error: rrUpdateError } = await window.supabaseClient
-                    .from('reversal_requests')
-                    .update(reversalUpdateData)
-                    .eq('id', reversalRequest.id);
-                
-                if (rrUpdateError) {
-                    console.warn('Error updating reversal_requests table:', rrUpdateError);
+                // Update reversal_requests with error handling for missing columns
+                try {
+                    const { error: rrUpdateError } = await window.supabaseClient
+                        .from('reversal_requests')
+                        .update(reversalUpdateData)
+                        .eq('id', reversalRequest.id);
+                    
+                    if (rrUpdateError) {
+                        // Check if error is about missing column (schema cache issue)
+                        const errorMessage = rrUpdateError.message || String(rrUpdateError);
+                        if (errorMessage.includes('Could not find') && errorMessage.includes('column')) {
+                            console.warn('Schema cache error - column may not exist in reversal_requests table:', errorMessage);
+                            // Check if it's specifically about team_lead_response
+                            if (errorMessage.includes('team_lead_response')) {
+                                // Remove team_lead_response and retry
+                                const { team_lead_response, ...updateDataWithoutTeamLeadResponse } = reversalUpdateData;
+                                const { error: retryError } = await window.supabaseClient
+                                    .from('reversal_requests')
+                                    .update(updateDataWithoutTeamLeadResponse)
+                                    .eq('id', reversalRequest.id);
+                                if (retryError) {
+                                    console.warn('Error updating reversal_requests table (retry without team_lead_response failed):', retryError);
+                                } else {
+                                    console.warn('Updated reversal_requests without team_lead_response (column does not exist)');
+                                }
+                            } else {
+                                // Some other column issue - log and continue
+                                console.warn('Error updating reversal_requests table (unknown column issue):', rrUpdateError);
+                            }
+                        } else {
+                            console.warn('Error updating reversal_requests table:', rrUpdateError);
+                        }
+                        // Don't throw - audit update succeeded, this is secondary
+                    }
+                } catch (updateErr) {
+                    console.warn('Exception updating reversal_requests table:', updateErr);
                     // Don't throw - audit update succeeded, this is secondary
                 }
                 

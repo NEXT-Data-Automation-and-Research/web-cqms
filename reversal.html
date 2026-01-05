@@ -606,6 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let combinedReversals = [];
                 
                 // STEP 1: Load from new reversal_requests table (primary source)
+                const startTime = performance.now();
                 try {
                     // First, get all reversal requests
                     let reversalQuery = window.supabaseClient
@@ -620,6 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     reversalQuery = reversalQuery.order('requested_at', { ascending: false });
                     
                     const { data: reversalRequests, error: reversalError } = await reversalQuery;
+                    console.log(`Loaded ${reversalRequests?.length || 0} reversal requests in ${(performance.now() - startTime).toFixed(2)}ms`);
                     
                     if (!reversalError && reversalRequests && reversalRequests.length > 0) {
                         // Get workflow states for all reversal requests in one query
@@ -638,29 +640,102 @@ document.addEventListener('DOMContentLoaded', function() {
                             });
                         }
                         
-                        // For each reversal request, get the audit data from the appropriate table
+                        // OPTIMIZATION: Group reversals by table name and batch fetch audits
+                        // This reduces N queries to M queries where M = number of unique tables
+                        const reversalsByTable = new Map();
+                        const reversalReqMap = new Map(); // Map audit_id -> reversal request
+                        
                         for (const reversalReq of reversalRequests) {
-                            try {
-                                // Get workflow state
-                                const workflowState = workflowStateMap.get(reversalReq.id) || 'submitted';
-                                
-                                // Filter pending if needed
-                                if (onlyPending) {
-                                    const pendingStates = ['submitted', 'team_lead_review', 'qa_review', 'cqc_review', 'cqc_sent_back', 'agent_re_review'];
-                                    if (!pendingStates.includes(workflowState)) {
-                                        continue;
-                                    }
+                            const workflowState = workflowStateMap.get(reversalReq.id) || 'submitted';
+                            
+                            // Filter pending if needed (before fetching audit data)
+                            if (onlyPending) {
+                                const pendingStates = ['submitted', 'team_lead_review', 'qa_review', 'cqc_review', 'cqc_sent_back', 'agent_re_review'];
+                                if (!pendingStates.includes(workflowState)) {
+                                    continue;
                                 }
+                            }
+                            
+                            if (!reversalsByTable.has(reversalReq.scorecard_table_name)) {
+                                reversalsByTable.set(reversalReq.scorecard_table_name, []);
+                            }
+                            reversalsByTable.get(reversalReq.scorecard_table_name).push(reversalReq.audit_id);
+                            reversalReqMap.set(reversalReq.audit_id, { reversalReq, workflowState });
+                        }
+                        
+                        // Batch fetch all audits for each table
+                        // Supabase has a limit on .in() queries (typically 100 items), so batch if needed
+                        const auditDataMap = new Map(); // Map audit_id -> audit data
+                        const BATCH_SIZE = 100; // Supabase limit for .in() queries
+                        const fetchStartTime = performance.now();
+                        
+                        // Execute all table queries in parallel for better performance
+                        const tableFetchPromises = [];
+                        for (const [tableName, auditIds] of reversalsByTable.entries()) {
+                            const fetchPromise = (async () => {
+                                try {
+                                    // If we have more than BATCH_SIZE IDs, split into batches
+                                    if (auditIds.length <= BATCH_SIZE) {
+                                        // Single query for small batches
+                                        const { data: audits, error: auditError } = await window.supabaseClient
+                                            .from(tableName)
+                                            .select('*')
+                                            .in('id', auditIds);
+                                        
+                                        if (auditError) {
+                                            console.warn(`Error loading audits from ${tableName}:`, auditError);
+                                            return;
+                                        }
+                                        
+                                        if (audits) {
+                                            audits.forEach(audit => {
+                                                auditDataMap.set(audit.id, audit);
+                                            });
+                                        }
+                                    } else {
+                                        // Batch large queries - execute batches in parallel
+                                        const batchPromises = [];
+                                        for (let i = 0; i < auditIds.length; i += BATCH_SIZE) {
+                                            const batch = auditIds.slice(i, i + BATCH_SIZE);
+                                            batchPromises.push(
+                                                window.supabaseClient
+                                                    .from(tableName)
+                                                    .select('*')
+                                                    .in('id', batch)
+                                                    .then(({ data: audits, error: auditError }) => {
+                                                        if (auditError) {
+                                                            console.warn(`Error loading audit batch from ${tableName}:`, auditError);
+                                                            return;
+                                                        }
+                                                        
+                                                        if (audits) {
+                                                            audits.forEach(audit => {
+                                                                auditDataMap.set(audit.id, audit);
+                                                            });
+                                                        }
+                                                    })
+                                            );
+                                        }
+                                        await Promise.all(batchPromises);
+                                    }
+                                } catch (err) {
+                                    console.warn(`Exception loading audits from ${tableName}:`, err);
+                                }
+                            })();
+                            tableFetchPromises.push(fetchPromise);
+                        }
+                        
+                        // Wait for all table fetches to complete in parallel
+                        await Promise.all(tableFetchPromises);
+                        console.log(`Fetched audits from ${reversalsByTable.size} tables in ${(performance.now() - fetchStartTime).toFixed(2)}ms`);
+                        
+                        // Now merge reversal request data with audit data
+                        for (const [auditId, { reversalReq, workflowState }] of reversalReqMap.entries()) {
+                            try {
+                                const auditData = auditDataMap.get(auditId);
                                 
-                                // Get audit data from the scorecard table
-                                const { data: auditData, error: auditError } = await window.supabaseClient
-                                    .from(reversalReq.scorecard_table_name)
-                                    .select('*')
-                                    .eq('id', reversalReq.audit_id)
-                                    .single();
-                                
-                                if (auditError || !auditData) {
-                                    console.warn(`Audit not found for reversal ${reversalReq.id}:`, auditError);
+                                if (!auditData) {
+                                    console.warn(`Audit not found for reversal ${reversalReq.id}: audit_id=${auditId}`);
                                     continue;
                                 }
                                 
@@ -705,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 
                                 combinedReversals.push(mergedReversal);
                             } catch (err) {
-                                console.warn(`Error loading audit for reversal ${reversalReq.id}:`, err);
+                                console.warn(`Error processing reversal ${reversalReq.id}:`, err);
                                 continue;
                             }
                         }
@@ -715,16 +790,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // STEP 2: Load from old structure (backward compatibility for unmigrated reversals)
+                // Only load from scorecards that have reversals not in the new structure
+                // OPTIMIZATION: Skip this step if we already have all reversals from reversal_requests
+                // Only check tables that might have old-style reversals
+                const existingAuditIds = new Set(combinedReversals.map(r => r.id));
+                const tablesWithReversals = new Set(combinedReversals.map(r => r._scorecard_table).filter(Boolean));
+                
+                // Only query scorecard tables that we haven't already loaded from reversal_requests
+                // This avoids querying tables unnecessarily
                 for (const scorecard of allScorecards) {
+                    // Skip if we already loaded from this table via reversal_requests
+                    if (tablesWithReversals.has(scorecard.table_name)) {
+                        continue; // Already loaded from this table
+                    }
+                    
                     try {
-                        // Only load reversals that aren't already in our combined list
-                        const existingAuditIds = new Set(combinedReversals.map(r => r.id));
-                        
                         let query = window.supabaseClient
                             .from(scorecard.table_name)
-                            .select('*')
+                            .select('id,employee_email,reversal_requested_at,reversal_approved') // Only select needed fields first
                             .not('reversal_requested_at', 'is', null)
-                            .not('id', 'in', `(${Array.from(existingAuditIds).map(id => `'${id}'`).join(',')})`);
+                            .limit(1); // Quick check: just see if there are any reversals
+                        
+                        const { data: quickCheck, error: checkError } = await query;
+                        
+                        // If no reversals in this table, skip it entirely
+                        if (checkError || !quickCheck || quickCheck.length === 0) {
+                            continue;
+                        }
+                        
+                        // Now fetch full data only if we found reversals
+                        query = window.supabaseClient
+                            .from(scorecard.table_name)
+                            .select('*')
+                            .not('reversal_requested_at', 'is', null);
                         
                         // For agents: Only show reversals they requested
                         if (isAgent && userInfo.email) {
@@ -748,7 +846,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         
                         if (data && data.length > 0) {
-                            let filteredData = data;
+                            // Filter out audits already loaded from reversal_requests (client-side for reliability)
+                            let filteredData = data.filter(audit => !existingAuditIds.has(audit.id));
                             
                             // For agents: Additional client-side filtering
                             if (isAgent && userInfo.email) {
@@ -938,7 +1037,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Map workflow states to display labels
             const statusMap = {
                 'pending': 'Pending',
-                'team_lead_review': 'Team Lead Review',
+                'submitted': 'Submitted',
+                'team_lead_review': 'Under Team Lead Review',
+                'team_lead_approved': 'Approved by Team Lead',
                 'team_lead_rejected': 'Rejected by Team Lead',
                 'qa_review': 'Under QC Review',
                 'cqc_review': 'CQC Review',
@@ -965,7 +1066,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const pending = reversalsForStats.filter(r => isPendingWorkflowState(r)).length;
             const approved = reversalsForStats.filter(r => {
                 const state = getReversalWorkflowState(r);
-                return state === 'approved' && !isPendingWorkflowState(r);
+                // Count both 'approved' and 'team_lead_approved' as approved
+                return (state === 'approved' || state === 'team_lead_approved') && !isPendingWorkflowState(r);
             }).length;
             const rejected = reversalsForStats.filter(r => {
                 const state = getReversalWorkflowState(r);
@@ -1008,6 +1110,42 @@ document.addEventListener('DOMContentLoaded', function() {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // Helper function to get reversal reason - checks multiple fields
+        function getReversalReason(reversal) {
+            // Priority 1: Check reversal_reason (old structure)
+            if (reversal.reversal_reason) {
+                return reversal.reversal_reason;
+            }
+            
+            // Priority 2: Extract from reversal_justification_from_agent (new structure)
+            // Format is "reason: detailed justification"
+            if (reversal.reversal_justification_from_agent) {
+                const colonIndex = reversal.reversal_justification_from_agent.indexOf(':');
+                if (colonIndex > 0) {
+                    return reversal.reversal_justification_from_agent.substring(0, colonIndex).trim();
+                }
+                // If no colon, return the whole thing (backward compatibility)
+                return reversal.reversal_justification_from_agent;
+            }
+            
+            // Priority 3: Check reversal_justification (old structure, might have reason)
+            if (reversal.reversal_justification) {
+                const colonIndex = reversal.reversal_justification.indexOf(':');
+                if (colonIndex > 0) {
+                    return reversal.reversal_justification.substring(0, colonIndex).trim();
+                }
+                return reversal.reversal_justification;
+            }
+            
+            // Priority 4: Use reversal_type as fallback
+            if (reversal.reversal_type) {
+                return reversal.reversal_type;
+            }
+            
+            // No reason found
+            return null;
         }
         
         function formatCardDate(dateString) {
@@ -1169,7 +1307,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let statusColor, statusBgColor, statusTextColor, statusIcon;
             
             // Map workflow states to colors and icons
-            if (status === 'Team Lead Review' || workflowState === 'team_lead_review') {
+            if (status === 'Under Team Lead Review' || workflowState === 'team_lead_review') {
                 statusColor = '#8b5cf6';
                 statusBgColor = '#ede9fe';
                 statusTextColor = '#6b21a8';
@@ -1211,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusIcon = `<svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>`;
-            } else if (status === 'Approved') {
+            } else if (status === 'Approved' || status === 'Approved by Team Lead') {
                 statusColor = '#10b981';
                 statusBgColor = '#dcfce7';
                 statusTextColor = '#166534';
@@ -1270,6 +1408,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                         ${escapeHtml(reversal._scorecard_name)}
                                     </span>
                                 ` : ''}
+                                ${getReversalReason(reversal) ? `
+                                    <span style="background-color: #fef3c7; color: #92400e; padding: 0.0938rem 0.375rem; border-radius: 0.1875rem; font-size: 0.4688rem; font-weight: 600; border: 0.0469rem solid #fbbf24;">
+                                        ${escapeHtml(getReversalReason(reversal))}
+                                    </span>
+                                ` : ''}
                                 ${reversal.reversal_type ? `
                                     <span style="background-color: #ede9fe; color: #6b21a8; padding: 0.0938rem 0.375rem; border-radius: 0.1875rem; font-size: 0.4688rem; font-weight: 600;">
                                         ${escapeHtml(reversal.reversal_type)}
@@ -1296,11 +1439,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ` : ''}
                             </div>
                             <p style="margin: 0; font-size: 0.5625rem; color: #6b7280; display: flex; align-items: center; gap: 0.2812rem; flex-wrap: wrap;">
-                                <span>${escapeHtml(reversal.interaction_id || 'No ID')}</span>
+                                <span>${escapeHtml(reversal.id || 'No ID')}</span>
                                 <span style="color: #d1d5db;">•</span>
                                 <span style="font-weight: 500;">${reversal.score_before_appeal || reversal.average_score || '0'}%</span>
-                                <span style="color: #d1d5db;">•</span>
-                                <span>${escapeHtml(reversal.reversal_reason || 'No reason provided')}</span>
                                 ${!isAgent ? `<span style="color: #d1d5db;">•</span>
                                 <span style="color: #374151; font-weight: 500;">${escapeHtml(reversal.auditor_name || 'Unknown auditor')}</span>` : ''}
                                 <span style="color: #d1d5db;">•</span>
@@ -1311,6 +1452,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <!-- Action buttons -->
                     <div style="display: flex; gap: 0.375rem; flex-shrink: 0; align-items: center; pointer-events: auto;">
+                        <button 
+                            onclick="event.stopPropagation(); copyAuditLink('${reversal.id}', '${reversal._scorecard_table}', this)"
+                            style="background: none; border: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; transition: opacity 0.2s ease;"
+                            onmouseover="this.style.opacity='0.7'"
+                            onmouseout="this.style.opacity='1'"
+                            title="Copy audit link"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" height="1.125rem" viewBox="0 -960 960 960" width="1.125rem" fill="#1f9e4b">
+                                <path d="M440-280H280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80ZM320-440v-80h320v80H320Zm200 160v-80h160q50 0 85-35t35-85q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280H520Z"/>
+                            </svg>
+                            <span class="copy-link-text" style="display: none;"></span>
+                        </button>
                         ${isPending ? `
                             <button 
                                 onclick="event.stopPropagation(); reviewAndProcessReversal('${reversal.id}', '${reversal._scorecard_table}')"
@@ -1456,7 +1609,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const matchesSearch = !searchTerm || 
                     (reversal.employee_name && reversal.employee_name.toLowerCase().includes(searchTerm)) ||
                     (reversal.interaction_id && reversal.interaction_id.toLowerCase().includes(searchTerm)) ||
-                    (reversal.reversal_reason && reversal.reversal_reason.toLowerCase().includes(searchTerm));
+                    (reversal.reversal_reason && reversal.reversal_reason.toLowerCase().includes(searchTerm)) ||
+                    (reversal.reversal_justification_from_agent && reversal.reversal_justification_from_agent.toLowerCase().includes(searchTerm)) ||
+                    (reversal.reversal_justification && reversal.reversal_justification.toLowerCase().includes(searchTerm));
                 
                 // Status filter
                 let matchesStatus = true;
@@ -1465,7 +1620,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     matchesStatus = isPendingWorkflowState(reversal);
                 } else if (statusValue === 'approved') {
                     const state = getReversalWorkflowState(reversal);
-                    matchesStatus = state === 'approved' && !isPendingWorkflowState(reversal);
+                    // Include both 'approved' and 'team_lead_approved' when filtering by approved
+                    matchesStatus = (state === 'approved' || state === 'team_lead_approved') && !isPendingWorkflowState(reversal);
                 } else if (statusValue === 'rejected') {
                     const state = getReversalWorkflowState(reversal);
                     matchesStatus = state === 'rejected' && !isPendingWorkflowState(reversal);
@@ -1554,7 +1710,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const headers = [
                 'ID', 'Employee Name', ...(isAgent ? [] : ['Auditor Name']), 'Score Before Appeal', 
                 'Reversal Type', 'Reversal Reason', 'Reversal Status', 'Requested At', 
-                'Responded At', 'Interaction ID', 'Scorecard'
+                'Responded At', 'Audit ID', 'Scorecard'
             ];
             
             const csvContent = [
@@ -1565,11 +1721,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     ...(isAgent ? [] : [r.auditor_name || '']),
                     r.score_before_appeal || r.average_score || '',
                     r.reversal_type || '',
-                    r.reversal_reason || '',
+                    getReversalReason(r) || '',
                     getReversalStatus(r),
                     r.reversal_requested_at || '',
                     r.reversal_responded_at || '',
-                    r.interaction_id || '',
+                    r.id || '',
                     r._scorecard_name || ''
                 ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
             ].join('\n');
@@ -1584,6 +1740,72 @@ document.addEventListener('DOMContentLoaded', function() {
             link.click();
             document.body.removeChild(link);
         });
+        
+        // Copy audit link to clipboard
+        window.copyAuditLink = async function(auditId, tableName, buttonElement) {
+            try {
+                const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+                const auditUrl = `${baseUrl}audit-view.html?id=${auditId}&table=${tableName}`;
+                
+                // Copy to clipboard
+                await navigator.clipboard.writeText(auditUrl);
+                
+                // Update button to show "Copied!" feedback
+                const textSpan = buttonElement.querySelector('.copy-link-text');
+                const svgIcon = buttonElement.querySelector('svg');
+                if (textSpan && svgIcon) {
+                    textSpan.textContent = 'Copied!';
+                    textSpan.style.display = 'inline';
+                    textSpan.style.marginLeft = '0.375rem';
+                    textSpan.style.fontSize = '0.5625rem';
+                    textSpan.style.color = '#10b981';
+                    textSpan.style.fontWeight = '600';
+                    svgIcon.setAttribute('fill', '#10b981');
+                    
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        textSpan.textContent = '';
+                        textSpan.style.display = 'none';
+                        textSpan.style.marginLeft = '0';
+                        svgIcon.setAttribute('fill', '#1f9e4b');
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Failed to copy link:', error);
+                // Fallback for older browsers
+                const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+                const auditUrl = `${baseUrl}audit-view.html?id=${auditId}&table=${tableName}`;
+                const textArea = document.createElement('textarea');
+                textArea.value = auditUrl;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const textSpan = buttonElement.querySelector('.copy-link-text');
+                    const svgIcon = buttonElement.querySelector('svg');
+                    if (textSpan && svgIcon) {
+                        textSpan.textContent = 'Copied!';
+                        textSpan.style.display = 'inline';
+                        textSpan.style.marginLeft = '0.375rem';
+                        textSpan.style.fontSize = '0.5625rem';
+                        textSpan.style.color = '#10b981';
+                        textSpan.style.fontWeight = '600';
+                        svgIcon.setAttribute('fill', '#10b981');
+                        setTimeout(() => {
+                            textSpan.textContent = '';
+                            textSpan.style.display = 'none';
+                            textSpan.style.marginLeft = '0';
+                            svgIcon.setAttribute('fill', '#1f9e4b');
+                        }, 2000);
+                    }
+                } catch (err) {
+                    alert('Failed to copy link. Please copy manually: ' + auditUrl);
+                }
+                document.body.removeChild(textArea);
+            }
+        };
         
         // View reversal details
         window.viewReversalDetails = function(auditId, tableName) {
@@ -2067,6 +2289,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupUserProfileHovers() {
         // Use event delegation for dynamically created elements
         document.addEventListener('mouseenter', async function(e) {
+            // Check if e.target is a valid DOM element
+            if (!e.target || typeof e.target.closest !== 'function') return;
+            
             const hoverElement = e.target.closest('.user-profile-hover');
             if (!hoverElement) return;
             
