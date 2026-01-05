@@ -943,10 +943,12 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
             currentStageIndex = 2;
             currentStageKey = 'qa_review';
         } else if (workflowState === 'approved' || workflowState === 'rejected') {
-            currentStageIndex = 3;
+            // Final Decision is completed - mark it as completed, not current
+            currentStageIndex = 4; // One past the last stage (Final Decision is at index 3)
             currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
         } else if (workflowState === 'acknowledged') {
-            currentStageIndex = 3; // Acknowledged is after final decision
+            // Acknowledged is after final decision - Final Decision is completed
+            currentStageIndex = 4; // One past the last stage (Final Decision is at index 3)
             currentStageKey = 'acknowledged';
         }
     } else {
@@ -955,10 +957,12 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
             currentStageIndex = 1; // qa_review is now at index 1 (after submitted)
             currentStageKey = 'qa_review';
         } else if (workflowState === 'approved' || workflowState === 'rejected') {
-            currentStageIndex = 2; // final_decision is now at index 2
+            // Final Decision is completed - mark it as completed, not current
+            currentStageIndex = 3; // One past the last stage (Final Decision is at index 2)
             currentStageKey = workflowState === 'approved' ? 'approved' : 'rejected';
         } else if (workflowState === 'acknowledged') {
-            currentStageIndex = 2; // Acknowledged is after final decision
+            // Acknowledged is after final decision - Final Decision is completed
+            currentStageIndex = 3; // One past the last stage (Final Decision is at index 2)
             currentStageKey = 'acknowledged';
         }
     }
