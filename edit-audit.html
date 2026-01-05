@@ -8182,9 +8182,34 @@ async function displayReversalApprovalInterface(audit) {
         isAuditorWaitingForTeamLead
     });
     
+    // Determine if we should show the "Awaiting Team Lead Review" banner
+    // Show for: agents, auditors (waiting), team leads/admins (when in team_lead_review state)
+    const shouldShowBanner = (workflowState === 'team_lead_review' || workflowState === 'pending') && 
+                              (isAgent || isAuditorWaitingForTeamLead || isTeamLeadReview || (isAdmin && !isTeamLeadReview));
+    
+    // Determine heading text based on user role
+    let headingText = '';
+    if (isAgent) {
+        headingText = 'Reversal Request Info';
+    } else if (isTeamLeadReview) {
+        headingText = 'Team Lead Review - Reversal Request';
+    } else {
+        headingText = 'Review & Process Reversal';
+    }
+    
     const approvalInterfaceHtml = `
         <div id="reversalApprovalInterface" class="no-print" style="background: white; border: 0.0625rem solid #e5e7eb; border-radius: 0.2812rem; padding: 0.75rem; box-shadow: 0 0.0625rem 0.1875rem rgba(0,0,0,0.1); margin-top: 0.5625rem;">
-            ${isAuditorWaitingForTeamLead ? `
+            <!-- Heading -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; padding-bottom: 0.5625rem; border-bottom: 0.0625rem solid #e5e7eb;">
+                <svg style="width: 1rem; height: 1rem; color: #1A733E;" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <h3 style="font-size: 0.75rem; font-weight: 600; color: #1A733E; margin: 0; font-family: 'Poppins', sans-serif;">
+                    ${escapeHtml(headingText)}
+                </h3>
+            </div>
+            
+            ${shouldShowBanner ? `
             <!-- Waiting for Team Lead Review Banner (at top of interface) -->
             <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 0.1875rem solid #f59e0b; border-radius: 0.2812rem; padding: 0.5625rem 0.75rem; margin-bottom: 0.75rem; box-shadow: 0 0.0625rem 0.1875rem rgba(245, 158, 11, 0.1);">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
