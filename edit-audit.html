@@ -579,14 +579,15 @@ function isCurrentUserAgent() {
 }
 
 // Check if current user is a Team Lead
+// Note: Team Lead is not a role, but a relationship - a team lead is someone whose email/name
+// is mentioned in the team_supervisor field of the users table for the audited employee
+// This function is kept synchronous for backward compatibility, but team lead check should
+// use isCurrentUserTeamSupervisor() which is async and checks the actual relationship
 function isCurrentUserTeamLead() {
-    const userInfo = getCurrentUserInfo();
-    if (!userInfo) {
-        return false;
-    }
-    
-    const role = (userInfo.role || '').toLowerCase();
-    return role.includes('team lead') || role.includes('teamlead') || role === 'team lead';
+    // This function is deprecated - team leads are identified via team_supervisor relationship
+    // Use isCurrentUserTeamSupervisor() instead for accurate team lead detection
+    // Returning false here since there's no "team lead" role
+    return false;
 }
 
 // ============================================================================
@@ -661,11 +662,11 @@ function getReversalWorkflowState(audit) {
     
     const ackStatus = (audit?.acknowledgement_status || audit?.acknowledgementStatus || '').toLowerCase();
     
-    // Check if team lead has approved - if so, move to QA review stage
-    const teamLeadApproved = audit?.team_lead_approved === true || audit?.team_lead_approved === 'true' || 
-                             audit?.team_lead_approved === 1 || audit?.team_lead_approved === '1';
-    const teamLeadRejected = audit?.team_lead_approved === false || audit?.team_lead_approved === 'false' || 
-                             audit?.team_lead_approved === 0 || audit?.team_lead_approved === '0';
+    // Check if team lead has approved - if so, move to QA review stage (use mapped fields)
+    const teamLeadApproved = audit?.teamLeadApproved === true || audit?.teamLeadApproved === 'true' || audit?.teamLeadApproved === 1 || audit?.teamLeadApproved === '1' ||
+                             (audit?.team_lead_approved === true || audit?.team_lead_approved === 'true' || audit?.team_lead_approved === 1 || audit?.team_lead_approved === '1');
+    const teamLeadRejected = audit?.teamLeadApproved === false || audit?.teamLeadApproved === 'false' || audit?.teamLeadApproved === 0 || audit?.teamLeadApproved === '0' ||
+                             (audit?.team_lead_approved === false || audit?.team_lead_approved === 'false' || audit?.team_lead_approved === 0 || audit?.team_lead_approved === '0');
     
     // Debug logging
     console.log('getReversalWorkflowState:', { ackStatus, auditId: audit.id, teamLeadApproved, teamLeadRejected });
@@ -707,7 +708,8 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
         workflowState === 'team_lead_review' || 
         workflowState === 'team_lead_approved' || 
         workflowState === 'team_lead_rejected' ||
-        (audit && (audit.team_lead_reviewed_by || audit.teamLeadReviewedBy)) ||
+        (audit && (audit.teamLeadReviewedBy || audit.team_lead_reviewed_by)) ||
+        (audit && (audit.teamLeadApproved !== null && audit.teamLeadApproved !== undefined)) ||
         (audit && (audit.team_lead_approved !== null && audit.team_lead_approved !== undefined)) ||
         (audit && audit.acknowledgement_status && audit.acknowledgement_status.toLowerCase().includes('team_lead'));
     
@@ -777,8 +779,9 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
     
     if (showTeamLeadReview) {
         // Team lead review stage exists - use index logic with TL review
-        // Check if team lead has already approved - if so, move to QC Review stage
+        // Check if team lead has already approved - if so, move to QC Review stage (use mapped fields)
         const isTeamLeadApproved = teamLeadApproved === true || teamLeadApproved === 'true' || teamLeadApproved === 1 || teamLeadApproved === '1' ||
+                                   (audit && (audit.teamLeadApproved === true || audit.teamLeadApproved === 'true' || audit.teamLeadApproved === 1 || audit.teamLeadApproved === '1')) ||
                                    (audit && (audit.team_lead_approved === true || audit.team_lead_approved === 'true' || audit.team_lead_approved === 1 || audit.team_lead_approved === '1'));
         
         console.log('buildReversalJourneyMap - Stage determination:', {
@@ -1095,7 +1098,8 @@ function shouldShowReversalApprovalInterface() {
     // 1. Team leads (for team_lead_review stage only)
     // 2. Anyone at qa_review/cqc_review stage (authorization check happens in displayReversalApprovalInterface to determine edit vs view)
     // 3. Agents (read-only view)
-    if ((workflowState === 'team_lead_review' || workflowState === 'pending') && isTeamLead) {
+    const teamLeadCondition = (workflowState === 'team_lead_review' || workflowState === 'pending') && isTeamLead;
+    if (teamLeadCondition) {
         // Team leads can review at team_lead_review stage
         console.log('shouldShowReversalApprovalInterface: User is team lead - showing interface for team lead review');
         return true;
@@ -1559,11 +1563,11 @@ async function loadAuditFromURL() {
                     reversalRequestData = reversalRequest;
                     adminBypassData = reversalRequest.admin_bypass || false;
                     
-                    // Get processed_by from current workflow state
+                    // Get processed_by and team lead review data from current workflow state
                     if (reversalRequest.current_state_id) {
                         const { data: currentState, error: wsError } = await window.supabaseClient
                             .from('reversal_workflow_states')
-                            .select('entered_by_name, entered_by_email')
+                            .select('entered_by_name, entered_by_email, entered_at, state, rejection_reason')
                             .eq('id', reversalRequest.current_state_id)
                             .eq('is_current', true)
                             .maybeSingle();
@@ -1572,6 +1576,39 @@ async function loadAuditFromURL() {
                             processedByData = {
                                 name: currentState.entered_by_name,
                                 email: currentState.entered_by_email
+                            };
+                            
+                            // Store team lead review data from workflow state
+                            if (currentState.state === 'team_lead_approved' || currentState.state === 'team_lead_rejected' || currentState.state === 'team_lead_review') {
+                                reversalRequestData.teamLeadReviewData = {
+                                    reviewed_by: currentState.entered_by_name,
+                                    reviewed_at: currentState.entered_at,
+                                    approved: currentState.state === 'team_lead_approved',
+                                    rejected: currentState.state === 'team_lead_rejected',
+                                    rejection_reason: currentState.rejection_reason || null
+                                };
+                            }
+                        }
+                    }
+                    
+                    // Also check for team_lead_approved or team_lead_rejected states (might not be current if workflow progressed)
+                    if (reversalRequest.current_state_id) {
+                        const { data: teamLeadState, error: tlError } = await window.supabaseClient
+                            .from('reversal_workflow_states')
+                            .select('entered_by_name, entered_by_email, entered_at, state, rejection_reason')
+                            .eq('reversal_request_id', reversalRequest.id)
+                            .in('state', ['team_lead_approved', 'team_lead_rejected'])
+                            .order('entered_at', { ascending: false })
+                            .limit(1)
+                            .maybeSingle();
+                        
+                        if (!tlError && teamLeadState && !reversalRequestData.teamLeadReviewData) {
+                            reversalRequestData.teamLeadReviewData = {
+                                reviewed_by: teamLeadState.entered_by_name,
+                                reviewed_at: teamLeadState.entered_at,
+                                approved: teamLeadState.state === 'team_lead_approved',
+                                rejected: teamLeadState.state === 'team_lead_rejected',
+                                rejection_reason: teamLeadState.rejection_reason || null
                             };
                         }
                     }
@@ -1641,13 +1678,19 @@ async function loadAuditFromURL() {
             // reversalProcessedBy: Use entered_by_name from reversal_workflow_states (new structure) with fallback to audit table (old structure)
             reversalProcessedBy: processedByData?.name || data.reversal_processed_by,
             reversalProcessedByEmail: processedByData?.email || data.reversal_processed_by_email,
-            // Team Lead review fields
-            teamLeadApproved: data.team_lead_approved,
-            team_lead_approved: data.team_lead_approved,
-            teamLeadReviewedBy: data.team_lead_reviewed_by,
-            team_lead_reviewed_by: data.team_lead_reviewed_by,
-            teamLeadReviewedAt: data.team_lead_reviewed_at,
-            team_lead_reviewed_at: data.team_lead_reviewed_at,
+            // Team Lead review fields: Use from reversal_workflow_states (new structure) with fallback to audit table (backward compatibility)
+            teamLeadApproved: reversalRequestData?.teamLeadReviewData?.approved !== undefined 
+                ? reversalRequestData.teamLeadReviewData.approved 
+                : (data.team_lead_approved !== undefined ? (data.team_lead_approved === true || data.team_lead_approved === 'true' || data.team_lead_approved === 1 || data.team_lead_approved === '1') : null),
+            team_lead_approved: reversalRequestData?.teamLeadReviewData?.approved !== undefined 
+                ? reversalRequestData.teamLeadReviewData.approved 
+                : data.team_lead_approved,
+            teamLeadReviewedBy: reversalRequestData?.teamLeadReviewData?.reviewed_by || data.team_lead_reviewed_by || '',
+            team_lead_reviewed_by: reversalRequestData?.teamLeadReviewData?.reviewed_by || data.team_lead_reviewed_by || '',
+            teamLeadReviewedAt: reversalRequestData?.teamLeadReviewData?.reviewed_at || data.team_lead_reviewed_at || null,
+            team_lead_reviewed_at: reversalRequestData?.teamLeadReviewData?.reviewed_at || data.team_lead_reviewed_at || null,
+            teamLeadRejectionReason: reversalRequestData?.teamLeadReviewData?.rejection_reason || data.team_lead_rejection_reason || '',
+            team_lead_rejection_reason: reversalRequestData?.teamLeadReviewData?.rejection_reason || data.team_lead_rejection_reason || '',
             // Team Lead response: Use from reversal_requests (new structure) - not stored in audit table
             responseFromTeamLead: reversalRequestData?.team_lead_response || null,
             response_from_team_lead: reversalRequestData?.team_lead_response || null,
@@ -2909,14 +2952,15 @@ function renderAudit(audit, auditScorecard, errorFields, mode = 'view') {
     const workflowState = getReversalWorkflowState(audit);
     const isAgent = isCurrentUserAuditedEmployee();
     
-    if (reversalStatus === 'Pending' || workflowState === 'team_lead_review' || workflowState === 'qa_review') {
+    if (reversalStatus === 'Pending' || workflowState === 'team_lead_review' || workflowState === 'qa_review' || workflowState === 'approved' || workflowState === 'rejected' || workflowState === 'team_lead_rejected') {
         // Check if there's a reversal request first
         const reversalRequestedAt = audit.reversalRequestedAt || audit.reversal_requested_at;
         if (reversalRequestedAt) {
             // Show interface for everyone:
             // - Agents: read-only view of their submitted reversal
             // - Team leads/auditors/admins: editable interface for processing
-            if (isAgent || workflowState === 'team_lead_review' || shouldShowReversalApprovalInterface()) {
+            const shouldShow = isAgent || workflowState === 'team_lead_review' || workflowState === 'team_lead_rejected' || shouldShowReversalApprovalInterface();
+            if (shouldShow) {
                 setTimeout(() => {
                     displayReversalApprovalInterface(audit);
                 }, 200);
@@ -7535,7 +7579,9 @@ function hasParameterChanges() {
 // Display reversal approval interface
 async function displayReversalApprovalInterface(audit) {
     const auditContentDiv = document.getElementById('auditContent');
-    if (!auditContentDiv) return;
+    if (!auditContentDiv) {
+        return;
+    }
     
     // Get current user info
     const userInfo = getCurrentUserInfo();
@@ -7551,7 +7597,7 @@ async function displayReversalApprovalInterface(audit) {
     // Check if user is team supervisor (async)
     const isTeamSupervisor = await isCurrentUserTeamSupervisor();
     const isAgent = isCurrentUserAuditedEmployee();
-    const isTeamLeadReview = (workflowState === 'team_lead_review' || workflowState === 'pending') && (isTeamLead || isTeamSupervisor) && !isAgent;
+    const isTeamLeadReview = (workflowState === 'team_lead_review' || workflowState === 'pending' || workflowState === 'team_lead_rejected') && (isTeamLead || isTeamSupervisor) && !isAgent;
     
     // Check if user is original auditor or admin
     const isOriginalAuditor = isCurrentUserOriginalAuditor(currentAudit);
@@ -7570,7 +7616,8 @@ async function displayReversalApprovalInterface(audit) {
     // 2. Original auditor (can review, but will see disabled view)
     // 3. Admins (can review)
     // 4. Other auditors (will see disabled view with explanation)
-    if ((workflowState === 'team_lead_review' || workflowState === 'pending')) {
+    // Also show for team_lead_rejected state so team leads can see what happened
+    if ((workflowState === 'team_lead_review' || workflowState === 'pending' || workflowState === 'team_lead_rejected')) {
         if (!isTeamSupervisor && !isTeamLead && !isOriginalAuditor && !isAdmin && !isAuditor) {
             console.log('User is not authorized to review this reversal. Hiding review interface.', {
                 workflowState,
@@ -7737,147 +7784,6 @@ async function displayReversalApprovalInterface(audit) {
             </div>
             ` : ''}
             
-            ${parametersWithComments.length > 0 ? `
-            <!-- Parameter Comments (Read-only for Team Lead) - Table Format -->
-            <div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4852rem; flex-wrap: wrap; gap: 0.4852rem;">
-                    <h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;">
-                        <svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-                        Agent's Comments on Parameters
-                    </h3>
-                    <span style="font-size: 0.4852rem; color: #6b7280; font-weight: 500; font-family: 'Poppins', sans-serif;">(Read-only)</span>
-                </div>
-                
-                <div style="background: var(--background-white); border-radius: 0.4852rem; box-shadow: 0 0.0405rem 0.1213rem 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
-                    <div style="background-color: var(--background-white); padding: 0.4852rem 0.6469rem; border-bottom: 0.0405rem solid var(--border-light);">
-                        <div style="display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 4fr 2fr; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
-                            <div style="min-width: 0;">Error Type</div>
-                            <div style="text-align: center; min-width: 0;">Points</div>
-                            <div style="text-align: center; min-width: 0;">Severity</div>
-                            <div style="text-align: center; min-width: 0;">Count</div>
-                            <div style="min-width: 0;">Feedback</div>
-                            <div style="min-width: 0;">Agent's Comment</div>
-                        </div>
-                    </div>
-                    <div style="padding: 0 0.6469rem 0.6469rem 0.6469rem; box-shadow: 0 -0.0606rem 0.1213rem rgba(0, 0, 0, 0.05);">
-                        ${parametersWithComments.map(field => {
-                            const fieldComment = parameterComments[field.key];
-                            let commentText = '';
-                            if (fieldComment.comment && fieldComment.comment.trim()) {
-                                commentText = fieldComment.comment.trim();
-                            } else if (fieldComment.comments && Array.isArray(fieldComment.comments)) {
-                                commentText = fieldComment.comments.filter(c => c && c.trim()).map(c => c.trim()).join('\n');
-                            }
-                            
-                            // Get field value and display
-                            const rawValue = audit[field.key];
-                            let displayValue = '';
-                            let count = 0;
-                            
-                            if (field.field_type === 'radio') {
-                                const isYes = rawValue === 1 || rawValue === true || rawValue === 'true' || rawValue === '1';
-                                displayValue = isYes ? '✓ YES' : '✗ NO';
-                                count = isYes ? 1 : 0;
-                            } else {
-                                count = rawValue ? parseInt(rawValue) : 0;
-                                displayValue = count.toString();
-                            }
-                            
-                            // Severity colors
-                            let severityColor = '#3b82f6';
-                            let severityBg = '#eff6ff';
-                            
-                            if (field.parameter_type === 'error') {
-                                // All error severities use red shades - darker red for higher severity
-                                // Text color is white for all to ensure good contrast against red backgrounds
-                                if (field.severity === 'Critical Fail') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#7f1d1d'; // Darkest red background
-                                } else if (field.severity === 'Critical') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#991b1b'; // Dark red background
-                                } else if (field.severity === 'Significant') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#b91c1c'; // Medium-dark red background
-                                } else if (field.severity === 'Major') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#dc2626'; // Medium red background
-                                } else if (field.severity === 'Minor') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#ef4444'; // Light-medium red background
-                                } else {
-                                    // Default for any other error severity
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#b91c1c'; // Medium-dark red background
-                                }
-                            } else if (field.parameter_type === 'achievement' || field.parameter_type === 'bonus') {
-                                severityColor = '#10b981';
-                                severityBg = '#d1fae5';
-                            }
-                            
-                            // Get feedback data (same as Error Details section)
-                            const feedbackData = audit[field.feedback];
-                            let feedbackArray = [];
-                            
-                            if (feedbackData) {
-                                if (typeof feedbackData === 'string') {
-                                    try {
-                                        const parsed = JSON.parse(feedbackData);
-                                        feedbackArray = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
-                                    } catch (e) {
-                                        feedbackArray = feedbackData.trim() ? [feedbackData] : [];
-                                    }
-                                } else if (Array.isArray(feedbackData)) {
-                                    feedbackArray = feedbackData;
-                                } else {
-                                    feedbackArray = feedbackData ? [feedbackData] : [];
-                                }
-                            }
-                            
-                            feedbackArray = feedbackArray.filter(f => f && f.trim());
-                            const hasFeedback = feedbackArray.length > 0;
-                            
-                            // Generate feedback HTML (same as Error Details section)
-                            let feedbackHtml = '-';
-                            if (hasFeedback) {
-                                feedbackHtml = feedbackArray.map((feedbackText, index) => {
-                                    const label = feedbackArray.length > 1 ? `<div style="font-size: 0.4043rem; color: #000000; font-weight: 600; margin-bottom: 0.1617rem; font-family: 'Poppins', sans-serif;">Feedback ${index + 1}:</div>` : '';
-                                    // Check if feedback contains HTML tags - if so, render as HTML, otherwise escape
-                                    const trimmedFeedback = feedbackText.trim();
-                                    const isHtml = trimmedFeedback.startsWith('<') && (trimmedFeedback.includes('</') || trimmedFeedback.endsWith('>'));
-                                    const displayText = isHtml ? feedbackText : escapeHtml(feedbackText);
-                                    return `${label}<div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; white-space: pre-wrap; line-height: 1.6; margin-bottom: ${index < feedbackArray.length - 1 ? '0.6469rem' : '0'};">${displayText}</div>`;
-                                }).join('');
-                            }
-                            
-                            return `
-                                <div style="display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 4fr 2fr; gap: 0.6469rem; align-items: start; padding: 0.3234rem 0; border-bottom: 0.0405rem solid #f3f4f6; width: 100%; min-width: 0;">
-                                    <div style="font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; min-width: 0; overflow: hidden;">
-                                        ${escapeHtml(field.label)}
-                                    </div>
-                                    <div style="display: flex; justify-content: center; font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; min-width: 0;">
-                                        ${field.points || 0}
-                                    </div>
-                                    <div style="display: flex; justify-content: center; min-width: 0;">
-                                        <span style="background: ${severityBg}; color: ${severityColor}; padding: 0.1617rem 0.4852rem; border-radius: 0.2425rem; font-size: 0.4852rem; font-weight: 600; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; white-space: nowrap;">${escapeHtml(field.severity || 'N/A')}</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: center; min-width: 0;">
-                                        <div style="font-size: 0.5659rem; color: #1f2937; text-align: center; font-weight: 700; font-family: 'Poppins', sans-serif;">${displayValue}</div>
-                                    </div>
-                                    <div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
-                                        ${feedbackHtml}
-                                    </div>
-                                    <div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; min-width: 0; overflow: hidden;">
-                                        <textarea id="teamLeadParamComment_${field.key}" rows="2" readonly disabled style="width: 100%; padding: 0.2425rem 0.3234rem; border: 0.0625rem solid #d1d5db; border-radius: 0.1617rem; font-size: 0.5659rem; font-family: 'Poppins', sans-serif; resize: none; box-sizing: border-box; background-color: #f3f4f6; color: #374151; cursor: not-allowed;">${escapeHtml(commentText)}</textarea>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            </div>
-            ` : ''}
-            
             <!-- Decision Section for Team Lead -->
             <div style="border-top: 0.0625rem solid #e5e7eb; padding-top: 0.75rem;">
                 <!-- Response from Team Lead -->
@@ -8007,6 +7913,7 @@ async function displayReversalApprovalInterface(audit) {
         const teamLeadReviewedBy = audit.team_lead_reviewed_by || audit.teamLeadReviewedBy || '';
         const teamLeadReviewedAt = audit.team_lead_reviewed_at || audit.teamLeadReviewedAt;
         const teamLeadResponse = audit.response_from_team_lead || audit.responseFromTeamLead || '';
+        const teamLeadRejectionReason = audit.team_lead_rejection_reason || '';
         
         // Get reversal request details
         const reversalRequestedAt = audit.reversalRequestedAt || audit.reversal_requested_at;
@@ -8102,167 +8009,6 @@ async function displayReversalApprovalInterface(audit) {
                 </div>
             </div>
             
-            ${parametersWithComments.length > 0 ? `
-            <!-- Agent's Parameter Comments (Read-only for Agent) - Table Format -->
-            <div style="background: #f9fafb; border-radius: 0.3234rem; padding: 0.6469rem; border: 0.0304rem solid #e5e7eb; margin-bottom: 0.6469rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4852rem; flex-wrap: wrap; gap: 0.4852rem;">
-                    <h3 style="font-size: 0.6064rem; font-weight: 600; color: #1A733E; margin: 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.3234rem;">
-                        <svg style="width: 0.7278rem; height: 0.7278rem;" viewBox="0 0 24 24" fill="#1A733E"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-                        Agent's Comments on Parameters
-                    </h3>
-                </div>
-                
-                <div style="background: var(--background-white); border-radius: 0.4852rem; box-shadow: 0 0.0405rem 0.1213rem 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
-                    <div style="background-color: var(--background-white); padding: 0.4852rem 0.6469rem; border-bottom: 0.0405rem solid var(--border-light);">
-                        <div style="display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 4fr 2fr; gap: 0.6469rem; align-items: center; font-weight: 700; font-size: 0.5659rem; color: var(--text-color); text-transform: uppercase; letter-spacing: 0.05em; width: 100%; min-width: 0;">
-                            <div style="min-width: 0;">Error Type</div>
-                            <div style="text-align: center; min-width: 0;">Points</div>
-                            <div style="text-align: center; min-width: 0;">Severity</div>
-                            <div style="text-align: center; min-width: 0;">Count</div>
-                            <div style="min-width: 0;">Feedback</div>
-                            <div style="min-width: 0;">Agent's Comment</div>
-                        </div>
-                    </div>
-                    <div style="padding: 0 0.6469rem 0.6469rem 0.6469rem; box-shadow: 0 -0.0606rem 0.1213rem rgba(0, 0, 0, 0.05);">
-                        ${parametersWithComments.map(field => {
-                            const fieldComment = parameterComments[field.key];
-                            let commentText = '';
-                            if (fieldComment.comment && fieldComment.comment.trim()) {
-                                commentText = fieldComment.comment.trim();
-                            } else if (fieldComment.comments && Array.isArray(fieldComment.comments)) {
-                                commentText = fieldComment.comments.filter(c => c && c.trim()).map(c => c.trim()).join('\n');
-                            }
-                            
-                            // Get field value and display
-                            const rawValue = audit[field.key];
-                            let displayValue = '';
-                            let count = 0;
-                            
-                            if (field.field_type === 'radio') {
-                                const isYes = rawValue === 1 || rawValue === true || rawValue === 'true' || rawValue === '1';
-                                displayValue = isYes ? '✓ YES' : '✗ NO';
-                                count = isYes ? 1 : 0;
-                            } else {
-                                count = rawValue ? parseInt(rawValue) : 0;
-                                displayValue = count.toString();
-                            }
-                            
-                            // Severity colors
-                            let severityColor = '#3b82f6';
-                            let severityBg = '#eff6ff';
-                            
-                            if (field.parameter_type === 'error') {
-                                // All error severities use red shades - darker red for higher severity
-                                // Text color is white for all to ensure good contrast against red backgrounds
-                                if (field.severity === 'Critical Fail') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#7f1d1d'; // Darkest red background
-                                } else if (field.severity === 'Critical') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#991b1b'; // Dark red background
-                                } else if (field.severity === 'Significant') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#b91c1c'; // Medium-dark red background
-                                } else if (field.severity === 'Major') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#dc2626'; // Medium red background
-                                } else if (field.severity === 'Minor') {
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#ef4444'; // Light-medium red background
-                                } else {
-                                    // Default for any other error severity
-                                    severityColor = '#ffffff'; // White text
-                                    severityBg = '#b91c1c'; // Medium-dark red background
-                                }
-                            } else if (field.parameter_type === 'achievement' || field.parameter_type === 'bonus') {
-                                severityColor = '#10b981';
-                                severityBg = '#d1fae5';
-                            }
-                            
-                            // Get feedback data (same as Error Details section)
-                            // Try multiple possible feedback field names for compatibility
-                            const feedbackKey = field.feedback || `feedback_${field.key}`;
-                            let feedbackData = audit[field.feedback] || audit[feedbackKey] || audit[`feedback_${field.key}`];
-                            
-                            // If still not found, try checking all possible feedback field variations
-                            if (!feedbackData && field.feedback) {
-                                // Try common variations
-                                const possibleKeys = [
-                                    field.feedback,
-                                    `feedback_${field.key}`,
-                                    `feedback${field.key}`,
-                                    `${field.key}_feedback`
-                                ].filter(k => k);
-                                
-                                for (const key of possibleKeys) {
-                                    if (audit[key]) {
-                                        feedbackData = audit[key];
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            let feedbackArray = [];
-                            
-                            if (feedbackData) {
-                                if (typeof feedbackData === 'string') {
-                                    try {
-                                        const parsed = JSON.parse(feedbackData);
-                                        feedbackArray = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
-                                    } catch (e) {
-                                        feedbackArray = feedbackData.trim() ? [feedbackData] : [];
-                                    }
-                                } else if (Array.isArray(feedbackData)) {
-                                    feedbackArray = feedbackData;
-                                } else {
-                                    feedbackArray = feedbackData ? [feedbackData] : [];
-                                }
-                            }
-                            
-                            feedbackArray = feedbackArray.filter(f => f && f.trim());
-                            const hasFeedback = feedbackArray.length > 0;
-                            
-                            // Generate feedback HTML (same as Error Details section)
-                            let feedbackHtml = '-';
-                            if (hasFeedback) {
-                                feedbackHtml = feedbackArray.map((feedbackText, index) => {
-                                    const label = feedbackArray.length > 1 ? `<div style="font-size: 0.4043rem; color: #000000; font-weight: 600; margin-bottom: 0.1617rem; font-family: 'Poppins', sans-serif;">Feedback ${index + 1}:</div>` : '';
-                                    // Check if feedback contains HTML tags - if so, render as HTML, otherwise escape
-                                    const trimmedFeedback = feedbackText.trim();
-                                    const isHtml = trimmedFeedback.startsWith('<') && (trimmedFeedback.includes('</') || trimmedFeedback.endsWith('>'));
-                                    const displayText = isHtml ? feedbackText : escapeHtml(feedbackText);
-                                    return `${label}<div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; white-space: pre-wrap; line-height: 1.6; margin-bottom: ${index < feedbackArray.length - 1 ? '0.6469rem' : '0'};">${displayText}</div>`;
-                                }).join('');
-                            }
-                            
-                            return `
-                                <div style="display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 4fr 2fr; gap: 0.6469rem; align-items: start; padding: 0.3234rem 0; border-bottom: 0.0405rem solid #f3f4f6; width: 100%; min-width: 0;">
-                                    <div style="font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; min-width: 0; overflow: hidden;">
-                                        ${escapeHtml(field.label)}
-                                    </div>
-                                    <div style="display: flex; justify-content: center; font-size: 0.5659rem; color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; min-width: 0;">
-                                        ${field.points || 0}
-                                    </div>
-                                    <div style="display: flex; justify-content: center; min-width: 0;">
-                                        <span style="background: ${severityBg}; color: ${severityColor}; padding: 0.1617rem 0.4852rem; border-radius: 0.2425rem; font-size: 0.4852rem; font-weight: 600; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.0151rem; white-space: nowrap;">${escapeHtml(field.severity || 'N/A')}</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: center; min-width: 0;">
-                                        <div style="font-size: 0.5659rem; color: #1f2937; text-align: center; font-weight: 700; font-family: 'Poppins', sans-serif;">${displayValue}</div>
-                                    </div>
-                                    <div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
-                                        ${feedbackHtml}
-                                    </div>
-                                    <div style="font-size: 0.5659rem; color: #000000; font-family: 'Poppins', sans-serif; min-width: 0; overflow: hidden;">
-                                        ${escapeHtml(commentText) || '<span style="color: #9ca3af; font-style: italic;">No comment</span>'}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            </div>
-            ` : ''}
-            
             ${reversalReason ? `
             <!-- Reversal Reason (Read-only) -->
             <div style="background: #eff6ff; border: 0.0625rem solid #bfdbfe; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
@@ -8280,18 +8026,36 @@ async function displayReversalApprovalInterface(audit) {
                     </svg>
                     Approved by Team Lead
                 </p>
-                <p style="font-size: 0.6094rem; color: #166534; margin: 0; font-family: 'Poppins', sans-serif;">
+                <p style="font-size: 0.6094rem; color: #166534; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif;">
                     <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
                     ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
-                    </p>
+                </p>
+                ${teamLeadResponse && teamLeadResponse.trim() ? `
+                <p style="font-size: 0.6562rem; color: #166534; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bbf7d0; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadResponse)}</p>
+                ` : ''}
                 </div>
             ` : ''}
             
-            ${teamLeadResponse ? `
-            <!-- Response From Team Lead (Read-only) -->
-            <div style="background: #fef3c7; border: 0.0625rem solid #fcd34d; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #92400e; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From Team Lead</p>
-                <p style="font-size: 0.6562rem; color: #92400e; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #fde68a; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadResponse)}</p>
+            ${!teamLeadApproved && teamLeadReviewedBy && (teamLeadRejectionReason || teamLeadResponse) ? `
+            <!-- Team Lead Rejection Status -->
+            <div style="background: #fef2f2; border: 0.0625rem solid #fecaca; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #dc2626; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
+                    <svg style="width: 0.75rem; height: 0.75rem; color: #dc2626;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    Rejected by Team Lead
+                </p>
+                <p style="font-size: 0.6094rem; color: #991b1b; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif;">
+                    <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
+                    ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
+                </p>
+                ${teamLeadRejectionReason && teamLeadRejectionReason.trim() ? `
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #991b1b; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Rejection Reason:</p>
+                <p style="font-size: 0.6562rem; color: #991b1b; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #fecaca; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadRejectionReason)}</p>
+                ` : ''}
+                ${teamLeadResponse && teamLeadResponse.trim() ? `
+                <p style="font-size: 0.6562rem; color: #991b1b; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #fecaca; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadResponse)}</p>
+                ` : ''}
             </div>
             ` : ''}
             
@@ -8314,11 +8078,22 @@ async function displayReversalApprovalInterface(audit) {
             return commentText && commentText.trim();
         });
         
+        // Get reversal reason (same parsing as team lead view)
+        const reversalJustification = audit.reversalJustificationFromAgent || audit.reversal_justification_from_agent || '';
+        let reversalReason = '';
+        if (reversalJustification && reversalJustification.includes(':')) {
+            const parts = reversalJustification.split(':');
+            if (parts.length >= 2) {
+                reversalReason = parts[0].trim();
+            }
+        }
+        
         // Check if Team Lead has approved
         const teamLeadApproved = audit.team_lead_approved;
         const teamLeadReviewedBy = audit.team_lead_reviewed_by || audit.teamLeadReviewedBy || '';
         const teamLeadReviewedAt = audit.team_lead_reviewed_at || audit.teamLeadReviewedAt;
         const teamLeadResponse = audit.response_from_team_lead || audit.responseFromTeamLead || '';
+        const teamLeadRejectionReason = audit.team_lead_rejection_reason || '';
         
         // Get reversal request details
         const reversalRequestedAt = audit.reversalRequestedAt || audit.reversal_requested_at;
@@ -8341,7 +8116,128 @@ async function displayReversalApprovalInterface(audit) {
             }
         }
         
+        // Get auditor response if available
+        const auditorResponse = audit.response_from_auditor || audit.reasonForReversalResponseDelay || '';
+        const reversalRespondedAt = audit.reversal_responded_at || audit.reversalRespondedAt;
+        
         decisionSectionHtml = `
+            ${reversalReason ? `
+            <!-- Reversal Reason (Read-only, for context) -->
+            <div style="background: #eff6ff; border: 0.0625rem solid #bfdbfe; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Reversal Reason</p>
+                <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe;">${escapeHtml(reversalReason)}</p>
+            </div>
+            ` : ''}
+            
+            <!-- Reversal Request Details -->
+            <div style="background: #f9fafb; border: 0.0625rem solid #e5e7eb; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5625rem; font-size: 0.6094rem; font-family: 'Poppins', sans-serif;">
+                    ${reversalRequestedAt ? (() => {
+                        const date = new Date(reversalRequestedAt);
+                        const now = new Date();
+                        const diffMs = now - date;
+                        const diffMins = Math.floor(diffMs / 60000);
+                        const diffHours = Math.floor(diffMs / 3600000);
+                        const diffDays = Math.floor(diffMs / 86400000);
+                        
+                        let requestedDateText = '';
+                        if (diffMins < 1) {
+                            requestedDateText = 'just now';
+                        } else if (diffMins < 60) {
+                            requestedDateText = `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+                        } else if (diffHours < 24) {
+                            requestedDateText = `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+                        } else if (diffDays === 1) {
+                            requestedDateText = '1 day ago';
+                        } else {
+                            requestedDateText = date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        return `
+                            <div>
+                                <span style="color: #6b7280; font-weight: 500;">Submitted:</span>
+                                <span style="color: #1f2937; font-weight: 600; margin-left: 0.2812rem;">${escapeHtml(requestedDateText)}</span>
+                            </div>
+                        `;
+                    })() : ''}
+                    ${(() => {
+                        return `
+                            <div>
+                                <span style="color: #6b7280; font-weight: 500;">Within Auditor Scope:</span>
+                                <span style="color: #1f2937; font-weight: 600; margin-left: 0.2812rem; display: inline-flex; align-items: center; gap: 0.1875rem;">
+                                    ${withinAuditorScope === 'true' || withinAuditorScope === true ? `
+                                        <svg style="width: 0.75rem; height: 0.75rem; color: #10b981;" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                        </svg>
+                                        <span>Yes</span>
+                                    ` : `
+                                        <svg style="width: 0.75rem; height: 0.75rem; color: #6b7280;" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                        </svg>
+                                        <span>No</span>
+                                    `}
+                                </span>
+                            </div>
+                        `;
+                    })()}
+                </div>
+            </div>
+            
+            ${teamLeadApproved && teamLeadReviewedBy ? `
+            <!-- Team Lead Approval Status -->
+            <div style="background: #f0fdf4; border: 0.0625rem solid #bbf7d0; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #16a34a; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
+                    <svg style="width: 0.75rem; height: 0.75rem; color: #16a34a;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Approved by Team Lead
+                </p>
+                <p style="font-size: 0.6094rem; color: #166534; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif;">
+                    <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
+                    ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
+                </p>
+                ${teamLeadResponse && teamLeadResponse.trim() ? `
+                <p style="font-size: 0.6562rem; color: #166534; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bbf7d0; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadResponse)}</p>
+                ` : ''}
+                </div>
+            ` : ''}
+            
+            ${!teamLeadApproved && teamLeadReviewedBy && (teamLeadRejectionReason || teamLeadResponse) ? `
+            <!-- Team Lead Rejection Status -->
+            <div style="background: #fef2f2; border: 0.0625rem solid #fecaca; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #dc2626; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
+                    <svg style="width: 0.75rem; height: 0.75rem; color: #dc2626;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    Rejected by Team Lead
+                </p>
+                <p style="font-size: 0.6094rem; color: #991b1b; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif;">
+                    <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
+                    ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
+                </p>
+                ${teamLeadRejectionReason && teamLeadRejectionReason.trim() ? `
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #991b1b; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Rejection Reason:</p>
+                <p style="font-size: 0.6562rem; color: #991b1b; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #fecaca; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadRejectionReason)}</p>
+                ` : ''}
+                ${teamLeadResponse && teamLeadResponse.trim() ? `
+                <p style="font-size: 0.6562rem; color: #991b1b; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #fecaca; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadResponse)}</p>
+                ` : ''}
+            </div>
+            ` : ''}
+            
+            ${auditorResponse && reversalRespondedAt ? `
+            <!-- Auditor Response (Read-only) -->
+            <div style="background: #f0f9ff; border: 0.0625rem solid #bae6fd; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From QC</p>
+                <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
+            </div>
+            ` : ''}
             
             ${!isAgent && !isAuditorWaitingForTeamLead && isAuthorizedForQA ? `
             <!-- Decision Section (only for authorized QA reviewers with team "QC" and role "Super Admin", not agents, and only when not waiting for team lead) -->
@@ -8906,13 +8802,13 @@ async function processReversalDecision(decision) {
     
     // Check if user is team supervisor (async check)
     const isTeamSupervisor = await isCurrentUserTeamSupervisor();
-    const canReviewAsTeamLead = (isTeamLead || isTeamSupervisor) && (workflowState === 'team_lead_review' || workflowState === 'pending');
+    const canReviewAsTeamLead = (isTeamLead || isTeamSupervisor) && (workflowState === 'team_lead_review' || workflowState === 'pending' || workflowState === 'team_lead_rejected');
     
     // Check if user is authorized for QA review (team "QC" AND role "Super Admin")
     const isAuthorizedForQA = await isCurrentUserAuthorizedForQAReview();
     
     // Check permissions based on workflow state
-    if (workflowState === 'team_lead_review' || workflowState === 'pending') {
+    if (workflowState === 'team_lead_review' || workflowState === 'pending' || workflowState === 'team_lead_rejected') {
         // Team lead review stage - only team leads or admins can process
         if (!canReviewAsTeamLead && !isAdmin) {
             alert('Error: Only Team Leads, Team Supervisors, or Admins can process reversals at this stage.');
@@ -8937,8 +8833,8 @@ async function processReversalDecision(decision) {
     let nextWorkflowState = '';
     let adminBypass = false; // Track if admin bypassed team leader approval
     
-    if (workflowState === 'team_lead_review' || workflowState === 'pending') {
-        // Team lead review stage
+    if (workflowState === 'team_lead_review' || workflowState === 'pending' || workflowState === 'team_lead_rejected') {
+        // Team lead review stage (including rejected state - team leads can still review/process)
         if (canReviewAsTeamLead) {
             // Normal team lead review
             actionType = 'team_lead_review';
@@ -9192,42 +9088,21 @@ async function processReversalDecision(decision) {
         
         // Handle different action types
         if (actionType === 'team_lead_review') {
-            // Team Lead review - don't update score yet, just set workflow state
-            updateData.team_lead_reviewed_at = respondedAt.toISOString();
-            // Store user's name instead of email
-            updateData.team_lead_reviewed_by = currentUserName || currentUserEmailFromInfo || currentUserEmail || '';
-            updateData.team_lead_approved = decision === 'approved';
+            // Team Lead review - data is stored in reversal_workflow_states, not audit table
+            // Keep these fields for backward compatibility with old audits, but don't write them for new reversals
+            // The actual data will be in reversal_workflow_states table
             
             // Note: Team lead response is saved to reversal_requests table, not audit table
             // (removed updateData.response_from_team_lead to avoid schema errors)
             
-            // If rejected, include rejection reason (final rejection, stops here)
-            if (decision === 'rejected') {
-                const rejectionData = window.teamLeadRejectionData || {};
-                const rejectionReason = rejectionData.reason || '';
-                const comments = rejectionData.comments || '';
-                
-                // Combine reason and comments
-                let fullRejectionReason = rejectionReason;
-                if (comments && comments.trim()) {
-                    fullRejectionReason = `${rejectionReason}\n\nAdditional Comments: ${comments}`;
-                }
-                
-                updateData.team_lead_rejection_reason = fullRejectionReason;
-                
-                // Clear the stored rejection data
-                delete window.teamLeadRejectionData;
-            }
-            
-            // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
-            // Don't write to audit table anymore - will be stored in workflow states
+            // Don't write team_lead_* fields to audit table anymore - stored in reversal_workflow_states
+            // Keeping this section empty but leaving comment for clarity
             
             // Don't set reversal_approved yet - that's for QA's final decision
         } else if (actionType === 'admin_bypass') {
             // Admin bypass - Admin processed without team leader approval
-            updateData.team_lead_reviewed_at = respondedAt.toISOString();
-            updateData.team_lead_reviewed_by = currentUserName || currentUserEmailFromInfo || currentUserEmail || '';
-            updateData.team_lead_approved = decision === 'approved';
+            // Data is stored in reversal_workflow_states, not audit table
+            // Don't write team_lead_* fields to audit table anymore
             // admin_bypass is now stored in reversal_requests table, not audit table
             // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
             
@@ -9406,6 +9281,24 @@ async function processReversalDecision(decision) {
                     newWorkflowState = decision === 'approved' ? 'approved' : 'rejected';
                 }
                 
+                // Prepare rejection reason for team lead rejection
+                let rejectionReason = null;
+                if (actionType === 'team_lead_review' && decision === 'rejected') {
+                    const rejectionData = window.teamLeadRejectionData || {};
+                    const reason = rejectionData.reason || '';
+                    const comments = rejectionData.comments || '';
+                    
+                    // Combine reason and comments
+                    if (reason || comments) {
+                        rejectionReason = comments && comments.trim() 
+                            ? `${reason}\n\nAdditional Comments: ${comments}` 
+                            : reason;
+                    }
+                    
+                    // Clear the stored rejection data
+                    delete window.teamLeadRejectionData;
+                }
+                
                 // Create new workflow state
                 const { data: newWorkflowStateData, error: wsError } = await window.supabaseClient
                     .from('reversal_workflow_states')
@@ -9417,6 +9310,7 @@ async function processReversalDecision(decision) {
                         entered_by_name: currentUserName,
                         previous_state_id: reversalRequest.current_state_id || null,
                         is_current: true,
+                        rejection_reason: rejectionReason,
                         notes: actionType === 'admin_bypass' 
                             ? `Admin bypassed team lead approval - ${decision === 'approved' ? 'approved' : 'rejected'}`
                             : actionType === 'team_lead_review'
