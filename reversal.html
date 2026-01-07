@@ -239,22 +239,22 @@
     <!-- Statistics Overview -->
     <div class="stats-grid" style="margin-top: 1.125rem;">
         <div class="stat-card">
-            <div class="stat-value" id="totalReversals">-</div>
-            <div class="stat-title">Total Reversals</div>
-                </div>
+            <div class="stat-value" id="totalPending">-</div>
+            <div class="stat-title">Total Pending</div>
+        </div>
         <div class="stat-card">
-            <div class="stat-value" id="pendingReversals">-</div>
-            <div class="stat-title">Pending</div>
-                </div>
+            <div class="stat-value" id="teamLeadReview">-</div>
+            <div class="stat-title">Team Lead Review</div>
+        </div>
         <div class="stat-card">
-            <div class="stat-value" id="approvedReversals">-</div>
-            <div class="stat-title">Approved</div>
-                </div>
+            <div class="stat-value" id="qcReview">-</div>
+            <div class="stat-title">QC Review</div>
+        </div>
         <div class="stat-card">
-            <div class="stat-value" id="rejectedReversals">-</div>
-            <div class="stat-title">Rejected</div>
-                </div>
-            </div>
+            <div class="stat-value" id="otherPending">-</div>
+            <div class="stat-title">Other Pending</div>
+        </div>
+    </div>
 
 
     <!-- Filters Section -->
@@ -1076,29 +1076,64 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update statistics - use filteredReversals to respect week/date filter
         function updateStatistics() {
-            // Use the helper function to get status
-            const getStatus = getReversalStatus;
-            
             // Use filteredReversals which already respects week/date filter
             const reversalsForStats = filteredReversals;
             
-            const total = reversalsForStats.length;
-            // Count all pending states (including sub-statuses like team_lead_review, cqc_review, etc.)
-            const pending = reversalsForStats.filter(r => isPendingWorkflowState(r)).length;
-            const approved = reversalsForStats.filter(r => {
-                const state = getReversalWorkflowState(r);
-                // Count both 'approved' and 'team_lead_approved' as approved
-                return (state === 'approved' || state === 'team_lead_approved') && !isPendingWorkflowState(r);
-            }).length;
-            const rejected = reversalsForStats.filter(r => {
-                const state = getReversalWorkflowState(r);
-                return state === 'rejected' && !isPendingWorkflowState(r);
-            }).length;
-            
-            document.getElementById('totalReversals').textContent = total;
-            document.getElementById('pendingReversals').textContent = pending;
-            document.getElementById('approvedReversals').textContent = approved;
-            document.getElementById('rejectedReversals').textContent = rejected;
+            if (viewingAll) {
+                // In "View All" mode, show overall statistics
+                const total = reversalsForStats.length;
+                const pending = reversalsForStats.filter(r => isPendingWorkflowState(r)).length;
+                const approved = reversalsForStats.filter(r => {
+                    const state = getReversalWorkflowState(r);
+                    return (state === 'approved' || state === 'team_lead_approved') && !isPendingWorkflowState(r);
+                }).length;
+                const rejected = reversalsForStats.filter(r => {
+                    const state = getReversalWorkflowState(r);
+                    return state === 'rejected' && !isPendingWorkflowState(r);
+                }).length;
+                
+                // Update stat cards for "View All" mode
+                document.getElementById('totalPending').textContent = total;
+                document.getElementById('totalPending').parentElement.querySelector('.stat-title').textContent = 'Total Reversals';
+                document.getElementById('teamLeadReview').textContent = pending;
+                document.getElementById('teamLeadReview').parentElement.querySelector('.stat-title').textContent = 'Pending';
+                document.getElementById('qcReview').textContent = approved;
+                document.getElementById('qcReview').parentElement.querySelector('.stat-title').textContent = 'Approved';
+                document.getElementById('otherPending').textContent = rejected;
+                document.getElementById('otherPending').parentElement.querySelector('.stat-title').textContent = 'Rejected';
+            } else {
+                // In default "Pending Only" view, break down pending reversals by workflow stage
+                const totalPending = reversalsForStats.filter(r => isPendingWorkflowState(r)).length;
+                
+                // Count by workflow stage
+                const teamLeadReview = reversalsForStats.filter(r => {
+                    const state = getReversalWorkflowState(r);
+                    return state === 'team_lead_review' || state === 'pending';
+                }).length;
+                
+                const qcReview = reversalsForStats.filter(r => {
+                    const state = getReversalWorkflowState(r);
+                    return state === 'qa_review';
+                }).length;
+                
+                const otherPending = reversalsForStats.filter(r => {
+                    const state = getReversalWorkflowState(r);
+                    return isPendingWorkflowState(r) && 
+                           state !== 'team_lead_review' && 
+                           state !== 'pending' && 
+                           state !== 'qa_review';
+                }).length;
+                
+                // Update stat cards for "Pending Only" mode
+                document.getElementById('totalPending').textContent = totalPending;
+                document.getElementById('totalPending').parentElement.querySelector('.stat-title').textContent = 'Total Pending';
+                document.getElementById('teamLeadReview').textContent = teamLeadReview;
+                document.getElementById('teamLeadReview').parentElement.querySelector('.stat-title').textContent = 'Team Lead Review';
+                document.getElementById('qcReview').textContent = qcReview;
+                document.getElementById('qcReview').parentElement.querySelector('.stat-title').textContent = 'QC Review';
+                document.getElementById('otherPending').textContent = otherPending;
+                document.getElementById('otherPending').parentElement.querySelector('.stat-title').textContent = 'Other Pending';
+            }
         }
         
         // Render reversals
