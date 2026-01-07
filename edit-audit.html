@@ -672,9 +672,19 @@ function getReversalWorkflowState(audit) {
                                  (audit?.team_lead_approved === false || audit?.team_lead_approved === 'false' || audit?.team_lead_approved === 0 || audit?.team_lead_approved === '0');
         const hasTeamLeadReviewed = teamLeadApproved || teamLeadRejected || (audit?.team_lead_reviewed_by && audit.team_lead_reviewed_by.trim());
         
+        // Check if reversal was rejected at QA stage
+        const reversalApproved = audit?.reversal_approved;
+        const isRejected = reversalApproved === false || reversalApproved === 'false' || reversalApproved === 0 || reversalApproved === '0';
+        const reversalRespondedAt = audit?.reversal_responded_at || audit?.reversalRespondedAt;
+        
         // If database says qa_review but team lead hasn't reviewed, correct it to team_lead_review
         if ((dbWorkflowState === 'qa_review' || dbWorkflowState === 'cqc_review') && !hasTeamLeadReviewed) {
             return 'team_lead_review'; // Team lead hasn't reviewed yet, so it should be in team lead review stage
+        }
+        
+        // If reversal was rejected at QA stage, return rejected (even if DB says qa_review)
+        if (isRejected && reversalRespondedAt && (dbWorkflowState === 'qa_review' || dbWorkflowState === 'cqc_review')) {
+            return 'rejected';
         }
         
         // If team lead rejected, return rejected state (even if DB says something else)
@@ -817,12 +827,26 @@ async function buildReversalJourneyMap(workflowState, teamLeadApproved, audit) {
             showTeamLeadReview
         });
         
-        if (workflowState === 'team_lead_rejected') {
+        // FIRST: Check if QC has already responded - if so, show Final Decision as completed
+        // This takes priority over workflow state to ensure accuracy
+        const reversalApproved = audit?.reversal_approved;
+        const reversalRespondedAt = audit?.reversal_responded_at || audit?.reversalRespondedAt;
+        const responseFromQC = audit?.response_from_auditor || audit?.reasonForReversalResponseDelay;
+        const isRejected = reversalApproved === false || reversalApproved === 'false' || reversalApproved === 0 || reversalApproved === '0';
+        const isApproved = reversalApproved === true || reversalApproved === 'true' || reversalApproved === 1 || reversalApproved === '1';
+        const hasQCResponded = responseFromQC && responseFromQC.trim() && reversalRespondedAt;
+        
+        if (hasQCResponded) {
+            // QC has already responded - show Final Decision as completed
+            currentStageIndex = 4; // One past the last stage (Final Decision is at index 3)
+            currentStageKey = isRejected ? 'rejected' : 'approved';
+            console.log('Journey Map: QC Responded - Moving to Final Decision (', currentStageKey, ')');
+        } else if (workflowState === 'team_lead_rejected') {
             currentStageIndex = 1;
             currentStageKey = 'team_lead_rejected';
             console.log('Journey Map: Team Lead Rejected - Stage 1');
         } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
-            // Already at QA review stage
+            // Still at QA review stage
             currentStageIndex = 2;
             currentStageKey = 'qa_review';
             console.log('Journey Map: QA Review - Stage 2');
@@ -1098,6 +1122,8 @@ function shouldShowEditButton() {
 // Check if reversal approval interface should be shown
 // Shows for: Original Auditor of the audit, Admins and above, Team Leads (for team_lead_review stage only)
 // Note: This function is synchronous but checks are done asynchronously in displayReversalApprovalInterface
+// Visibility should be universal - everyone should see what agents see
+// Editing permissions are handled separately in displayReversalApprovalInterface
 function shouldShowReversalApprovalInterface() {
     if (!hasPendingReversalRequest()) {
         console.log('shouldShowReversalApprovalInterface: No pending reversal request');
@@ -1105,39 +1131,19 @@ function shouldShowReversalApprovalInterface() {
     }
     
     const workflowState = getReversalWorkflowState(currentAudit);
-    const isOriginalAuditor = isCurrentUserOriginalAuditor(currentAudit);
-    const isAdmin = isCurrentUserAdmin();
-    const isTeamLead = isCurrentUserTeamLead();
     const userInfo = getCurrentUserInfo();
     
     console.log('shouldShowReversalApprovalInterface:', {
         workflowState,
-        isOriginalAuditor,
-        isAdmin,
-        isTeamLead,
         userRole: userInfo?.role
     });
     
-    // Show interface for:
-    // 1. Team leads (for team_lead_review stage only)
-    // 2. Anyone at qa_review/cqc_review stage (authorization check happens in displayReversalApprovalInterface to determine edit vs view)
-    // 3. Agents (read-only view)
-    const teamLeadCondition = (workflowState === 'team_lead_review' || workflowState === 'pending') && isTeamLead;
-    if (teamLeadCondition) {
-        // Team leads can review at team_lead_review stage
-        console.log('shouldShowReversalApprovalInterface: User is team lead - showing interface for team lead review');
-        return true;
-    }
-    
-    if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
-        // Show interface to everyone at QA review stage (read-only for unauthorized, editable for authorized)
-        // Authorization check happens in displayReversalApprovalInterface
-        console.log('shouldShowReversalApprovalInterface: QA review stage - showing interface (authorization check in displayReversalApprovalInterface)');
-        return true;
-    }
-    
-    console.log('shouldShowReversalApprovalInterface: No conditions met - NOT showing interface');
-    return false;
+    // Show interface to EVERYONE if there's a reversal request
+    // This ensures all auditors can see the reversal section, just like agents can
+    // Authorization for editing is handled separately in displayReversalApprovalInterface
+    // Visibility should be universal - everyone should see what agents see
+    console.log('shouldShowReversalApprovalInterface: Reversal request exists - showing interface to everyone for visibility');
+    return true;
 }
 
 // Check if reversal button should be shown (hide after 48 hours from audit submission)
@@ -7681,36 +7687,21 @@ async function displayReversalApprovalInterface(audit) {
                                         !isTeamLead && 
                                         !isTeamSupervisor;
     
-    // If this is a team lead review stage, show interface for:
-    // 1. Team supervisors/leads (can review)
-    // 2. Original auditor (can review, but will see disabled view)
-    // 3. Admins (can review)
-    // 4. Other auditors (will see disabled view with explanation)
-    // Also show for team_lead_rejected state so team leads can see what happened
-    if ((workflowState === 'team_lead_review' || workflowState === 'pending' || workflowState === 'team_lead_rejected')) {
-        if (!isTeamSupervisor && !isTeamLead && !isOriginalAuditor && !isAdmin && !isAuditor) {
-            console.log('User is not authorized to review this reversal. Hiding review interface.', {
-                workflowState,
-                isTeamSupervisor,
-                isTeamLead,
-                isOriginalAuditor,
-                isAdmin,
-                isAuditor
-            });
-            return;
-        } else {
-            console.log('Team lead review interface will be shown.', {
-                workflowState,
-                isTeamSupervisor,
-                isTeamLead,
-                isOriginalAuditor,
-                isAdmin,
-                isAuditor,
-                isAuditorWaitingForTeamLead,
-                isTeamLeadReview
-            });
-        }
-    }
+    // Show interface to everyone - no restrictions for visibility
+    // Everyone should be able to see the reversal section, just like agents can
+    // The interface will display read-only information for unauthorized users
+    // and editable interface for authorized users (team leads, admins, original auditors, etc.)
+    // Visibility should be universal - editing permissions are handled separately
+    console.log('Reversal interface will be shown to everyone for visibility.', {
+        workflowState,
+        isTeamSupervisor,
+        isTeamLead,
+        isOriginalAuditor,
+        isAdmin,
+        isAuditor,
+        isAuditorWaitingForTeamLead,
+        isTeamLeadReview
+    });
     
     // Check if user is authorized for QA review (team "QC" AND role "Super Admin")
     const isAuthorizedForQA = await isCurrentUserAuthorizedForQAReview();
@@ -8081,26 +8072,16 @@ async function displayReversalApprovalInterface(audit) {
                 </div>
             </div>
             
-            ${reversalReason ? `
-            <!-- Reversal Reason (Read-only) -->
-            <div style="background: #eff6ff; border: 0.0625rem solid #bfdbfe; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Reversal Reason</p>
-                <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe;">${escapeHtml(reversalReason)}</p>
-            </div>
-            ` : ''}
-            
             ${teamLeadApproved && teamLeadReviewedBy ? `
             <!-- Team Lead Approval Status -->
             <div style="background: #f0fdf4; border: 0.0625rem solid #bbf7d0; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #16a34a; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #16a34a; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;">
                     <svg style="width: 0.75rem; height: 0.75rem; color: #16a34a;" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
                     Approved by Team Lead
-                </p>
-                <p style="font-size: 0.6094rem; color: #166534; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif;">
-                    <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
-                    ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
+                    ${teamLeadReviewedBy ? ` by <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>` : ''}
+                    ${formattedReviewDate ? ` <span style="font-weight: 400; color: #166534;">on ${escapeHtml(formattedReviewDate)}</span>` : ''}
                 </p>
                 ${teamLeadResponse && teamLeadResponse.trim() ? `
                 <p style="font-size: 0.6562rem; color: #166534; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bbf7d0; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadResponse)}</p>
@@ -8111,15 +8092,13 @@ async function displayReversalApprovalInterface(audit) {
             ${!teamLeadApproved && teamLeadReviewedBy && (teamLeadRejectionReason || teamLeadResponse) ? `
             <!-- Team Lead Rejection Status -->
             <div style="background: #fef2f2; border: 0.0625rem solid #fecaca; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #dc2626; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #dc2626; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;">
                     <svg style="width: 0.75rem; height: 0.75rem; color: #dc2626;" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                     </svg>
                     Rejected by Team Lead
-                </p>
-                <p style="font-size: 0.6094rem; color: #991b1b; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif;">
-                    <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
-                    ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
+                    ${teamLeadReviewedBy ? ` by <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>` : ''}
+                    ${formattedReviewDate ? ` <span style="font-weight: 400; color: #991b1b;">on ${escapeHtml(formattedReviewDate)}</span>` : ''}
                 </p>
                 ${teamLeadRejectionReason && teamLeadRejectionReason.trim() ? `
                 <p style="font-size: 0.6562rem; font-weight: 600; color: #991b1b; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Rejection Reason:</p>
@@ -8131,11 +8110,33 @@ async function displayReversalApprovalInterface(audit) {
             </div>
             ` : ''}
             
-            ${auditorResponse && reversalRespondedAt ? `
-            <!-- Auditor Response (Read-only) -->
-            <div style="background: #f0f9ff; border: 0.0625rem solid #bae6fd; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From QC</p>
-                <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
+            ${auditorResponse && reversalRespondedAt && isQCApproved ? `
+            <!-- QC Approval Status -->
+            <div style="background: #f0fdf4; border: 0.0625rem solid #bbf7d0; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #16a34a; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;">
+                    <svg style="width: 0.75rem; height: 0.75rem; color: #16a34a;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Approved by QC
+                    ${qcReviewedBy ? ` by <span class="user-profile-hover" data-user-name="${escapeHtml(qcReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(qcReviewedBy)}</span>` : ''}
+                    ${formattedQCReviewDate ? ` <span style="font-weight: 400; color: #166534;">on ${escapeHtml(formattedQCReviewDate)}</span>` : ''}
+                </p>
+                <p style="font-size: 0.6562rem; color: #166534; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bbf7d0; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
+            </div>
+            ` : ''}
+            
+            ${auditorResponse && reversalRespondedAt && isQCRejected ? `
+            <!-- QC Rejection Status -->
+            <div style="background: #fef2f2; border: 0.0625rem solid #fecaca; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #dc2626; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;">
+                    <svg style="width: 0.75rem; height: 0.75rem; color: #dc2626;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    Rejected by QC
+                    ${qcReviewedBy ? ` by <span class="user-profile-hover" data-user-name="${escapeHtml(qcReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(qcReviewedBy)}</span>` : ''}
+                    ${formattedQCReviewDate ? ` <span style="font-weight: 400; color: #991b1b;">on ${escapeHtml(formattedQCReviewDate)}</span>` : ''}
+                </p>
+                <p style="font-size: 0.6562rem; color: #991b1b; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #fecaca; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
             </div>
             ` : ''}
         `;
@@ -8265,15 +8266,13 @@ async function displayReversalApprovalInterface(audit) {
             ${teamLeadApproved && teamLeadReviewedBy ? `
             <!-- Team Lead Approval Status -->
             <div style="background: #f0fdf4; border: 0.0625rem solid #bbf7d0; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #16a34a; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #16a34a; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;">
                     <svg style="width: 0.75rem; height: 0.75rem; color: #16a34a;" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
                     Approved by Team Lead
-                </p>
-                <p style="font-size: 0.6094rem; color: #166534; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif;">
-                    <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
-                    ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
+                    ${teamLeadReviewedBy ? ` by <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>` : ''}
+                    ${formattedReviewDate ? ` <span style="font-weight: 400; color: #166534;">on ${escapeHtml(formattedReviewDate)}</span>` : ''}
                 </p>
                 ${teamLeadResponse && teamLeadResponse.trim() ? `
                 <p style="font-size: 0.6562rem; color: #166534; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bbf7d0; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(teamLeadResponse)}</p>
@@ -8284,15 +8283,13 @@ async function displayReversalApprovalInterface(audit) {
             ${!teamLeadApproved && teamLeadReviewedBy && (teamLeadRejectionReason || teamLeadResponse) ? `
             <!-- Team Lead Rejection Status -->
             <div style="background: #fef2f2; border: 0.0625rem solid #fecaca; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #dc2626; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #dc2626; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;">
                     <svg style="width: 0.75rem; height: 0.75rem; color: #dc2626;" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                     </svg>
                     Rejected by Team Lead
-                </p>
-                <p style="font-size: 0.6094rem; color: #991b1b; margin: 0 0 0.375rem 0; font-family: 'Poppins', sans-serif;">
-                    <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>
-                    ${formattedReviewDate ? ` on ${escapeHtml(formattedReviewDate)}` : ''}
+                    ${teamLeadReviewedBy ? ` by <span class="user-profile-hover" data-user-name="${escapeHtml(teamLeadReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(teamLeadReviewedBy)}</span>` : ''}
+                    ${formattedReviewDate ? ` <span style="font-weight: 400; color: #991b1b;">on ${escapeHtml(formattedReviewDate)}</span>` : ''}
                 </p>
                 ${teamLeadRejectionReason && teamLeadRejectionReason.trim() ? `
                 <p style="font-size: 0.6562rem; font-weight: 600; color: #991b1b; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Rejection Reason:</p>
@@ -8304,11 +8301,33 @@ async function displayReversalApprovalInterface(audit) {
             </div>
             ` : ''}
             
-            ${auditorResponse && reversalRespondedAt ? `
-            <!-- Auditor Response (Read-only) -->
-            <div style="background: #f0f9ff; border: 0.0625rem solid #bae6fd; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
-                <p style="font-size: 0.6562rem; font-weight: 600; color: #1e40af; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif;">Response From QC</p>
-                <p style="font-size: 0.6562rem; color: #1e40af; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bfdbfe; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
+            ${auditorResponse && reversalRespondedAt && isQCApproved ? `
+            <!-- QC Approval Status -->
+            <div style="background: #f0fdf4; border: 0.0625rem solid #bbf7d0; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #16a34a; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;">
+                    <svg style="width: 0.75rem; height: 0.75rem; color: #16a34a;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Approved by QC
+                    ${qcReviewedBy ? ` by <span class="user-profile-hover" data-user-name="${escapeHtml(qcReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(qcReviewedBy)}</span>` : ''}
+                    ${formattedQCReviewDate ? ` <span style="font-weight: 400; color: #166534;">on ${escapeHtml(formattedQCReviewDate)}</span>` : ''}
+                </p>
+                <p style="font-size: 0.6562rem; color: #166534; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #bbf7d0; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
+            </div>
+            ` : ''}
+            
+            ${auditorResponse && reversalRespondedAt && isQCRejected ? `
+            <!-- QC Rejection Status -->
+            <div style="background: #fef2f2; border: 0.0625rem solid #fecaca; border-radius: 0.2812rem; padding: 0.5625rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.6562rem; font-weight: 600; color: #dc2626; margin: 0 0 0.2812rem 0; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;">
+                    <svg style="width: 0.75rem; height: 0.75rem; color: #dc2626;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    Rejected by QC
+                    ${qcReviewedBy ? ` by <span class="user-profile-hover" data-user-name="${escapeHtml(qcReviewedBy)}" style="cursor: pointer; text-decoration: underline; font-weight: 600;">${escapeHtml(qcReviewedBy)}</span>` : ''}
+                    ${formattedQCReviewDate ? ` <span style="font-weight: 400; color: #991b1b;">on ${escapeHtml(formattedQCReviewDate)}</span>` : ''}
+                </p>
+                <p style="font-size: 0.6562rem; color: #991b1b; margin: 0; font-family: 'Poppins', sans-serif; background: white; padding: 0.5625rem; border-radius: 0.2812rem; border: 0.0625rem solid #fecaca; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(auditorResponse)}</p>
             </div>
             ` : ''}
             
@@ -8891,9 +8910,9 @@ async function processReversalDecision(decision) {
     
     // Check permissions based on workflow state
     if (workflowState === 'team_lead_review' || workflowState === 'pending' || workflowState === 'team_lead_rejected') {
-        // Team lead review stage - only team leads or admins can process
-        if (!canReviewAsTeamLead && !isAdmin) {
-            alert('Error: Only Team Leads, Team Supervisors, or Admins can process reversals at this stage.');
+        // Team lead review stage - only team leads can process
+        if (!canReviewAsTeamLead) {
+            alert('Error: Only Team Leads or Team Supervisors can process reversals at this stage.');
             return;
         }
     } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
@@ -8913,7 +8932,6 @@ async function processReversalDecision(decision) {
     // Determine what action this is based on workflow state and user role
     let actionType = 'final'; // default: final decision by auditor/admin
     let nextWorkflowState = '';
-    let adminBypass = false; // Track if admin bypassed team leader approval
     
     if (workflowState === 'team_lead_review' || workflowState === 'pending' || workflowState === 'team_lead_rejected') {
         // Team lead review stage (including rejected state - team leads can still review/process)
@@ -8925,18 +8943,9 @@ async function processReversalDecision(decision) {
             } else {
                 nextWorkflowState = 'pending - team_lead_rejected'; // Final rejection, stops here
             }
-        } else if (isAdmin) {
-            // Admin bypass: Admin can process even if team leader hasn't approved
-            actionType = 'admin_bypass';
-            adminBypass = true;
-            if (decision === 'approved') {
-                nextWorkflowState = 'pending - qa_review'; // Goes to QA/Auditor for review
-            } else {
-                nextWorkflowState = 'pending - team_lead_rejected'; // Final rejection, stops here
-            }
         } else {
             // This should not happen if UI is properly disabled, but show a helpful message
-            alert('This reversal is currently under Team Lead review. Only Team Leads, Team Supervisors, or Admins can review reversals at this stage. You will be able to review and process this reversal once the Team Lead has approved it.');
+            alert('This reversal is currently under Team Lead review. Only Team Leads or Team Supervisors can review reversals at this stage. You will be able to review and process this reversal once the Team Lead has approved it.');
             return;
         }
     } else if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
@@ -8973,13 +8982,13 @@ async function processReversalDecision(decision) {
         return;
     }
     
-    // CRITICAL: Validate that Response From QC is provided for ALL users (including admins)
+    // CRITICAL: Validate that Response From QC is provided for ALL users
     // This validation cannot be bypassed and applies to everyone
-    if (actionType === 'qa_review' || actionType === 'final' || actionType === 'admin_bypass') {
-        // For QA/Auditor review, admin bypass, or final decision - require Response From QC
+    if (actionType === 'qa_review' || actionType === 'final') {
+        // For QA/Auditor review or final decision - require Response From QC
         const responseFromAuditor = document.getElementById('reversalDelayReason')?.value?.trim() || '';
         if (!responseFromAuditor) {
-            alert('Error: Response From QC is required. Please provide your response before processing this reversal. This field is mandatory for all users including admins.');
+            alert('Error: Response From QC is required. Please provide your response before processing this reversal. This field is mandatory.');
             const responseField = document.getElementById('reversalDelayReason');
             if (responseField) {
                 responseField.focus();
@@ -9181,20 +9190,6 @@ async function processReversalDecision(decision) {
             // Keeping this section empty but leaving comment for clarity
             
             // Don't set reversal_approved yet - that's for QA's final decision
-        } else if (actionType === 'admin_bypass') {
-            // Admin bypass - Admin processed without team leader approval
-            // Data is stored in reversal_workflow_states, not audit table
-            // Don't write team_lead_* fields to audit table anymore
-            // admin_bypass is now stored in reversal_requests table, not audit table
-            // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
-            
-            // Get response from QC - REQUIRED (validation already done above)
-            const delayReasonValue = delayReason?.trim() || '';
-            if (!delayReasonValue) {
-                throw new Error('Response From QC is required but was not provided. This should not happen as validation should have caught this.');
-            }
-            updateData.response_from_auditor = delayReasonValue;
-            updateData.sla_in_hours = parseFloat(slaHours.toFixed(2));
         } else if (actionType === 'qa_review') {
             // QA/Auditor review - can edit audit parameters and make final decision
             updateData.reversal_approved = decision === 'approved';
@@ -9206,7 +9201,6 @@ async function processReversalDecision(decision) {
             updateData.within_auditor_scope = withinAuditorScope;
             
             // reversal_processed_by/email are now tracked in reversal_workflow_states.entered_by_name/email
-            // admin_bypass is now stored in reversal_requests table
             
             // Get response from QC - REQUIRED (validation already done above, but ensure it's saved)
             const delayReason = document.getElementById('reversalDelayReason')?.value?.trim() || '';
@@ -9274,14 +9268,6 @@ async function processReversalDecision(decision) {
                 const reversalUpdateData = {
                     updated_at: new Date().toISOString()
                 };
-                
-                // Add admin_bypass if this is an admin bypass action
-                if (actionType === 'admin_bypass') {
-                    reversalUpdateData.admin_bypass = true;
-                } else if (actionType === 'qa_review' && isAdmin) {
-                    // Admin processed at QA stage (not a bypass, but admin processed)
-                    reversalUpdateData.admin_bypass = false;
-                }
                 
                 // Add team lead response if this is team lead review
                 if (actionType === 'team_lead_review') {
@@ -9355,8 +9341,6 @@ async function processReversalDecision(decision) {
                 let newWorkflowState = '';
                 if (actionType === 'team_lead_review') {
                     newWorkflowState = decision === 'approved' ? 'team_lead_approved' : 'team_lead_rejected';
-                } else if (actionType === 'admin_bypass') {
-                    newWorkflowState = decision === 'approved' ? 'team_lead_approved' : 'team_lead_rejected';
                 } else if (actionType === 'qa_review') {
                     newWorkflowState = decision === 'approved' ? 'approved' : 'rejected';
                 } else {
@@ -9393,9 +9377,7 @@ async function processReversalDecision(decision) {
                         previous_state_id: reversalRequest.current_state_id || null,
                         is_current: true,
                         rejection_reason: rejectionReason,
-                        notes: actionType === 'admin_bypass' 
-                            ? `Admin bypassed team lead approval - ${decision === 'approved' ? 'approved' : 'rejected'}`
-                            : actionType === 'team_lead_review'
+                        notes: actionType === 'team_lead_review'
                             ? `Team Lead ${decision === 'approved' ? 'approved' : 'rejected'} reversal`
                             : `QA review - ${decision === 'approved' ? 'approved' : 'rejected'} reversal`
                     })
@@ -9527,12 +9509,6 @@ async function processReversalDecision(decision) {
                 successMessage = '✓ Reversal request has been sent to QC. The request is now under QC review.';
             } else {
                 successMessage = '✓ Reversal request has been rejected. The agent will be notified.';
-            }
-        } else if (actionType === 'admin_bypass') {
-            if (decision === 'approved') {
-                successMessage = '✓ Reversal request has been processed by Admin (Team Leader approval bypassed). The request is now under QC review.';
-            } else {
-                successMessage = '✓ Reversal request has been rejected by Admin (Team Leader approval bypassed). The agent will be notified.';
             }
         } else if (actionType === 'qa_review') {
             successMessage = `✓ Reversal ${decision === 'approved' ? 'approved' : 'rejected'} successfully!${decision === 'approved' ? ` Score updated to ${newScore.toFixed(2)}%.` : ''}`;
