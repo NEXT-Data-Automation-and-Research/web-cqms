@@ -972,8 +972,29 @@ document.addEventListener('DOMContentLoaded', function() {
         // First checks new structure (reversal_workflow_state), then falls back to acknowledgement_status parsing
         function getReversalWorkflowState(reversal) {
             // Priority 1: Use workflow state from new structure if available
+            // BUT: Validate that if state is qa_review, team lead must have actually approved
             if (reversal.reversal_workflow_state) {
-                return reversal.reversal_workflow_state;
+                const dbWorkflowState = reversal.reversal_workflow_state;
+                
+                // Check if team lead has actually approved/rejected
+                const teamLeadApproved = reversal.team_lead_approved === true || reversal.team_lead_approved === 'true' || reversal.team_lead_approved === 1 || reversal.team_lead_approved === '1' ||
+                                         (reversal.teamLeadApproved === true || reversal.teamLeadApproved === 'true' || reversal.teamLeadApproved === 1 || reversal.teamLeadApproved === '1');
+                const teamLeadRejected = reversal.team_lead_approved === false || reversal.team_lead_approved === 'false' || reversal.team_lead_approved === 0 || reversal.team_lead_approved === '0' ||
+                                         (reversal.teamLeadApproved === false || reversal.teamLeadApproved === 'false' || reversal.teamLeadApproved === 0 || reversal.teamLeadApproved === '0');
+                const hasTeamLeadReviewed = teamLeadApproved || teamLeadRejected || (reversal.team_lead_reviewed_by && reversal.team_lead_reviewed_by.trim()) || (reversal.teamLeadReviewedBy && reversal.teamLeadReviewedBy.trim());
+                
+                // If database says qa_review but team lead hasn't reviewed, correct it to team_lead_review
+                if ((dbWorkflowState === 'qa_review' || dbWorkflowState === 'cqc_review') && !hasTeamLeadReviewed) {
+                    return 'team_lead_review'; // Team lead hasn't reviewed yet, so it should be in team lead review stage
+                }
+                
+                // If team lead rejected, return rejected state (even if DB says something else)
+                if (teamLeadRejected) {
+                    return 'team_lead_rejected';
+                }
+                
+                // Otherwise, use the database state
+                return dbWorkflowState;
             }
             
             // Priority 2: Parse from acknowledgement_status (old structure)

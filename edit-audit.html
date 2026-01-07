@@ -650,7 +650,7 @@ function isCurrentUserCQC() {
     return role.includes('cqc') || role.includes('quality control');
 }
 
-// Get reversal workflow state from acknowledgement_status
+// Get reversal workflow state - checks reversal_workflow_state first, then falls back to acknowledgement_status
 function getReversalWorkflowState(audit) {
     if (!audit) return null;
     
@@ -660,6 +660,40 @@ function getReversalWorkflowState(audit) {
         return null; // No reversal requested, no workflow state
     }
     
+    // Priority 1: Check if workflow state was already loaded from reversal_workflow_states (cached on audit object)
+    // BUT: Validate that if state is qa_review, team lead must have actually approved
+    if (audit.reversal_workflow_state) {
+        const dbWorkflowState = audit.reversal_workflow_state;
+        
+        // Check if team lead has actually approved/rejected
+        const teamLeadApproved = audit?.teamLeadApproved === true || audit?.teamLeadApproved === 'true' || audit?.teamLeadApproved === 1 || audit?.teamLeadApproved === '1' ||
+                                 (audit?.team_lead_approved === true || audit?.team_lead_approved === 'true' || audit?.team_lead_approved === 1 || audit?.team_lead_approved === '1');
+        const teamLeadRejected = audit?.teamLeadApproved === false || audit?.teamLeadApproved === 'false' || audit?.teamLeadApproved === 0 || audit?.teamLeadApproved === '0' ||
+                                 (audit?.team_lead_approved === false || audit?.team_lead_approved === 'false' || audit?.team_lead_approved === 0 || audit?.team_lead_approved === '0');
+        const hasTeamLeadReviewed = teamLeadApproved || teamLeadRejected || (audit?.team_lead_reviewed_by && audit.team_lead_reviewed_by.trim());
+        
+        // #region debug log
+        fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:664',message:'getReversalWorkflowState - validating workflow state',data:{dbWorkflowState,teamLeadApproved,teamLeadRejected,hasTeamLeadReviewed,teamLeadReviewedBy:audit?.team_lead_reviewed_by,auditId:audit.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+        // #endregion
+        
+        // If database says qa_review but team lead hasn't reviewed, correct it to team_lead_review
+        if ((dbWorkflowState === 'qa_review' || dbWorkflowState === 'cqc_review') && !hasTeamLeadReviewed) {
+            // #region debug log
+            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:680',message:'getReversalWorkflowState - correcting invalid qa_review state',data:{dbWorkflowState,correctedState:'team_lead_review',auditId:audit.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+            // #endregion
+            return 'team_lead_review'; // Team lead hasn't reviewed yet, so it should be in team lead review stage
+        }
+        
+        // If team lead rejected, return rejected state (even if DB says something else)
+        if (teamLeadRejected) {
+            return 'team_lead_rejected';
+        }
+        
+        // Otherwise, use the database state
+        return dbWorkflowState;
+    }
+    
+    // Priority 2: Parse from acknowledgement_status (old structure)
     const ackStatus = (audit?.acknowledgement_status || audit?.acknowledgementStatus || '').toLowerCase();
     
     // Check if team lead has approved - if so, move to QA review stage (use mapped fields)
@@ -668,8 +702,9 @@ function getReversalWorkflowState(audit) {
     const teamLeadRejected = audit?.teamLeadApproved === false || audit?.teamLeadApproved === 'false' || audit?.teamLeadApproved === 0 || audit?.teamLeadApproved === '0' ||
                              (audit?.team_lead_approved === false || audit?.team_lead_approved === 'false' || audit?.team_lead_approved === 0 || audit?.team_lead_approved === '0');
     
-    // Debug logging
-    console.log('getReversalWorkflowState:', { ackStatus, auditId: audit.id, teamLeadApproved, teamLeadRejected });
+    // #region debug log
+    fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:663',message:'getReversalWorkflowState - parsing from acknowledgement_status',data:{ackStatus,auditId:audit.id,teamLeadApproved,teamLeadRejected,hasReversalWorkflowState:!!audit.reversal_workflow_state},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     
     // If team lead rejected, return rejected state
     if (teamLeadRejected || ackStatus.includes('team_lead_rejected')) return 'team_lead_rejected';
@@ -1519,6 +1554,7 @@ async function loadAuditFromURL() {
         let reversalRequestData = null;
         let processedByData = null;
         let adminBypassData = false;
+        let currentWorkflowState = null; // Store workflow state to add to audit object
         
         if (data.reversal_requested_at) {
             try {
@@ -1573,6 +1609,10 @@ async function loadAuditFromURL() {
                             .maybeSingle();
                         
                         if (!wsError && currentState) {
+                            currentWorkflowState = currentState.state; // Store workflow state
+                            // #region debug log
+                            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:1575',message:'Loaded workflow state from reversal_workflow_states',data:{workflowState:currentState.state,auditId:auditId,currentStateId:reversalRequest.current_state_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                            // #endregion
                             processedByData = {
                                 name: currentState.entered_by_name,
                                 email: currentState.entered_by_email
@@ -1592,7 +1632,17 @@ async function loadAuditFromURL() {
                     }
                     
                     // Also check for team_lead_approved or team_lead_rejected states (might not be current if workflow progressed)
-                    if (reversalRequest.current_state_id) {
+                    // Always check for team lead approval state, even if current state is qa_review
+                    if (reversalRequest.id) {
+                        // First, query for all team lead related states to see what exists
+                        const { data: allTeamLeadStates, error: allStatesError } = await window.supabaseClient
+                            .from('reversal_workflow_states')
+                            .select('entered_by_name, entered_by_email, entered_at, state, rejection_reason')
+                            .eq('reversal_request_id', reversalRequest.id)
+                            .in('state', ['team_lead_review', 'team_lead_approved', 'team_lead_rejected'])
+                            .order('entered_at', { ascending: false });
+                        
+                        // Then get the specific approved/rejected state
                         const { data: teamLeadState, error: tlError } = await window.supabaseClient
                             .from('reversal_workflow_states')
                             .select('entered_by_name, entered_by_email, entered_at, state, rejection_reason')
@@ -1602,6 +1652,10 @@ async function loadAuditFromURL() {
                             .limit(1)
                             .maybeSingle();
                         
+                        // #region debug log
+                        fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:1611',message:'Querying for team lead approval state',data:{reversalRequestId:reversalRequest.id,hasTeamLeadState:!!teamLeadState,teamLeadState:teamLeadState,allTeamLeadStates:allTeamLeadStates,allStatesError:allStatesError,error:tlError,hasExistingTeamLeadReviewData:!!reversalRequestData.teamLeadReviewData,teamLeadResponse:reversalRequestData?.team_lead_response,currentWorkflowState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                        // #endregion
+                        
                         if (!tlError && teamLeadState && !reversalRequestData.teamLeadReviewData) {
                             reversalRequestData.teamLeadReviewData = {
                                 reviewed_by: teamLeadState.entered_by_name,
@@ -1610,6 +1664,23 @@ async function loadAuditFromURL() {
                                 rejected: teamLeadState.state === 'team_lead_rejected',
                                 rejection_reason: teamLeadState.rejection_reason || null
                             };
+                            
+                            // #region debug log
+                            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:1621',message:'Set teamLeadReviewData from query',data:{teamLeadReviewData:reversalRequestData.teamLeadReviewData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                            // #endregion
+                        } else if (!tlError && teamLeadState && reversalRequestData.teamLeadReviewData) {
+                            // If we already have data but found team lead state, update it (team lead state is more authoritative)
+                            reversalRequestData.teamLeadReviewData = {
+                                reviewed_by: teamLeadState.entered_by_name,
+                                reviewed_at: teamLeadState.entered_at,
+                                approved: teamLeadState.state === 'team_lead_approved',
+                                rejected: teamLeadState.state === 'team_lead_rejected',
+                                rejection_reason: teamLeadState.rejection_reason || null
+                            };
+                            
+                            // #region debug log
+                            fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:1635',message:'Updated teamLeadReviewData from query (overwrote existing)',data:{teamLeadReviewData:reversalRequestData.teamLeadReviewData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                            // #endregion
                         }
                     }
                 }
@@ -1697,6 +1768,8 @@ async function loadAuditFromURL() {
             // Acknowledgement tracking fields
             acknowledgementStatus: data.acknowledgement_status,
             acknowledgementStatusUpdatedAt: data.acknowledgement_status_updated_at,
+            // Workflow state from new structure (reversal_workflow_states table)
+            reversal_workflow_state: currentWorkflowState || null,
             // Parameter comments
             parameterComments: data.parameter_comments || {},
             parameter_comments: data.parameter_comments || {},
@@ -1705,6 +1778,11 @@ async function loadAuditFromURL() {
             scorecard_id: finalScorecardId,
             _scorecard_table: tableName
         };
+        
+        // #region debug log
+        // Log the final team lead approval values that will be used
+        fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:1735',message:'Final audit object team lead approval values',data:{teamLeadApproved:audit.teamLeadApproved,team_lead_approved:audit.team_lead_approved,teamLeadReviewedBy:audit.teamLeadReviewedBy,team_lead_reviewed_by:audit.team_lead_reviewed_by,teamLeadReviewedAt:audit.teamLeadReviewedAt,team_lead_reviewed_at:audit.team_lead_reviewed_at,reversalRequestDataTeamLeadReviewData:reversalRequestData?.teamLeadReviewData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
 
         // Load scorecard parameters
         let errorFields = [];
@@ -7928,8 +8006,13 @@ async function displayReversalApprovalInterface(audit) {
             }
         }
         
-        // Check if Team Lead has approved
-        const teamLeadApproved = audit.team_lead_approved;
+        // Check if Team Lead has approved - normalize boolean/string/number values
+        const teamLeadApproved = audit.teamLeadApproved === true || audit.teamLeadApproved === 'true' || audit.teamLeadApproved === 1 || audit.teamLeadApproved === '1' ||
+                                 (audit.team_lead_approved === true || audit.team_lead_approved === 'true' || audit.team_lead_approved === 1 || audit.team_lead_approved === '1');
+        
+        // #region debug log
+        fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:7949',message:'Team Lead section - checking team lead approval',data:{teamLeadApproved,teamLeadReviewedBy:audit.team_lead_reviewed_by||audit.teamLeadReviewedBy||'',workflowState,auditTeamLeadApproved:audit.team_lead_approved,auditTeamLeadApprovedCamel:audit.teamLeadApproved},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         const teamLeadReviewedBy = audit.team_lead_reviewed_by || audit.teamLeadReviewedBy || '';
         const teamLeadReviewedAt = audit.team_lead_reviewed_at || audit.teamLeadReviewedAt;
         const teamLeadResponse = audit.response_from_team_lead || audit.responseFromTeamLead || '';
@@ -8108,12 +8191,17 @@ async function displayReversalApprovalInterface(audit) {
             }
         }
         
-        // Check if Team Lead has approved
-        const teamLeadApproved = audit.team_lead_approved;
+        // Check if Team Lead has approved - normalize boolean/string/number values
+        const teamLeadApproved = audit.teamLeadApproved === true || audit.teamLeadApproved === 'true' || audit.teamLeadApproved === 1 || audit.teamLeadApproved === '1' ||
+                                 (audit.team_lead_approved === true || audit.team_lead_approved === 'true' || audit.team_lead_approved === 1 || audit.team_lead_approved === '1');
         const teamLeadReviewedBy = audit.team_lead_reviewed_by || audit.teamLeadReviewedBy || '';
         const teamLeadReviewedAt = audit.team_lead_reviewed_at || audit.teamLeadReviewedAt;
         const teamLeadResponse = audit.response_from_team_lead || audit.responseFromTeamLead || '';
         const teamLeadRejectionReason = audit.team_lead_rejection_reason || '';
+        
+        // #region debug log
+        fetch('http://127.0.0.1:7242/ingest/11273579-9ce1-4c55-884d-8555e5f01175',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-audit.html:8129',message:'Auditor section - checking team lead approval',data:{teamLeadApproved,teamLeadReviewedBy,teamLeadReviewedAt,workflowState,auditTeamLeadApproved:audit.team_lead_approved,auditTeamLeadApprovedCamel:audit.teamLeadApproved},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         
         // Get reversal request details
         const reversalRequestedAt = audit.reversalRequestedAt || audit.reversal_requested_at;
