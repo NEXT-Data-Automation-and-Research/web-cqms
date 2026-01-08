@@ -1863,18 +1863,10 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = `audit-view.html?id=${auditId}&table=${tableName}`;
         };
         
-        // Review and process reversal - redirects to edit page
+        // Review and process reversal - redirects to audit-view page (which supports reversal processing)
         window.reviewAndProcessReversal = function(auditId, tableName) {
-            // Get scorecard ID from reversal data
-            const reversal = allReversals.find(r => r.id === auditId && r._scorecard_table === tableName);
-            const scorecardId = reversal?._scorecard_id || reversal?.scorecard_id || '';
-            
-            // Redirect to edit-audit.html with the audit
-            if (scorecardId) {
-                window.location.href = `edit-audit.html?id=${auditId}&scorecard=${scorecardId}&table=${tableName}`;
-            } else {
-                window.location.href = `edit-audit.html?id=${auditId}&table=${tableName}`;
-            }
+            // Redirect to audit-view.html which has full reversal processing capabilities
+            window.location.href = `audit-view.html?id=${auditId}&table=${tableName}`;
         };
         
         // Process reversal (kept for backward compatibility, but not used in new flow)
