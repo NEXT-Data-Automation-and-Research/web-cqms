@@ -649,9 +649,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             const workflowState = workflowStateMap.get(reversalReq.id) || 'submitted';
                             
                             // Filter pending if needed (before fetching audit data)
+                            // Use a less strict filter here - only exclude clearly final states
+                            // The actual pending determination will be done after fetching audit data
                             if (onlyPending) {
-                                const pendingStates = ['submitted', 'team_lead_review', 'qa_review', 'cqc_review', 'cqc_sent_back', 'agent_re_review'];
-                                if (!pendingStates.includes(workflowState)) {
+                                const finalStates = ['approved', 'rejected', 'acknowledged'];
+                                // Only exclude if it's a final state - include everything else for later filtering
+                                if (finalStates.includes(workflowState)) {
                                     continue;
                                 }
                             }
@@ -1021,27 +1024,56 @@ document.addEventListener('DOMContentLoaded', function() {
             
         // Helper function to check if a workflow state is considered "pending"
         // Includes all pending sub-statuses like team_lead_review, cqc_review, etc.
+        // Also includes reversals approved by team lead that are awaiting final QC decision
         function isPendingWorkflowState(reversal) {
             const workflowState = getReversalWorkflowState(reversal);
             
             // All pending states (including sub-statuses)
             const pendingStates = [
                 'pending',
+                'submitted', // Initial submission state
                 'team_lead_review',
+                'team_lead_approved', // Team lead approved, awaiting QC decision
                 'qa_review',
                 'cqc_review',
                 'cqc_sent_back',
                 'agent_re_review'
             ];
             
-            // Also check if it's a "pending - reversal_approved" or "pending - reversal_rejected" 
+            // First check: If workflow state is in pending states list, it's pending
+            if (pendingStates.includes(workflowState)) {
+                return true;
+            }
+            
+            // Second check: If team lead has approved but QC hasn't made final decision
+            // This catches cases where team_lead_approved = true but reversal_approved is still null
+            // This is important for reversals that are approved by team lead and under QC review
+            const teamLeadApproved = reversal.team_lead_approved === true || reversal.team_lead_approved === 'true' || 
+                                     reversal.team_lead_approved === 1 || reversal.team_lead_approved === '1' ||
+                                     (reversal.teamLeadApproved === true || reversal.teamLeadApproved === 'true' || 
+                                      reversal.teamLeadApproved === 1 || reversal.teamLeadApproved === '1');
+            const finalDecision = reversal.reversal_approved;
+            const hasFinalDecision = finalDecision !== null && finalDecision !== undefined;
+            
+            // If team lead approved but no final decision from QC yet, it's pending
+            if (teamLeadApproved && !hasFinalDecision) {
+                return true;
+            }
+            
+            // Third check: Also check if it's a "pending - reversal_approved" or "pending - reversal_rejected" 
             // These are pending until acknowledged
             const ackStatus = (reversal.acknowledgement_status || reversal.acknowledgementStatus || '').toLowerCase();
             if (ackStatus.includes('pending - reversal_approved') || ackStatus.includes('pending - reversal_rejected')) {
                 return true;
             }
             
-            return pendingStates.includes(workflowState);
+            // If workflow state is qa_review or cqc_review, it's definitely pending (double-check)
+            // This is a safeguard in case the state wasn't in the pendingStates list above
+            if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+                return true;
+            }
+            
+            return false;
             }
             
         // Helper function to get reversal status - properly handles string and boolean values
