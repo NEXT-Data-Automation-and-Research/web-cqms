@@ -589,7 +589,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const isAgent = userInfo.isAgent;
                 
                 const loadingMessage = onlyPending ? 'Loading pending reversals...' : 'Loading all reversals...';
-                console.log(loadingMessage, 'User role:', userInfo.role, 'Is agent:', isAgent);
                 
                 if (!window.supabaseClient) {
                     throw new Error('Supabase client not initialized');
@@ -621,7 +620,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     reversalQuery = reversalQuery.order('requested_at', { ascending: false });
                     
                     const { data: reversalRequests, error: reversalError } = await reversalQuery;
-                    console.log(`Loaded ${reversalRequests?.length || 0} reversal requests in ${(performance.now() - startTime).toFixed(2)}ms`);
                     
                     if (!reversalError && reversalRequests && reversalRequests.length > 0) {
                         // Get workflow states for all reversal requests in one query
@@ -730,7 +728,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Wait for all table fetches to complete in parallel
                         await Promise.all(tableFetchPromises);
-                        console.log(`Fetched audits from ${reversalsByTable.size} tables in ${(performance.now() - fetchStartTime).toFixed(2)}ms`);
                         
                         // Now merge reversal request data with audit data
                         for (const [auditId, { reversalReq, workflowState }] of reversalReqMap.entries()) {
@@ -926,8 +923,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const dateB = new Date(b.reversal_requested_at);
                     return dateB - dateA;
                 });
-                
-                console.log(`Total reversals loaded: ${dateFilteredReversals.length} (${onlyPending ? 'pending only' : 'all'})`);
                 
                 // Update the appropriate array based on what we loaded
                 if (onlyPending) {
@@ -1378,9 +1373,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     requestedDateTooltip = 'Date not available';
                 }
             }
-            
-            // Debug: Verify tooltip is set (remove in production)
-            // console.log('Reversal date tooltip:', requestedDateTooltip, 'for reversal:', reversal.id);
             
             // Use the helper function to get status
             const status = getReversalStatus(reversal);

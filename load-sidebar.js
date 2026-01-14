@@ -973,69 +973,321 @@ class SidebarLoader {
   }
 
   /**
-   * Update pending reversals count badge
+   * Get reversal workflow state - matches reversal.html exactly
+   */
+  getReversalWorkflowState(reversal) {
+    if (reversal.reversal_workflow_state) {
+      const dbWorkflowState = reversal.reversal_workflow_state
+      const teamLeadApproved = reversal.team_lead_approved === true || reversal.team_lead_approved === 'true' || 
+                               reversal.team_lead_approved === 1 || reversal.team_lead_approved === '1' ||
+                               (reversal.teamLeadApproved === true || reversal.teamLeadApproved === 'true' || 
+                                reversal.teamLeadApproved === 1 || reversal.teamLeadApproved === '1')
+      const teamLeadRejected = reversal.team_lead_approved === false || reversal.team_lead_approved === 'false' || 
+                               reversal.team_lead_approved === 0 || reversal.team_lead_approved === '0' ||
+                               (reversal.teamLeadApproved === false || reversal.teamLeadApproved === 'false' || 
+                                reversal.teamLeadApproved === 0 || reversal.teamLeadApproved === '0')
+      const hasTeamLeadReviewed = teamLeadApproved || teamLeadRejected || 
+                                  (reversal.team_lead_reviewed_by && reversal.team_lead_reviewed_by.trim()) || 
+                                  (reversal.teamLeadReviewedBy && reversal.teamLeadReviewedBy.trim())
+      if ((dbWorkflowState === 'qa_review' || dbWorkflowState === 'cqc_review') && !hasTeamLeadReviewed) {
+        return 'team_lead_review'
+      }
+      if (teamLeadRejected) {
+        return 'team_lead_rejected'
+      }
+      return dbWorkflowState
+    }
+    const ackStatus = (reversal.acknowledgement_status || reversal.acknowledgementStatus || '').toLowerCase()
+    if (ackStatus.includes('team_lead_review')) return 'team_lead_review'
+    if (ackStatus.includes('team_lead_rejected')) return 'team_lead_rejected'
+    if (ackStatus.includes('qa_review') || ackStatus.includes('auditor_review')) return 'qa_review'
+    if (ackStatus.includes('cqc_review')) return 'cqc_review'
+    if (ackStatus.includes('cqc_sent_back')) return 'cqc_sent_back'
+    if (ackStatus.includes('agent_re_review')) return 'agent_re_review'
+    if (ackStatus.includes('reversal_approved')) return 'approved'
+    if (ackStatus.includes('reversal_rejected')) return 'rejected'
+    if (ackStatus === 'acknowledged' || ackStatus.includes('acknowledged')) return 'acknowledged'
+    const approved = reversal.reversal_approved
+    if (approved === null || approved === undefined) return 'pending'
+    if (approved === true || approved === 'true' || approved === 1 || approved === '1') return 'approved'
+    if (approved === false || approved === 'false' || approved === 0 || approved === '0') return 'rejected'
+    return 'pending'
+  }
+
+  /**
+   * Check if a workflow state is considered "pending" - matches reversal.html exactly
+   */
+  isPendingWorkflowState(reversal) {
+    const workflowState = this.getReversalWorkflowState(reversal)
+    const pendingStates = [
+      'pending',
+      'submitted',
+      'team_lead_review',
+      'team_lead_approved',
+      'qa_review',
+      'cqc_review',
+      'cqc_sent_back',
+      'agent_re_review'
+    ]
+    if (pendingStates.includes(workflowState)) {
+      return true
+    }
+    const teamLeadApproved = reversal.team_lead_approved === true || reversal.team_lead_approved === 'true' || 
+                             reversal.team_lead_approved === 1 || reversal.team_lead_approved === '1' ||
+                             (reversal.teamLeadApproved === true || reversal.teamLeadApproved === 'true' || 
+                              reversal.teamLeadApproved === 1 || reversal.teamLeadApproved === '1')
+    const finalDecision = reversal.reversal_approved
+    const hasFinalDecision = finalDecision !== null && finalDecision !== undefined
+    if (teamLeadApproved && !hasFinalDecision) {
+      return true
+    }
+    const ackStatus = (reversal.acknowledgement_status || reversal.acknowledgementStatus || '').toLowerCase()
+    if (ackStatus.includes('pending - reversal_approved') || ackStatus.includes('pending - reversal_rejected')) {
+      return true
+    }
+    if (workflowState === 'qa_review' || workflowState === 'cqc_review') {
+      return true
+    }
+    return false
+  }
+
+  /**
+   * Update pending reversals count badge - uses EXACT same logic as reversal.html
    */
   async updatePendingReversalsCount() {
     try {
-      // Only show for non-employees (auditors, quality analysts, etc.)
       const userInfo = this.getUserInfo()
       if (userInfo && userInfo.role === 'Employee') {
-        // Hide the badge for employees
         this.setReversalBadgeCount(0)
         return
       }
 
       if (!window.supabaseClient) {
-        // Supabase not initialized yet, try again after a delay
         setTimeout(() => this.updatePendingReversalsCount(), 1000)
         return
       }
 
-      // Load scorecards first
-      const { data: scorecards, error: scorecardsError } = await window.supabaseClient
+      const { data: allScorecards, error: scorecardsError } = await window.supabaseClient
         .from('scorecards')
-        .select('table_name')
+        .select('*')
 
       if (scorecardsError) {
-        console.warn('Error loading scorecards for reversal count:', scorecardsError)
+        console.warn('Error loading scorecards:', scorecardsError)
         return
       }
 
-      if (!scorecards || scorecards.length === 0) {
-        this.setReversalBadgeCount(0)
-        return
+      let combinedReversals = []
+      const isAgent = userInfo && userInfo.role === 'Employee'
+
+      // STEP 1: Load from new reversal_requests table
+      try {
+        let reversalQuery = window.supabaseClient
+          .from('reversal_requests')
+          .select('*')
+        if (isAgent && userInfo.email) {
+          reversalQuery = reversalQuery.eq('requested_by_email', userInfo.email)
+        }
+
+        reversalQuery = reversalQuery.order('requested_at', { ascending: false })
+
+        const { data: reversalRequests, error: reversalError } = await reversalQuery
+
+        if (!reversalError && reversalRequests && reversalRequests.length > 0) {
+          const reversalIds = reversalRequests.map(rr => rr.id)
+          const { data: workflowStates, error: wsError } = await window.supabaseClient
+            .from('reversal_workflow_states')
+            .select('*')
+            .in('reversal_request_id', reversalIds)
+            .eq('is_current', true)
+
+          const workflowStateMap = new Map()
+          if (!wsError && workflowStates) {
+            workflowStates.forEach(ws => {
+              workflowStateMap.set(ws.reversal_request_id, ws.state)
+            })
+          }
+
+          const reversalsByTable = new Map()
+          const reversalReqMap = new Map()
+
+          for (const reversalReq of reversalRequests) {
+            const workflowState = workflowStateMap.get(reversalReq.id) || 'submitted'
+            const finalStates = ['approved', 'rejected', 'acknowledged']
+            if (finalStates.includes(workflowState)) {
+              continue
+            }
+
+            if (!reversalsByTable.has(reversalReq.scorecard_table_name)) {
+              reversalsByTable.set(reversalReq.scorecard_table_name, [])
+            }
+            reversalsByTable.get(reversalReq.scorecard_table_name).push(reversalReq.audit_id)
+            reversalReqMap.set(reversalReq.audit_id, { reversalReq, workflowState })
+          }
+
+          const auditDataMap = new Map()
+          const BATCH_SIZE = 100
+
+          for (const [tableName, auditIds] of reversalsByTable.entries()) {
+            try {
+              if (auditIds.length <= BATCH_SIZE) {
+                const { data: audits, error: auditError } = await window.supabaseClient
+                  .from(tableName)
+                  .select('*')
+                  .in('id', auditIds)
+
+                if (!auditError && audits) {
+                  audits.forEach(audit => {
+                    auditDataMap.set(audit.id, audit)
+                  })
+                }
+              } else {
+                for (let i = 0; i < auditIds.length; i += BATCH_SIZE) {
+                  const batch = auditIds.slice(i, i + BATCH_SIZE)
+                  const { data: audits, error: auditError } = await window.supabaseClient
+                    .from(tableName)
+                    .select('*')
+                    .in('id', batch)
+
+                  if (!auditError && audits) {
+                    audits.forEach(audit => {
+                      auditDataMap.set(audit.id, audit)
+                    })
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn(`Error loading audits from ${tableName}:`, err)
+            }
+          }
+
+          for (const [auditId, { reversalReq, workflowState }] of reversalReqMap.entries()) {
+            const auditData = auditDataMap.get(auditId)
+            if (!auditData) continue
+
+            const scorecard = allScorecards?.find(s => s.table_name === reversalReq.scorecard_table_name)
+
+            const mergedReversal = {
+              ...auditData,
+              reversal_requested_at: reversalReq.requested_at,
+              reversal_type: reversalReq.reversal_type,
+              reversal_justification_from_agent: reversalReq.justification,
+              reversal_metrics_parameters: reversalReq.metrics_parameters,
+              reversal_attachments: reversalReq.attachments,
+              score_before_appeal: reversalReq.original_score,
+              score_after_appeal: reversalReq.new_score,
+              reversal_approved: reversalReq.final_decision === 'approved' ? true : 
+                                 reversalReq.final_decision === 'rejected' ? false : null,
+              reversal_responded_at: reversalReq.final_decision_at,
+              reversal_approved_by: reversalReq.final_decision_by_name,
+              reversal_processed_by_email: reversalReq.final_decision_by_email,
+              sla_in_hours: reversalReq.sla_hours,
+              within_auditor_scope: reversalReq.within_auditor_scope,
+              reversal_workflow_state: workflowState,
+              _scorecard_id: scorecard?.id || null,
+              _scorecard_name: scorecard?.name || reversalReq.scorecard_table_name,
+              _scorecard_table: reversalReq.scorecard_table_name,
+              _reversal_request_id: reversalReq.id
+            }
+
+            if (isAgent && userInfo.email) {
+              const auditEmployeeEmail = (mergedReversal.employee_email || '').toLowerCase().trim()
+              if (auditEmployeeEmail !== userInfo.email) {
+                continue
+              }
+            }
+
+            combinedReversals.push(mergedReversal)
+          }
+        }
+      } catch (err) {
+        console.warn('Error loading from reversal_requests table:', err)
       }
 
-      // Count pending reversals from all scorecard tables
-      let totalPending = 0
-      for (const scorecard of scorecards) {
+      // STEP 2: Load from old structure
+      const existingAuditIds = new Set(combinedReversals.map(r => r.id))
+      const tablesWithReversals = new Set(combinedReversals.map(r => r._scorecard_table).filter(Boolean))
+
+      for (const scorecard of allScorecards || []) {
+        if (tablesWithReversals.has(scorecard.table_name)) {
+          continue
+        }
+
         try {
-          const { count, error } = await window.supabaseClient
+          let query = window.supabaseClient
             .from(scorecard.table_name)
-            .select('*', { count: 'exact', head: true })
+            .select('id,employee_email,reversal_requested_at,reversal_approved')
             .not('reversal_requested_at', 'is', null)
-            .is('reversal_approved', null)
+            .limit(1)
 
-          if (error) {
-            console.warn(`Error counting reversals from ${scorecard.table_name}:`, error)
+          const { data: quickCheck, error: checkError } = await query
+
+          if (checkError || !quickCheck || quickCheck.length === 0) {
             continue
           }
 
-          if (count !== null && count !== undefined) {
-            totalPending += count
+          query = window.supabaseClient
+            .from(scorecard.table_name)
+            .select('*')
+            .not('reversal_requested_at', 'is', null)
+
+          const isAgent = userInfo && userInfo.role === 'Employee'
+          if (isAgent && userInfo.email) {
+            query = query.eq('employee_email', userInfo.email)
+          }
+
+          if (!isAgent) {
+            query = query.is('reversal_approved', null)
+          }
+
+          query = query.order('reversal_requested_at', { ascending: false })
+
+          const { data, error } = await query
+
+          if (error) {
+            console.warn(`Error loading from ${scorecard.table_name}:`, error)
+            continue
+          }
+
+          if (data && data.length > 0) {
+            let filteredData = data.filter(audit => !existingAuditIds.has(audit.id))
+
+            if (isAgent && userInfo && userInfo.email) {
+              filteredData = filteredData.filter(audit => {
+                const auditEmployeeEmail = (audit.employee_email || '').toLowerCase().trim()
+                return auditEmployeeEmail === userInfo.email
+              })
+            }
+
+            const reversalsWithScorecard = filteredData.map(audit => ({
+              ...audit,
+              _scorecard_id: scorecard.id,
+              _scorecard_name: scorecard.name,
+              _scorecard_table: scorecard.table_name
+            }))
+
+            combinedReversals = combinedReversals.concat(reversalsWithScorecard)
           }
         } catch (err) {
-          console.warn(`Exception counting reversals from ${scorecard.table_name}:`, err)
+          console.warn(`Exception loading from ${scorecard.table_name}:`, err)
           continue
         }
       }
 
-      // Update cache and badge
-      this.setCachedNotificationCount('reversals', totalPending)
-      this.setReversalBadgeCount(totalPending)
+      if (isAgent && userInfo.email) {
+        combinedReversals = combinedReversals.filter(reversal => {
+          const auditEmployeeEmail = (reversal.employee_email || '').toLowerCase().trim()
+          return auditEmployeeEmail === userInfo.email
+        })
+      }
+
+      const pendingReversals = combinedReversals.filter(reversal => {
+        return this.isPendingWorkflowState(reversal)
+      })
+
+      this.setCachedNotificationCount('reversals', pendingReversals.length)
+      this.setReversalBadgeCount(pendingReversals.length)
     } catch (error) {
       console.error('Error updating pending reversals count:', error)
-      // Don't show badge on error, but keep cached value if available
       const cachedCount = this.getCachedNotificationCount('reversals')
       if (cachedCount !== null) {
         this.setReversalBadgeCount(cachedCount)
