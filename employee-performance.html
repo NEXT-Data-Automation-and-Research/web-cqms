@@ -269,6 +269,275 @@
             margin-bottom: 0.375rem;
         }
 
+        /* Multi-Select Dropdown Styles */
+        .multi-select-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .multi-select-trigger {
+            padding: 0.1875rem 0.2812rem;
+            border: 0.0469rem solid #d1d5db;
+            border-radius: 0.1875rem;
+            font-size: 0.5156rem;
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.375rem;
+            min-height: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .multi-select-trigger:hover {
+            border-color: var(--primary-color);
+        }
+
+        .multi-select-trigger.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.1875rem rgba(26, 115, 62, 0.1);
+        }
+
+        .multi-select-placeholder {
+            color: #9ca3af;
+            flex: 1;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .multi-select-count {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.0625rem 0.375rem;
+            border-radius: 0.75rem;
+            font-size: 0.4688rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.1875rem;
+            background: #ffffff;
+            border: 0.0469rem solid #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 12.5rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 100%;
+            width: max-content;
+            max-width: 20rem;
+        }
+
+        .multi-select-search {
+            padding: 0.375rem 0.5625rem;
+            border: none;
+            border-bottom: 0.0469rem solid #e5e7eb;
+            border-radius: 0.375rem 0.375rem 0 0;
+            font-size: 0.5156rem;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f9fafb;
+            color: #374151;
+            outline: none;
+        }
+        
+        .multi-select-search:focus {
+            background-color: #ffffff;
+            border-bottom-color: var(--primary-color);
+        }
+
+        .multi-select-options {
+            max-height: 8.75rem;
+            overflow-y: auto;
+            padding: 0.1875rem 0;
+        }
+
+        .multi-select-option {
+            padding: 0.375rem 0.5625rem;
+            font-size: 0.5156rem;
+            font-family: 'Poppins', sans-serif;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.375rem;
+            transition: background-color 0.15s ease;
+            min-width: 0;
+        }
+
+        .multi-select-option:hover {
+            background-color: #f3f4f6;
+        }
+
+        .multi-select-option.hidden {
+            display: none;
+        }
+
+        .multi-select-option input[type="checkbox"] {
+            width: 0.75rem;
+            height: 0.75rem;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+
+        .multi-select-option label {
+            cursor: pointer;
+            flex: 1;
+            user-select: none;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        .multi-select-actions {
+            display: flex;
+            gap: 0.375rem;
+            padding: 0.375rem;
+            border-top: 0.0469rem solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+
+        .multi-select-action-btn {
+            flex: 1;
+            padding: 0.2812rem 0.5625rem;
+            border: 0.0469rem solid #d1d5db;
+            border-radius: 0.1875rem;
+            background-color: #ffffff;
+            color: #374151;
+            font-size: 0.4688rem;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .multi-select-action-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* View Toggle Button Styles */
+        .view-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .view-toggle-wrapper {
+            position: relative;
+            display: flex;
+            background-color: #032816;
+            border-radius: 0.4688rem;
+            overflow: hidden;
+            padding: 0.2344rem;
+            min-width: 12rem;
+        }
+
+        .view-toggle-slider {
+            position: absolute;
+            top: 0.2344rem;
+            height: calc(100% - 0.4688rem);
+            background-color: var(--primary-color);
+            border-radius: 0.2344rem;
+            transition: all 0.3s ease;
+            left: 0.2344rem;
+            width: calc(50% - 0.2344rem);
+        }
+
+        .view-toggle-btn {
+            flex: 1;
+            padding: 0.375rem 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-weight: 700;
+            transition: color 0.2s ease;
+            z-index: 2;
+            position: relative;
+            font-family: var(--font-family);
+            font-size: 0.6rem;
+            white-space: nowrap;
+        }
+
+        .channel-filter-icon-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.375rem;
+            background-color: var(--background-white);
+            border: 0.0469rem solid var(--border-light);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .channel-filter-icon-btn:hover {
+            background-color: var(--gray-50);
+            border-color: var(--primary-color);
+        }
+
+        .channel-filter-icon-btn.active {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .channel-filter-icon-btn.active svg {
+            stroke: white;
+        }
+
+        .channel-filter-icon-btn svg {
+            width: 0.875rem;
+            height: 0.875rem;
+            stroke: var(--text-color);
+        }
+
+        /* Dark mode support */
+        [data-theme="dark"] .multi-select-trigger {
+            background-color: var(--background-white);
+            border-color: var(--border-light);
+            color: var(--text-color);
+        }
+
+        [data-theme="dark"] .multi-select-dropdown {
+            background: var(--background-white);
+            border-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-search {
+            background-color: var(--gray-50);
+            color: var(--text-color);
+            border-bottom-color: var(--border-light);
+        }
+
+        [data-theme="dark"] .multi-select-option {
+            color: var(--text-color);
+        }
+
+        [data-theme="dark"] .multi-select-option:hover {
+            background-color: var(--gray-100);
+        }
+
+        [data-theme="dark"] .multi-select-actions {
+            background-color: var(--gray-50);
+            border-top-color: var(--border-light);
+        }
+
         .kpi-chart-container {
             height: 2.1094rem;
             margin-top: 0.75rem;
@@ -311,7 +580,6 @@
         }
 
         .dashboard-grid > .dashboard-card:nth-child(2) {
-            /* Top Performers */
             grid-column: span 6;
         }
 
@@ -407,7 +675,7 @@
 
         .performance-table th {
             padding: 0.5625rem;
-            text-align: left;
+            text-align: center;
             font-size: 0.6562rem;
             font-weight: 600;
             color: var(--text-secondary);
@@ -416,6 +684,7 @@
 
         .performance-table td {
             padding: 0.5625rem;
+            text-align: center;
             font-size: 0.6562rem;
             color: var(--text-color);
             border-bottom: 0.0469rem solid var(--gray-100);
@@ -427,6 +696,110 @@
 
         .performance-table tbody tr:hover {
             background-color: var(--gray-50);
+        }
+
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 0.0469rem solid var(--border-light);
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .pagination-info {
+            font-size: 0.6562rem;
+            color: var(--text-secondary);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .pagination-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background-color: var(--background-white);
+            color: var(--text-color);
+            border: 0.0469rem solid var(--border-light);
+            border-radius: 0.375rem;
+            font-size: 0.6562rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-family);
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background-color: var(--gray-50);
+            border-color: var(--primary-color);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-page-numbers {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .pagination-page-number {
+            min-width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 0.5rem;
+            background-color: var(--background-white);
+            color: var(--text-color);
+            border: 0.0469rem solid var(--border-light);
+            border-radius: 0.375rem;
+            font-size: 0.6562rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-page-number:hover {
+            background-color: var(--gray-50);
+            border-color: var(--primary-color);
+        }
+
+        .pagination-page-number.active {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .pagination-page-size {
+            display: flex;
+            align-items: center;
+        }
+
+        .pagination-select {
+            padding: 0.375rem 0.5625rem;
+            border: 0.0469rem solid var(--border-light);
+            border-radius: 0.2812rem;
+            font-size: 0.6562rem;
+            font-family: var(--font-family);
+            background-color: var(--background-white);
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .pagination-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
         }
 
         .status-badge {
@@ -590,6 +963,12 @@
             color: var(--text-muted);
         }
 
+        /* Loading Spinner Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
     </style>
 </head>
 
@@ -619,7 +998,7 @@
     <div id="dashboardContent">
 
     <!-- Action Buttons -->
-    <div class="header-actions" style="margin-top: 3rem; margin-bottom: 1.125rem;">
+    <div class="header-actions" id="headerActions" style="margin-top: 3rem; margin-bottom: 1.125rem; display: none;">
         <!-- Week Navigation -->
         <div style="display: flex; align-items: center; gap: 0.5625rem;">
             <button class="action-btn" id="prevWeekBtn" style="padding: 0.4688rem 0.5625rem;" title="Previous Week">
@@ -684,6 +1063,12 @@
         </button>
     </div>
 
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; width: 100%;">
+        <div style="width: 2.5rem; height: 2.5rem; border: 0.25rem solid #e5e7eb; border-top-color: #1A733E; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
+        <p style="font-size: 0.75rem; color: #6b7280; font-family: 'Poppins', sans-serif; margin: 0;">Loading Reports...</p>
+    </div>
+
     <!-- Filter Panel -->
     <div class="filter-panel" id="filterPanel">
         <div class="filter-group">
@@ -713,19 +1098,7 @@
     </div>
 
     <!-- KPI Cards -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-header">
-                <div class="kpi-label">Interaction Count</div>
-                <div class="kpi-date" id="kpi0Date" style="display: none;">-</div>
-            </div>
-            <div class="kpi-value" id="kpi0Value" style="color: #9333ea;">-</div>
-            <div class="kpi-change positive" id="kpi0Change">-</div>
-            <div class="kpi-chart-container">
-                <canvas id="kpiChart0"></canvas>
-            </div>
-        </div>
-
+    <div class="kpi-grid" id="kpiGrid" style="display: none;">
         <div class="kpi-card">
             <div class="kpi-header">
                 <div class="kpi-label">Completed Audits</div>
@@ -740,7 +1113,7 @@
 
         <div class="kpi-card">
             <div class="kpi-header">
-                <div class="kpi-label">Error Count Trend</div>
+                <div class="kpi-label">Error Count</div>
                 <div class="kpi-date" id="kpi2Date" style="display: none;">-</div>
             </div>
             <div class="kpi-value" id="kpi2Value" style="color: #ef4444;">-</div>
@@ -761,11 +1134,149 @@
                 <canvas id="kpiChart3"></canvas>
             </div>
         </div>
+
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-label">Passing Rate</div>
+                <div class="kpi-date" id="kpi4Date" style="display: none;">-</div>
+            </div>
+            <div class="kpi-value" id="kpi4Value">-</div>
+            <div class="kpi-change positive" id="kpi4Change">-</div>
+            <div class="kpi-chart-container">
+                <canvas id="kpiChart4"></canvas>
+            </div>
+        </div>
     </div>
 
     <!-- Main Dashboard Grid -->
-    <div class="dashboard-grid">
-        <!-- Performance Table - Full Width -->
+    <div class="dashboard-grid" id="dashboardGrid" style="display: none;">
+        <!-- Channel-wise Passing Rate Comparison - Full Width -->
+        <div class="dashboard-card" style="position: relative;">
+            <div class="card-header" style="position: relative;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <div class="card-title">Channel-wise Passing Rate Comparison</div>
+                    <div class="view-toggle-container">
+                        <div class="view-toggle-wrapper" id="viewToggleWrapper">
+                            <div class="view-toggle-slider" id="viewToggleSlider"></div>
+                            <button class="view-toggle-btn active" id="detailedViewBtn" onclick="switchView('detailed', this, 0)">Detailed View</button>
+                            <button class="view-toggle-btn" id="summaryViewBtn" onclick="switchView('summary', this, 1)">Summary</button>
+                        </div>
+                        <div style="position: relative;">
+                            <button class="channel-filter-icon-btn" id="channelFilterIconBtn" onclick="toggleChannelFilter()" title="Filter by Channel">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                                </svg>
+                            </button>
+                            <div class="multi-select-container" id="channelFilterContainer" style="width: auto; min-width: 10rem; position: absolute; left: 0; top: 100%; margin-top: 0.5rem; z-index: 1000; display: none;">
+                                <div class="multi-select-trigger" id="channelFilterTrigger" onclick="toggleMultiSelect('channelFilter')">
+                                    <span class="multi-select-placeholder" id="channelFilterPlaceholder">Select channels...</span>
+                                    <span class="multi-select-count" id="channelFilterCount" style="display: none;"></span>
+                                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                                <div class="multi-select-dropdown" id="channelFilterDropdown" style="display: none;">
+                                    <input type="text" class="multi-select-search" id="channelFilterSearch" placeholder="Search channels..." oninput="filterMultiSelectOptions('channelFilter')" onclick="event.stopPropagation()">
+                                    <div class="multi-select-options" id="channelFilterOptions">
+                                        <!-- Options will be populated dynamically -->
+                                    </div>
+                                    <div class="multi-select-actions">
+                                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('channelFilter')">Select All</button>
+                                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('channelFilter')">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.6562rem; color: var(--text-secondary); margin-top: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.375rem;">
+                        <div style="width: 0.5rem; height: 0.5rem; border-radius: 50%; background-color: #10b981;"></div>
+                        <span>Target Met (≥80%)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.375rem;">
+                        <div style="width: 0.5rem; height: 0.5rem; border-radius: 50%; background-color: #f59e0b;"></div>
+                        <span>Below Target (60-79%)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.375rem;">
+                        <div style="width: 0.5rem; height: 0.5rem; border-radius: 50%; background-color: #ef4444;"></div>
+                        <span>Needs Improvement (&lt;60%)</span>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="channelFilter" value="">
+            <!-- Summary Statistics -->
+            <div id="passingRateSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; background-color: var(--gray-50); border-radius: 0.375rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 0.5625rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Total Individuals</div>
+                    <div style="font-size: 1.125rem; font-weight: 600; color: var(--text-color);" id="totalIndividualsCount">-</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.5625rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Target Met (≥80%)</div>
+                    <div style="font-size: 1.125rem; font-weight: 600; color: #10b981;" id="targetMetCount">-</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.5625rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Below Target</div>
+                    <div style="font-size: 1.125rem; font-weight: 600; color: #ef4444;" id="belowTargetCount">-</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.5625rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Target Achievement Rate</div>
+                    <div style="font-size: 1.125rem; font-weight: 600; color: var(--text-color);" id="targetAchievementRate">-</div>
+                </div>
+            </div>
+            <div class="performance-table-container">
+                <table class="performance-table">
+                    <thead id="channelPassingRateTableHead">
+                        <tr>
+                            <th>Channel</th>
+                            <th>Individual Name</th>
+                            <th>Total Audits</th>
+                            <th>Passed</th>
+                            <th>Failed</th>
+                            <th>Passing Rate</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="channelPassingRateTableBody">
+                        <tr>
+                            <td colspan="7" class="loading">Loading passing rate data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination for Channel-wise Passing Rate Comparison -->
+            <div class="pagination-container" id="channelPassingRatePagination" style="display: none;">
+                <div class="pagination-info">
+                    <span id="channelPassingRatePaginationInfo">Showing 0-0 of 0</span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="channelPassingRatePrevBtn" onclick="changeChannelPassingRatePage(-1)" disabled>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 0.75rem; height: 0.75rem;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                        Previous
+                    </button>
+                    <div class="pagination-page-numbers" id="channelPassingRatePageNumbers"></div>
+                    <button class="pagination-btn" id="channelPassingRateNextBtn" onclick="changeChannelPassingRatePage(1)" disabled>
+                        Next
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 0.75rem; height: 0.75rem;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="pagination-page-size">
+                    <label for="channelPassingRatePageSize" style="font-size: 0.6562rem; color: var(--text-secondary); margin-right: 0.375rem;">Show:</label>
+                    <select id="channelPassingRatePageSize" class="pagination-select" onchange="changeChannelPassingRatePageSize()">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Performance - Full Width -->
         <div class="dashboard-card">
             <div class="card-header">
                 <div class="card-title">Agent Performance</div>
@@ -796,15 +1307,35 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-
-        <!-- Top Performers - Left Column -->
-        <div class="dashboard-card">
-            <div class="card-header">
-                <div class="card-title">Top Performers</div>
-            </div>
-            <div style="height: 8.7891rem;">
-                <canvas id="topPerformersChart"></canvas>
+            <!-- Pagination for Agent Performance -->
+            <div class="pagination-container" id="agentPerformancePagination" style="display: none;">
+                <div class="pagination-info">
+                    <span id="agentPerformancePaginationInfo">Showing 0-0 of 0</span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="agentPerformancePrevBtn" onclick="changeAgentPerformancePage(-1)" disabled>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 0.75rem; height: 0.75rem;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                        Previous
+                    </button>
+                    <div class="pagination-page-numbers" id="agentPerformancePageNumbers"></div>
+                    <button class="pagination-btn" id="agentPerformanceNextBtn" onclick="changeAgentPerformancePage(1)" disabled>
+                        Next
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 0.75rem; height: 0.75rem;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="pagination-page-size">
+                    <label for="agentPerformancePageSize" style="font-size: 0.6562rem; color: var(--text-secondary); margin-right: 0.375rem;">Show:</label>
+                    <select id="agentPerformancePageSize" class="pagination-select" onchange="changeAgentPerformancePageSize()">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -918,6 +1449,27 @@ let allScorecardParameters = {}; // Map of scorecard_id -> parameters
 let allScorecards = []; // Store all scorecards for mapping scorecard_id to table_name
 let dateFilter = { start: null, end: null };
 let currentFilters = { channel: '', status: '', agent: '' };
+
+// Store reference to shared date filter utility BEFORE defining our own function
+// This prevents naming conflicts (similar to auditor-dashboard.html and home.html)
+const originalApplyQuickDateFilter = (typeof window !== 'undefined' && window.applyQuickDateFilter) 
+    ? window.applyQuickDateFilter 
+    : null;
+
+// Pagination state
+let agentPerformancePagination = {
+    currentPage: 1,
+    pageSize: 25,
+    totalItems: 0,
+    allData: []
+};
+
+let channelPassingRatePagination = {
+    currentPage: 1,
+    pageSize: 25,
+    totalItems: 0,
+    allData: []
+};
 // User info for filtering (matching audit-reports.html)
 let isAgent = false;
 let currentUserEmail = '';
@@ -1025,6 +1577,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeMonthFilter();
     await loadAllData();
     setupEventListeners();
+    
+    // Populate channel filter options after data is loaded
+    populateChannelFilterOptions();
+    
+    // Initialize view toggle slider position
+    initializeViewToggleSlider();
 });
 
 async function waitForSupabase() {
@@ -1091,9 +1649,37 @@ function setupEventListeners() {
 }
 
 // ============================================================================
+// Loading Indicator Functions
+// ============================================================================
+function showLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const dashboardGrid = document.getElementById('dashboardGrid');
+    const kpiGrid = document.getElementById('kpiGrid');
+    const headerActions = document.getElementById('headerActions');
+    if (loadingIndicator) loadingIndicator.style.display = 'flex';
+    if (dashboardGrid) dashboardGrid.style.display = 'none';
+    if (kpiGrid) kpiGrid.style.display = 'none';
+    if (headerActions) headerActions.style.display = 'none';
+}
+
+function hideLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const dashboardGrid = document.getElementById('dashboardGrid');
+    const kpiGrid = document.getElementById('kpiGrid');
+    const headerActions = document.getElementById('headerActions');
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    if (dashboardGrid) dashboardGrid.style.display = 'grid';
+    if (kpiGrid) kpiGrid.style.display = 'grid';
+    if (headerActions) headerActions.style.display = 'flex';
+}
+
+// ============================================================================
 // Data Loading
 // ============================================================================
 async function loadAllData(forceRefresh = false) {
+    // Show loading indicator
+    showLoadingIndicator();
+    
     try {
         const useCache = !forceRefresh && isCacheValid();
         
@@ -1126,6 +1712,9 @@ async function loadAllData(forceRefresh = false) {
                 // Initialize charts
                 initializeKPIChats();
                 
+                // Hide loading indicator
+                hideLoadingIndicator();
+                
                 // Load fresh data in background for next time
                 loadAllDataFresh(true);
             } else {
@@ -1139,6 +1728,7 @@ async function loadAllData(forceRefresh = false) {
         }
     } catch (error) {
         console.error('Error loading data:', error);
+        hideLoadingIndicator();
         document.getElementById('performanceTableBody').innerHTML = 
             '<tr><td colspan="8" class="loading" style="color: var(--error-color);">Error loading data. Please refresh.</td></tr>';
     }
@@ -1184,6 +1774,9 @@ async function loadAllDataFresh(background = false) {
 
             // Initialize charts
             initializeKPIChats();
+            
+            // Hide loading indicator
+            hideLoadingIndicator();
         } else {
             // In background mode, just update the data silently
             // The UI will use the cached data that was already displayed
@@ -1192,6 +1785,7 @@ async function loadAllDataFresh(background = false) {
     } catch (error) {
         console.error('Error loading fresh data:', error);
         if (!background) {
+            hideLoadingIndicator();
             document.getElementById('performanceTableBody').innerHTML = 
                 '<tr><td colspan="8" class="loading" style="color: var(--error-color);">Error loading data. Please refresh.</td></tr>';
         }
@@ -1554,6 +2148,7 @@ function applyAllFilters() {
     updateCharts();
     updateRecentAudits();
     updateErrorCategories();
+    updateChannelPassingRateComparison();
 }
 
 function applyFilters() {
@@ -1601,15 +2196,103 @@ function clearDateFilter() {
 }
 
 // Use shared date filter utility - wrap to provide page-specific callbacks
-const originalApplyQuickDateFilter = window.applyQuickDateFilter;
-function applyQuickDateFilter(period) {
-    originalApplyQuickDateFilter(period, {
-        dateFilter: dateFilter,
-        setUseWeekFilter: () => { useWeekFilter = false; },
-        onUpdate: updateWeekDisplay,
-        onRefresh: applyAllFilters
-    });
-}
+// Store reference BEFORE defining to avoid overwriting the original
+window.applyQuickDateFilter = function(period) {
+    try {
+        // Check if the shared utility function exists (use stored reference to avoid conflict)
+        if (originalApplyQuickDateFilter && typeof originalApplyQuickDateFilter === 'function') {
+            originalApplyQuickDateFilter(period, {
+                dateFilter: dateFilter,
+                setUseWeekFilter: () => { useWeekFilter = false; },
+                onUpdate: updateWeekDisplay,
+                onRefresh: applyAllFilters
+            });
+            return;
+        }
+        
+        // Fallback implementation - check if required functions exist
+        if (typeof getDhakaNow !== 'function' || typeof getDhakaStartOfDay !== 'function' || 
+            typeof getDhakaEndOfDay !== 'function' || typeof formatDhakaDateForInput !== 'function' ||
+            typeof getDhakaFirstDayOfMonth !== 'function' || typeof getDhakaLastDayOfMonth !== 'function' ||
+            typeof formatDhakaDate !== 'function') {
+            console.error('Required date utility functions not available');
+            alert('Date filter utilities not loaded. Please refresh the page.');
+            return;
+        }
+        
+        const today = getDhakaNow();
+        let startDate, endDate;
+        
+        switch(period) {
+            case 'today':
+                startDate = getDhakaStartOfDay();
+                endDate = getDhakaEndOfDay();
+                break;
+            case 'yesterday':
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                startDate = getDhakaStartOfDay(yesterday);
+                endDate = getDhakaEndOfDay(yesterday);
+                break;
+            case 'thisMonth':
+                startDate = getDhakaFirstDayOfMonth(today);
+                endDate = getDhakaLastDayOfMonth(today);
+                break;
+            case 'lastMonth':
+                const lastMonthDate = new Date(today);
+                lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+                startDate = getDhakaFirstDayOfMonth(lastMonthDate);
+                endDate = getDhakaLastDayOfMonth(lastMonthDate);
+                break;
+            default:
+                console.warn('Unknown period:', period);
+                return;
+        }
+        
+        // Update date filter
+        dateFilter.start = formatDhakaDateForInput(startDate);
+        dateFilter.end = formatDhakaDateForInput(endDate);
+        useWeekFilter = false;
+        
+        // Update date input fields
+        const startDateEl = document.getElementById('startDate');
+        const endDateEl = document.getElementById('endDate');
+        const dateBtnTextEl = document.getElementById('dateBtnText');
+        
+        if (startDateEl) {
+            startDateEl.value = dateFilter.start;
+        }
+        if (endDateEl) {
+            endDateEl.value = dateFilter.end;
+        }
+        
+        if (dateBtnTextEl) {
+            const start = formatDhakaDate(startDate, { month: 'short', day: 'numeric' });
+            const end = formatDhakaDate(endDate, { month: 'short', day: 'numeric' });
+            dateBtnTextEl.textContent = `${start} - ${end}`;
+        }
+        
+        // Update active state of quick filter buttons
+        const quickDateButtons = document.querySelectorAll('.quick-date-btn');
+        quickDateButtons.forEach(btn => btn.classList.remove('active'));
+        
+        const activeButton = document.getElementById(period + 'Btn');
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+        
+        // Update week display and refresh filters
+        if (typeof updateWeekDisplay === 'function') {
+            updateWeekDisplay();
+        }
+        if (typeof applyAllFilters === 'function') {
+            applyAllFilters();
+        }
+    } catch (error) {
+        console.error('Error in applyQuickDateFilter:', error);
+        alert('Error applying date filter: ' + error.message);
+    }
+};;
 
 // ============================================================================
 // KPI Updates
@@ -1753,14 +2436,27 @@ function updateKPIs() {
         : 0;
     const scoreChange = avgScore - previousPeriodAvgScore;
 
+    // Calculate passing rate
+    const passedAudits = filteredAudits.filter(a => {
+        const status = normalizePassingStatus(a.passingStatus || a.passing_status);
+        return status === 'Passed';
+    }).length;
+    const passingRate = filteredAudits.length > 0 
+        ? Math.round((passedAudits / filteredAudits.length) * 100) 
+        : 0;
+
+    // Previous period passing rate
+    const previousPassedAudits = previousFilteredAudits.filter(a => {
+        const status = normalizePassingStatus(a.passingStatus || a.passing_status);
+        return status === 'Passed';
+    }).length;
+    const previousPassingRate = previousFilteredAudits.length > 0 
+        ? Math.round((previousPassedAudits / previousFilteredAudits.length) * 100) 
+        : 0;
+    const passingRateChange = passingRate - previousPassingRate;
+
     // Update KPI cards
     // Hide date display
-    document.getElementById('kpi0Date').textContent = '';
-    // Show "Coming Soon" chip instead of numbers for Interaction Count
-    document.getElementById('kpi0Value').innerHTML = '<span class="coming-soon-chip">Coming Soon</span>';
-    document.getElementById('kpi0Change').textContent = '';
-    document.getElementById('kpi0Change').style.display = 'none';
-
     document.getElementById('kpi1Date').textContent = '';
     document.getElementById('kpi1Value').textContent = completedAudits.toLocaleString();
     document.getElementById('kpi1Change').textContent = `${completedChange >= 0 ? '+' : ''}${Math.round(completedChange)}% than previous period`;
@@ -1780,12 +2476,17 @@ function updateKPIs() {
     document.getElementById('kpi3Change').textContent = `${scoreChange >= 0 ? '+' : ''}${scoreChange}% than previous period`;
     document.getElementById('kpi3Change').className = `kpi-change ${scoreChange >= 0 ? 'positive' : 'negative'}`;
 
+    document.getElementById('kpi4Date').textContent = '';
+    document.getElementById('kpi4Value').textContent = `${passingRate}%`;
+    document.getElementById('kpi4Change').textContent = `${passingRateChange >= 0 ? '+' : ''}${passingRateChange}% than previous period`;
+    document.getElementById('kpi4Change').className = `kpi-change ${passingRateChange >= 0 ? 'positive' : 'negative'}`;
+
     // Update KPI trend charts
     // For error trend: negative change (fewer errors) is positive trend
-    updateKPITrendCharts(interactionChange >= 0, completedChange >= 0, errorChangeRounded <= 0, scoreChange >= 0);
+    updateKPITrendCharts(completedChange >= 0, errorChangeRounded <= 0, scoreChange >= 0, passingRateChange >= 0);
 }
 
-function updateKPITrendCharts(up0, up1, up2, up3) {
+function updateKPITrendCharts(up1, up2, up3, up4) {
     const generateData = (trend) => {
         const data = [];
         let value = 50;
@@ -1835,22 +2536,6 @@ function updateKPITrendCharts(up0, up1, up2, up3) {
         elements: { point: { radius: 0 }, line: { borderWidth: 2 } }
     };
 
-    if (charts.kpi0) charts.kpi0.destroy();
-    charts.kpi0 = new Chart(document.getElementById('kpiChart0'), {
-        type: 'line',
-        data: {
-            labels: Array(7).fill(''),
-            datasets: [{
-                data: generateData(up0),
-                borderColor: '#9333ea',
-                backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: chartOptions
-    });
-
     if (charts.kpi1) charts.kpi1.destroy();
     charts.kpi1 = new Chart(document.getElementById('kpiChart1'), {
         type: 'line',
@@ -1892,6 +2577,22 @@ function updateKPITrendCharts(up0, up1, up2, up3) {
                 data: generateData(up3),
                 borderColor: up3 ? '#10b981' : '#ef4444',
                 backgroundColor: up3 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: chartOptions
+    });
+
+    if (charts.kpi4) charts.kpi4.destroy();
+    charts.kpi4 = new Chart(document.getElementById('kpiChart4'), {
+        type: 'line',
+        data: {
+            labels: Array(7).fill(''),
+            datasets: [{
+                data: generateData(up4),
+                borderColor: up4 ? '#10b981' : '#ef4444',
+                backgroundColor: up4 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                 tension: 0.4,
                 fill: true
             }]
@@ -2068,12 +2769,30 @@ function updateAgentPerformance() {
         };
     }).sort((a, b) => b.avgScore - a.avgScore);
 
+    // Store all data for pagination
+    agentPerformancePagination.allData = agentData;
+    agentPerformancePagination.totalItems = agentData.length;
+    
+    // Apply pagination
+    renderAgentPerformanceTable();
+}
+
+function renderAgentPerformanceTable() {
+    const { currentPage, pageSize, totalItems, allData } = agentPerformancePagination;
+    
+    // Calculate pagination
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
+    const paginatedData = allData.slice(startIndex, endIndex);
+    
     // Update table
     const tbody = document.getElementById('performanceTableBody');
-    if (agentData.length === 0) {
+    if (allData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="loading">No performance data available</td></tr>';
+        document.getElementById('agentPerformancePagination').style.display = 'none';
     } else {
-        tbody.innerHTML = agentData.map((agent) => {
+        tbody.innerHTML = paginatedData.map((agent) => {
             return `
                 <tr>
                     <td>${escapeHtml(agent.employeeId)}</td>
@@ -2092,10 +2811,89 @@ function updateAgentPerformance() {
                 </tr>
             `;
         }).join('');
+        
+        // Update pagination UI
+        updateAgentPerformancePaginationUI(totalPages, startIndex + 1, endIndex, totalItems);
     }
+}
 
-    // Update top performers chart
-    updateTopPerformersChart(agentData.slice(0, 3));
+function updateAgentPerformancePaginationUI(totalPages, startItem, endItem, totalItems) {
+    const paginationContainer = document.getElementById('agentPerformancePagination');
+    const infoElement = document.getElementById('agentPerformancePaginationInfo');
+    const prevBtn = document.getElementById('agentPerformancePrevBtn');
+    const nextBtn = document.getElementById('agentPerformanceNextBtn');
+    const pageNumbers = document.getElementById('agentPerformancePageNumbers');
+    
+    if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+    }
+    
+    paginationContainer.style.display = 'flex';
+    infoElement.textContent = `Showing ${startItem}-${endItem} of ${totalItems}`;
+    
+    // Update buttons
+    prevBtn.disabled = agentPerformancePagination.currentPage === 1;
+    nextBtn.disabled = agentPerformancePagination.currentPage === totalPages;
+    
+    // Generate page numbers
+    let pageNumbersHTML = '';
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, agentPerformancePagination.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    if (startPage > 1) {
+        pageNumbersHTML += `<button class="pagination-page-number" onclick="goToAgentPerformancePage(1)">1</button>`;
+        if (startPage > 2) {
+            pageNumbersHTML += `<span style="padding: 0 0.25rem; color: var(--text-secondary);">...</span>`;
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbersHTML += `<button class="pagination-page-number ${i === agentPerformancePagination.currentPage ? 'active' : ''}" onclick="goToAgentPerformancePage(${i})">${i}</button>`;
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            pageNumbersHTML += `<span style="padding: 0 0.25rem; color: var(--text-secondary);">...</span>`;
+        }
+        pageNumbersHTML += `<button class="pagination-page-number" onclick="goToAgentPerformancePage(${totalPages})">${totalPages}</button>`;
+    }
+    
+    pageNumbers.innerHTML = pageNumbersHTML;
+}
+
+function changeAgentPerformancePage(direction) {
+    const { currentPage, totalItems, pageSize } = agentPerformancePagination;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const newPage = currentPage + direction;
+    
+    if (newPage >= 1 && newPage <= totalPages) {
+        agentPerformancePagination.currentPage = newPage;
+        renderAgentPerformanceTable();
+    }
+}
+
+function goToAgentPerformancePage(page) {
+    const { totalItems, pageSize } = agentPerformancePagination;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    
+    if (page >= 1 && page <= totalPages) {
+        agentPerformancePagination.currentPage = page;
+        renderAgentPerformanceTable();
+    }
+}
+
+function changeAgentPerformancePageSize() {
+    const pageSizeSelect = document.getElementById('agentPerformancePageSize');
+    const newPageSize = parseInt(pageSizeSelect.value);
+    agentPerformancePagination.pageSize = newPageSize;
+    agentPerformancePagination.currentPage = 1; // Reset to first page
+    renderAgentPerformanceTable();
 }
 
 function getTopErrorParameter(audits) {
@@ -2194,59 +2992,6 @@ function formatAgentName(email) {
 // ============================================================================
 // Charts
 // ============================================================================
-function updateTopPerformersChart(data) {
-    const ctx = document.getElementById('topPerformersChart');
-    
-    if (charts.topPerformers) {
-        charts.topPerformers.destroy();
-    }
-
-    if (data.length === 0) {
-        // Show empty state
-        return;
-    }
-
-    charts.topPerformers = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.map(a => a.fullName || formatAgentName(a.email)),
-            datasets: [{
-                label: 'Score %',
-                data: data.map(a => a.avgScore),
-                backgroundColor: data.map((_, i) => {
-                    const colors = ['#1a733e', '#10b981', '#34d399'];
-                    return colors[i] || '#6b7280';
-                }),
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `Score: ${context.parsed.y}%`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
 
 function updateCharts() {
     updateChannelChart();
@@ -3146,6 +3891,648 @@ function updateTopErrorCategoriesList(errorNameCounts) {
             </table>
         </div>
     `;
+}
+
+// ============================================================================
+// Channel-wise Passing Rate Comparison
+// ============================================================================
+function updateChannelPassingRateComparison() {
+    // Get filtered audits by submission date
+    let filteredAudits = getFilteredAuditsBySubmissionDate();
+    
+    // Apply channel filter if channels are selected
+    if (selectedChannels.length > 0) {
+        filteredAudits = filteredAudits.filter(audit => {
+            const channel = audit.channel || audit.channel_name || 'Unknown';
+            return selectedChannels.includes(channel);
+        });
+    }
+    
+    // Group by channel, then by individual (for detailed view) or just by channel (for summary view)
+    const channelMap = {};
+    const auditIds = {}; // Track unique audit IDs to prevent double-counting
+    
+    filteredAudits.forEach(audit => {
+        // Get channel from audit or user data
+        const channel = audit.channel || audit.channel_name || 'Unknown';
+        
+        // Get employee email
+        const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
+        
+        // Initialize channel if needed
+        if (!channelMap[channel]) {
+            channelMap[channel] = {};
+        }
+        
+        // Initialize individual if needed
+        if (!channelMap[channel][agentEmail]) {
+            channelMap[channel][agentEmail] = {
+                email: agentEmail,
+                total: 0,
+                passed: 0,
+                failed: 0
+            };
+            auditIds[agentEmail] = new Set();
+        }
+        
+        // Use Set to ensure we never count the same audit twice
+        const auditKey = `${audit.id}_${audit._scorecard_id || audit.scorecard_id || 'unknown'}`;
+        if (!auditIds[agentEmail].has(auditKey)) {
+            auditIds[agentEmail].add(auditKey);
+            
+            // Count total audits
+            channelMap[channel][agentEmail].total++;
+            
+            // Get passing status and normalize it
+            const passingStatus = audit.passing_status || audit.passingStatus || '';
+            const normalizedStatus = normalizePassingStatus(passingStatus);
+            
+            // Count passed/failed
+            if (normalizedStatus === 'Passed') {
+                channelMap[channel][agentEmail].passed++;
+            } else {
+                channelMap[channel][agentEmail].failed++;
+            }
+        }
+    });
+    
+    // Convert to array format for display
+    let channelData;
+    
+    if (currentView === 'summary') {
+        // Summary view: aggregate by channel only
+        channelData = Object.keys(channelMap)
+            .sort()
+            .map(channel => {
+                // Aggregate all individuals in this channel
+                const individuals = Object.values(channelMap[channel]);
+                const total = individuals.reduce((sum, ind) => sum + ind.total, 0);
+                const passed = individuals.reduce((sum, ind) => sum + ind.passed, 0);
+                const failed = individuals.reduce((sum, ind) => sum + ind.failed, 0);
+                const passingRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+                const meetsTarget = passingRate >= 80;
+                
+                return {
+                    channel,
+                    individuals: [{
+                        channel,
+                        total,
+                        passed,
+                        failed,
+                        passingRate,
+                        meetsTarget,
+                        isSummary: true
+                    }]
+                };
+            })
+            .filter(ch => ch.individuals[0].total > 0);
+    } else {
+        // Detailed view: show individual breakdown
+        channelData = Object.keys(channelMap)
+            .sort()
+            .map(channel => {
+                const individuals = Object.values(channelMap[channel])
+                    .map(individual => {
+                        // Get user info
+                        const user = allUsers.find(u => u.email && individual.email && 
+                            u.email.toLowerCase() === individual.email.toLowerCase());
+                        const fullName = user?.name || formatAgentName(individual.email);
+                        const employeeId = user?.employee_id || '-';
+                        
+                        // Calculate passing rate
+                        const passingRate = individual.total > 0 
+                            ? Math.round((individual.passed / individual.total) * 100) 
+                            : 0;
+                        
+                        // Determine if target is met (80% threshold)
+                        const meetsTarget = passingRate >= 80;
+                        
+                        return {
+                            ...individual,
+                            fullName,
+                            employeeId,
+                            passingRate,
+                            channel,
+                            meetsTarget
+                        };
+                    })
+                    .sort((a, b) => {
+                        // Sort by target status first (target met at top), then by passing rate
+                        if (a.meetsTarget !== b.meetsTarget) {
+                            return b.meetsTarget - a.meetsTarget; // true (1) comes before false (0)
+                        }
+                        return b.passingRate - a.passingRate;
+                    });
+                
+                return {
+                    channel,
+                    individuals
+                };
+            })
+            .filter(ch => ch.individuals.length > 0); // Only include channels with data
+    }
+    
+    // Calculate summary statistics
+    let totalIndividuals = 0;
+    let targetMetCount = 0;
+    let belowTargetCount = 0;
+    
+    channelData.forEach(channelInfo => {
+        channelInfo.individuals.forEach(individual => {
+            totalIndividuals++;
+            if (individual.meetsTarget) {
+                targetMetCount++;
+            } else {
+                belowTargetCount++;
+            }
+        });
+    });
+    
+    const targetAchievementRate = totalIndividuals > 0 
+        ? Math.round((targetMetCount / totalIndividuals) * 100) 
+        : 0;
+    
+    // Update summary statistics
+    document.getElementById('totalIndividualsCount').textContent = totalIndividuals;
+    document.getElementById('targetMetCount').textContent = targetMetCount;
+    document.getElementById('belowTargetCount').textContent = belowTargetCount;
+    document.getElementById('targetAchievementRate').textContent = `${targetAchievementRate}%`;
+    
+    // Flatten data for pagination (preserve channel grouping in display)
+    const flattenedData = [];
+    channelData.forEach((channelInfo) => {
+        channelInfo.individuals.forEach((individual) => {
+            flattenedData.push({
+                ...individual,
+                channelInfo: channelInfo // Keep reference for grouping
+            });
+        });
+    });
+    
+    // Store all data for pagination
+    channelPassingRatePagination.allData = flattenedData;
+    channelPassingRatePagination.totalItems = flattenedData.length;
+    
+    // Apply pagination
+    renderChannelPassingRateTable();
+}
+
+function renderChannelPassingRateTable() {
+    const { currentPage, pageSize, totalItems, allData } = channelPassingRatePagination;
+    
+    // Calculate pagination
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
+    const paginatedData = allData.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('channelPassingRateTableBody');
+    if (!tbody) return;
+    
+    const colspan = currentView === 'summary' ? 6 : 7;
+    
+    if (allData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${colspan}" class="loading">No passing rate data available for the selected period</td></tr>`;
+        document.getElementById('channelPassingRatePagination').style.display = 'none';
+        // Reset summary
+        document.getElementById('totalIndividualsCount').textContent = '0';
+        document.getElementById('targetMetCount').textContent = '0';
+        document.getElementById('belowTargetCount').textContent = '0';
+        document.getElementById('targetAchievementRate').textContent = '0%';
+    } else {
+        let tableHTML = '';
+        let currentChannel = null;
+        
+        paginatedData.forEach((individual, index) => {
+            const isFirstInChannel = individual.channel !== currentChannel;
+            
+            if (isFirstInChannel) {
+                currentChannel = individual.channel;
+            }
+            
+            // Determine row styling - add border between channels
+            const rowStyle = isFirstInChannel && index > 0 
+                ? 'border-top: 0.0938rem solid var(--border-light);' 
+                : '';
+            
+            // Highlight rows that meet target
+            const rowBackground = individual.meetsTarget 
+                ? 'background-color: rgba(16, 185, 129, 0.05);' 
+                : '';
+            
+            // Color code passing rate
+            let passingRateColor = '#6b7280'; // Default gray
+            if (individual.passingRate >= 80) {
+                passingRateColor = '#10b981'; // Green
+            } else if (individual.passingRate >= 60) {
+                passingRateColor = '#f59e0b'; // Yellow/Orange
+            } else {
+                passingRateColor = '#ef4444'; // Red
+            }
+            
+            // Status badge
+            let statusBadge = '';
+            if (individual.meetsTarget) {
+                statusBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.1875rem 0.5rem; border-radius: 0.75rem; font-size: 0.5625rem; font-weight: 600; background-color: rgba(16, 185, 129, 0.1); color: #10b981;">✓ Target Met</span>';
+            } else if (individual.passingRate >= 60) {
+                statusBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.1875rem 0.5rem; border-radius: 0.75rem; font-size: 0.5625rem; font-weight: 600; background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">Below Target</span>';
+            } else {
+                statusBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.1875rem 0.5rem; border-radius: 0.75rem; font-size: 0.5625rem; font-weight: 600; background-color: rgba(239, 68, 68, 0.1); color: #ef4444;">Needs Improvement</span>';
+            }
+            
+            if (currentView === 'summary') {
+                // Summary view: show only channel-level data
+                tableHTML += `
+                    <tr style="${rowStyle} ${rowBackground}">
+                        <td style="font-weight: 600; color: var(--text-color);">${escapeHtml(individual.channel)}</td>
+                        <td style="text-align: center;">${individual.total}</td>
+                        <td style="text-align: center; color: #10b981; font-weight: 600;">${individual.passed}</td>
+                        <td style="text-align: center; color: #ef4444; font-weight: 600;">${individual.failed}</td>
+                        <td style="text-align: center; color: ${passingRateColor}; font-weight: 600;">${individual.passingRate}%</td>
+                        <td style="text-align: center;">${statusBadge}</td>
+                    </tr>
+                `;
+            } else {
+                // Detailed view: show individual-level data
+                tableHTML += `
+                    <tr style="${rowStyle} ${rowBackground}">
+                        <td style="font-weight: ${isFirstInChannel ? '600' : '400'}; color: var(--text-color);">${escapeHtml(individual.channel)}</td>
+                        <td>${escapeHtml(individual.fullName || 'Unknown')}</td>
+                        <td style="text-align: center;">${individual.total}</td>
+                        <td style="text-align: center; color: #10b981; font-weight: 600;">${individual.passed}</td>
+                        <td style="text-align: center; color: #ef4444; font-weight: 600;">${individual.failed}</td>
+                        <td style="text-align: center; color: ${passingRateColor}; font-weight: 600;">${individual.passingRate}%</td>
+                        <td style="text-align: center;">${statusBadge}</td>
+                    </tr>
+                `;
+            }
+        });
+        
+        tbody.innerHTML = tableHTML;
+        
+        // Update pagination UI
+        updateChannelPassingRatePaginationUI(totalPages, startIndex + 1, endIndex, totalItems);
+    }
+}
+
+function updateChannelPassingRatePaginationUI(totalPages, startItem, endItem, totalItems) {
+    const paginationContainer = document.getElementById('channelPassingRatePagination');
+    const infoElement = document.getElementById('channelPassingRatePaginationInfo');
+    const prevBtn = document.getElementById('channelPassingRatePrevBtn');
+    const nextBtn = document.getElementById('channelPassingRateNextBtn');
+    const pageNumbers = document.getElementById('channelPassingRatePageNumbers');
+    
+    if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+    }
+    
+    paginationContainer.style.display = 'flex';
+    infoElement.textContent = `Showing ${startItem}-${endItem} of ${totalItems}`;
+    
+    // Update buttons
+    prevBtn.disabled = channelPassingRatePagination.currentPage === 1;
+    nextBtn.disabled = channelPassingRatePagination.currentPage === totalPages;
+    
+    // Generate page numbers
+    let pageNumbersHTML = '';
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, channelPassingRatePagination.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    if (startPage > 1) {
+        pageNumbersHTML += `<button class="pagination-page-number" onclick="goToChannelPassingRatePage(1)">1</button>`;
+        if (startPage > 2) {
+            pageNumbersHTML += `<span style="padding: 0 0.25rem; color: var(--text-secondary);">...</span>`;
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbersHTML += `<button class="pagination-page-number ${i === channelPassingRatePagination.currentPage ? 'active' : ''}" onclick="goToChannelPassingRatePage(${i})">${i}</button>`;
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            pageNumbersHTML += `<span style="padding: 0 0.25rem; color: var(--text-secondary);">...</span>`;
+        }
+        pageNumbersHTML += `<button class="pagination-page-number" onclick="goToChannelPassingRatePage(${totalPages})">${totalPages}</button>`;
+    }
+    
+    pageNumbers.innerHTML = pageNumbersHTML;
+}
+
+function changeChannelPassingRatePage(direction) {
+    const { currentPage, totalItems, pageSize } = channelPassingRatePagination;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const newPage = currentPage + direction;
+    
+    if (newPage >= 1 && newPage <= totalPages) {
+        channelPassingRatePagination.currentPage = newPage;
+        renderChannelPassingRateTable();
+    }
+}
+
+function goToChannelPassingRatePage(page) {
+    const { totalItems, pageSize } = channelPassingRatePagination;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    
+    if (page >= 1 && page <= totalPages) {
+        channelPassingRatePagination.currentPage = page;
+        renderChannelPassingRateTable();
+    }
+}
+
+function changeChannelPassingRatePageSize() {
+    const pageSizeSelect = document.getElementById('channelPassingRatePageSize');
+    const newPageSize = parseInt(pageSizeSelect.value);
+    channelPassingRatePagination.pageSize = newPageSize;
+    channelPassingRatePagination.currentPage = 1; // Reset to first page
+    renderChannelPassingRateTable();
+}
+
+// ============================================================================
+// Multi-Select Dropdown Functions
+// ============================================================================
+let selectedChannels = [];
+let currentView = 'detailed'; // 'detailed' or 'summary'
+
+window.toggleMultiSelect = function(filterId) {
+    const dropdown = document.getElementById(`${filterId}Dropdown`);
+    const trigger = document.getElementById(`${filterId}Trigger`);
+    
+    if (!dropdown || !trigger) return;
+    
+    // Close all other multi-selects
+    document.querySelectorAll('.multi-select-dropdown').forEach(dd => {
+        if (dd !== dropdown) {
+            dd.style.display = 'none';
+            const otherTrigger = dd.previousElementSibling;
+            if (otherTrigger) otherTrigger.classList.remove('active');
+        }
+    });
+    
+    // Toggle current dropdown
+    const isOpen = dropdown.style.display !== 'none';
+    dropdown.style.display = isOpen ? 'none' : 'flex';
+    trigger.classList.toggle('active', !isOpen);
+};
+
+window.updateMultiSelect = function(filterId) {
+    const options = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+    const selected = Array.from(options)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+    
+    const hiddenInput = document.getElementById(filterId);
+    if (hiddenInput) {
+        hiddenInput.value = JSON.stringify(selected);
+    }
+    
+    // Update UI
+    const placeholder = document.getElementById(`${filterId}Placeholder`);
+    const count = document.getElementById(`${filterId}Count`);
+    
+    if (selected.length === 0) {
+        if (placeholder) {
+            placeholder.style.display = 'inline';
+            placeholder.textContent = 'Select channels...';
+        }
+        if (count) count.style.display = 'none';
+    } else {
+        if (placeholder) placeholder.style.display = 'none';
+        if (count) {
+            count.style.display = 'inline';
+            count.textContent = selected.length;
+        }
+    }
+    
+    // Store selected channels
+    if (filterId === 'channelFilter') {
+        selectedChannels = selected;
+        updateChannelPassingRateComparison();
+    }
+};
+
+window.filterMultiSelectOptions = function(filterId) {
+    const searchInput = document.getElementById(`${filterId}Search`);
+    const options = document.querySelectorAll(`#${filterId}Options .multi-select-option`);
+    const searchTerm = (searchInput?.value || '').toLowerCase();
+    
+    options.forEach(option => {
+        const label = option.querySelector('label');
+        const text = label ? label.textContent.toLowerCase() : '';
+        if (text.includes(searchTerm)) {
+            option.classList.remove('hidden');
+        } else {
+            option.classList.add('hidden');
+        }
+    });
+};
+
+window.selectAllMultiSelect = function(filterId) {
+    const options = document.querySelectorAll(`#${filterId}Options .multi-select-option:not(.hidden) input[type="checkbox"]`);
+    options.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateMultiSelect(filterId);
+};
+
+window.clearMultiSelect = function(filterId) {
+    const options = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+    options.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateMultiSelect(filterId);
+};
+
+// Close multi-select dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    const channelFilterContainer = document.getElementById('channelFilterContainer');
+    const channelFilterIconBtn = document.getElementById('channelFilterIconBtn');
+    
+    // Don't close if clicking on the filter icon button
+    if (e.target.closest('#channelFilterIconBtn') || e.target.closest('#channelFilterContainer')) {
+        return;
+    }
+    
+    // Close channel filter container if clicking outside
+    if (channelFilterContainer && !e.target.closest('#channelFilterContainer')) {
+        channelFilterContainer.style.display = 'none';
+        if (channelFilterIconBtn) {
+            channelFilterIconBtn.classList.remove('active');
+        }
+    }
+    
+    // Close all multi-select dropdowns
+    if (!e.target.closest('.multi-select-container')) {
+        document.querySelectorAll('.multi-select-dropdown').forEach(dropdown => {
+            dropdown.style.display = 'none';
+            const trigger = dropdown.previousElementSibling;
+            if (trigger) trigger.classList.remove('active');
+        });
+    }
+});
+
+// Toggle channel filter dropdown
+function toggleChannelFilter() {
+    const container = document.getElementById('channelFilterContainer');
+    const iconBtn = document.getElementById('channelFilterIconBtn');
+    
+    if (container && iconBtn) {
+        const isVisible = container.style.display !== 'none';
+        container.style.display = isVisible ? 'none' : 'block';
+        iconBtn.classList.toggle('active', !isVisible);
+        
+        // If showing, also open the dropdown
+        if (!isVisible) {
+            setTimeout(() => {
+                toggleMultiSelect('channelFilter');
+            }, 100);
+        }
+    }
+}
+
+// Initialize view toggle slider position
+function initializeViewToggleSlider() {
+    const slider = document.getElementById('viewToggleSlider');
+    const toggleWrapper = document.getElementById('viewToggleWrapper');
+    
+    if (slider && toggleWrapper) {
+        // Wait for layout to be calculated
+        setTimeout(() => {
+            const containerPadding = 5;
+            const tabWidth = (toggleWrapper.offsetWidth - (containerPadding * 2)) / 2;
+            const sliderLeft = containerPadding; // Start at index 0 (Detailed View)
+            
+            slider.style.left = `${sliderLeft}px`;
+            slider.style.width = `${tabWidth}px`;
+        }, 100);
+    }
+}
+
+// View switching function
+function switchView(view, buttonElement, index) {
+    currentView = view;
+    
+    // Update button states
+    const detailedBtn = document.getElementById('detailedViewBtn');
+    const summaryBtn = document.getElementById('summaryViewBtn');
+    const slider = document.getElementById('viewToggleSlider');
+    const toggleWrapper = document.getElementById('viewToggleWrapper');
+    
+    if (detailedBtn && summaryBtn && slider && toggleWrapper) {
+        // Remove active class from all buttons
+        detailedBtn.classList.remove('active');
+        summaryBtn.classList.remove('active');
+        
+        // Add active class to clicked button
+        if (buttonElement) {
+            buttonElement.classList.add('active');
+        } else {
+            // Fallback if buttonElement not provided
+            if (view === 'detailed') {
+                detailedBtn.classList.add('active');
+            } else {
+                summaryBtn.classList.add('active');
+            }
+        }
+        
+        // Calculate slider position
+        const containerPadding = 5; // 0.2344rem ≈ 3.75px, using 5px for better visual
+        const tabWidth = (toggleWrapper.offsetWidth - (containerPadding * 2)) / 2;
+        const sliderLeft = containerPadding + (index * tabWidth);
+        
+        slider.style.left = `${sliderLeft}px`;
+        slider.style.width = `${tabWidth}px`;
+    }
+    
+    // Update table headers
+    const tableHead = document.getElementById('channelPassingRateTableHead');
+    if (tableHead) {
+        if (view === 'summary') {
+            tableHead.innerHTML = `
+                <tr>
+                    <th>Channel</th>
+                    <th>Total Audits</th>
+                    <th>Passed</th>
+                    <th>Failed</th>
+                    <th>Passing Rate</th>
+                    <th>Status</th>
+                </tr>
+            `;
+        } else {
+            tableHead.innerHTML = `
+                <tr>
+                    <th>Channel</th>
+                    <th>Individual Name</th>
+                    <th>Total Audits</th>
+                    <th>Passed</th>
+                    <th>Failed</th>
+                    <th>Passing Rate</th>
+                    <th>Status</th>
+                </tr>
+            `;
+        }
+    }
+    
+    // Refresh the table
+    updateChannelPassingRateComparison();
+}
+
+// Populate channel filter options
+function populateChannelFilterOptions() {
+    const filteredAudits = getFilteredAuditsBySubmissionDate();
+    const channels = new Set();
+    
+    filteredAudits.forEach(audit => {
+        const channel = audit.channel || audit.channel_name || 'Unknown';
+        if (channel) {
+            channels.add(channel);
+        }
+    });
+    
+    const channelOptions = document.getElementById('channelFilterOptions');
+    if (channelOptions) {
+        const sortedChannels = Array.from(channels).sort();
+        channelOptions.innerHTML = sortedChannels.map(channel => `
+            <div class="multi-select-option" data-value="${escapeHtml(channel)}">
+                <input type="checkbox" id="channel_${escapeHtml(channel)}" value="${escapeHtml(channel)}" onchange="updateMultiSelect('channelFilter')">
+                <label for="channel_${escapeHtml(channel)}">${escapeHtml(channel)}</label>
+            </div>
+        `).join('');
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Normalize passing status to handle variations
+function normalizePassingStatus(status) {
+    if (!status) return status;
+    
+    // Convert to string and trim
+    const statusStr = String(status).trim();
+    
+    // Convert old values to new ones for consistency
+    // Handle "Passing", "Pass", "passed" (case-insensitive)
+    if (statusStr === 'Passing' || statusStr === 'Pass' || statusStr.toLowerCase() === 'passed') {
+        return 'Passed';
+    }
+    // Handle "Not Passing", "Not Pass", "not passed" (case-insensitive)
+    if (statusStr === 'Not Passing' || statusStr === 'Not Pass' || statusStr.toLowerCase() === 'not passed') {
+        return 'Not Passed';
+    }
+    
+    // Return as-is if already normalized or unknown
+    return statusStr;
 }
 
 // ============================================================================
