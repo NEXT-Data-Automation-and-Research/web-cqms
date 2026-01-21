@@ -351,12 +351,12 @@
         <!-- Filters -->
         <div class="filters-container">
             <div class="filter-group">
-                <label class="filter-label" for="startDate">Start Date</label>
-                <input type="date" class="filter-input" id="startDate">
+                <label class="filter-label" for="startDate">Start Date <span style="color: #ef4444;">*</span></label>
+                <input type="date" class="filter-input" id="startDate" required>
             </div>
             <div class="filter-group">
-                <label class="filter-label" for="endDate">End Date</label>
-                <input type="date" class="filter-input" id="endDate">
+                <label class="filter-label" for="endDate">End Date <span style="color: #ef4444;">*</span></label>
+                <input type="date" class="filter-input" id="endDate" required>
             </div>
             <div class="filter-group">
                 <label class="filter-label">Country</label>
@@ -473,16 +473,10 @@ let currentReportData = [];
 let allReportData = []; // Store all data before filtering
 let usersMap = {}; // Map of email to user data for country lookup
 
-// Initialize default dates (December 12-31, 2025)
+// Initialize dates (no default values - fields are required)
 function initializeDates() {
-    const startDateEl = document.getElementById('startDate');
-    const endDateEl = document.getElementById('endDate');
-    
-    if (startDateEl && endDateEl) {
-        // Set default dates: December 12-31, 2025
-        startDateEl.value = '2025-12-12';
-        endDateEl.value = '2025-12-31';
-    }
+    // Date fields are now required and have no default values
+    // Users must select dates before loading the report
 }
 
 // Load report data
@@ -496,8 +490,19 @@ async function loadReport() {
     const exportBtn = document.getElementById('exportBtn');
     const loadBtn = document.getElementById('loadBtn');
     
-    const startDate = startDateEl?.value;
-    const endDate = endDateEl?.value;
+    // Check HTML5 validation
+    if (!startDateEl.checkValidity() || !endDateEl.checkValidity()) {
+        // Trigger browser's native validation messages
+        if (!startDateEl.value) {
+            startDateEl.reportValidity();
+        } else if (!endDateEl.value) {
+            endDateEl.reportValidity();
+        }
+        return;
+    }
+    
+    const startDate = startDateEl.value;
+    const endDate = endDateEl.value;
     
     if (!startDate || !endDate) {
         alert('Please select both start and end dates');
@@ -949,10 +954,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const checkSupabase = setInterval(async () => {
         if (window.supabaseClient) {
             clearInterval(checkSupabase);
-            // Initialize default dates
+            // Initialize date fields (no default values - fields are required)
             initializeDates();
-            // Optionally auto-load with default dates
-            // loadReport();
         } else if (retries >= maxRetries) {
             clearInterval(checkSupabase);
             const errorMessage = document.getElementById('errorMessage');
