@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Audit Metrics Report | CQMS</title>
+<meta name="description" content="Audit Metrics Report Dashboard">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAtOTYwIDk2MCA5NjAiIHdpZHRoPSIyNHB4IiBmaWxsPSIjMWY5ZTRiIj48cGF0aCBkPSJNMjAwLTEyMHEtMzMgMC01Ni41LTIzLjVUMTIwLTIwMHYtNTYwcTAtMzMgMjMuNS01Ni41VDIwMC04NDBoNTYwcTMzIDAgNTYuNSAyMy41VDg0MC03NjB2NTYwcTAgMzMtMjMuNSA1Ni41VDc2MC0xMjBIMjAwWm00OTEtODBoNjl2LTY5bC02OSA2OVptLTQ1NyAwaDczbDEyMC0xMjBoODVMNDUyLTIwMGg2NGwxMjAtMTIwaDg1TDU0MS0yMDBoNjVsMTIwLTEyMGgzNHYtNDQwSDIwMHY1MDlsNjktNjloODVMNDM0LTIwMFptNzItMjAwLTU2LTU2IDE3Ny0xNzcgODAgODAgMTQ3LTE0NyA1NiA1Ni0yMDMgMjA0LTgwLTgwLTEyMSAxMjBaIi8+PC9zdmc+">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="sidebar.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: '#1a733e',
+          'primary-dark': '#0d5e3a',
+          'dark-forest': '#032816',
+          'success': '#10b981',
+          'warning': '#f59e0b',
+          'error': '#ef4444',
+        },
+        fontFamily: {
+          sans: ['Poppins', 'sans-serif'],
+        },
+      },
+    },
+  }
+</script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="env-config.js"></script>
+<script src="supabase-config.js"></script>
+    <script src="auth-check.js"></script>
+    <script src="confirmation-dialog.js" defer></script>
+    <script src="load-sidebar.js" defer></script>
+    <script src="dark-mode.js" defer></script>
+    <script src="search.js" defer></script>
+    <script src="form-validation.js" defer></script>
+    <script src="keyboard-shortcuts.js" defer></script>
+    <script src="timezone-utils.js"></script>
+    <script src="date-filter-utils.js"></script>
+<style>
+  .main-content {
+    background-color: #f8f7f2;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+
+  .metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-family: 'Poppins', sans-serif;
+    margin-top: 1.5rem;
+  }
+
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .metrics-table th,
+  .metrics-table td {
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem;
+    text-align: left;
+    font-size: 0.875rem;
+  }
+
+  .metrics-table th {
+    background-color: #374151;
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .metrics-table tbody tr:hover {
+    background-color: #f9fafb;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .loading-spinner {
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #1a733e;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .filters-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+  }
+
+  .filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .filter-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-family: 'Poppins', sans-serif;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .filter-input:focus {
+    outline: none;
+    border-color: #1a733e;
+    box-shadow: 0 0 0 3px rgba(26, 115, 62, 0.1);
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #1a733e;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Poppins', sans-serif;
+    height: 2.5rem;
+  }
+
+  .action-btn:hover {
+    background-color: #0d5e3a;
+  }
+
+  .action-btn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .action-btn.secondary {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+  }
+
+  .action-btn.secondary:hover {
+    background-color: #f9fafb;
+    border-color: #1a733e;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .error-state {
+    text-align: center;
+    padding: 2rem;
+    color: #ef4444;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Searchable Dropdown Styles */
+  .searchable-dropdown {
+    position: relative;
+    width: 100%;
+  }
+
+  .searchable-dropdown-trigger {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-family: 'Poppins', sans-serif;
+    background-color: #ffffff;
+    color: #374151;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .searchable-dropdown-trigger:hover {
+    border-color: #1a733e;
+  }
+
+  .searchable-dropdown-trigger.active {
+    border-color: #1a733e;
+    box-shadow: 0 0 0 3px rgba(26, 115, 62, 0.1);
+  }
+
+  .searchable-dropdown-placeholder {
+    color: #9ca3af;
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .searchable-dropdown-value {
+    color: #374151;
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .searchable-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.25rem;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 20rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 100%;
+    width: max-content;
+    max-width: 20rem;
+  }
+
+  .searchable-dropdown-search {
+    padding: 0.5rem 0.75rem;
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 0.375rem 0.375rem 0 0;
+    font-size: 0.875rem;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f9fafb;
+    color: #374151;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .searchable-dropdown-search:focus {
+    background-color: #ffffff;
+    border-bottom-color: #1a733e;
+  }
+
+  .searchable-dropdown-options {
+    max-height: 14rem;
+    overflow-y: auto;
+    padding: 0.25rem 0;
+  }
+
+  .searchable-dropdown-option {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-family: 'Poppins', sans-serif;
+    color: #374151;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .searchable-dropdown-option:hover {
+    background-color: #f3f4f6;
+  }
+
+  .searchable-dropdown-option.selected {
+    background-color: #1a733e;
+    color: white;
+  }
+
+  .searchable-dropdown-option.hidden {
+    display: none;
+  }
+</style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Audit Metrics Report</h1>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="filter-group">
+                <label class="filter-label" for="startDate">Start Date</label>
+                <input type="date" class="filter-input" id="startDate">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label" for="endDate">End Date</label>
+                <input type="date" class="filter-input" id="endDate">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Country</label>
+                <div class="searchable-dropdown">
+                    <div class="searchable-dropdown-trigger" id="countryFilterTrigger" onclick="toggleDropdown('countryFilter')">
+                        <span class="searchable-dropdown-placeholder" id="countryFilterPlaceholder">All Countries</span>
+                        <span class="searchable-dropdown-value" id="countryFilterValue" style="display: none;"></span>
+                        <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div class="searchable-dropdown-menu" id="countryFilterDropdown" style="display: none;">
+                        <input type="text" class="searchable-dropdown-search" id="countryFilterSearch" placeholder="Search countries..." oninput="filterDropdownOptions('countryFilter')" onclick="event.stopPropagation()">
+                        <div class="searchable-dropdown-options" id="countryFilterOptions">
+                            <!-- Options will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="countryFilter" value="">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Channel</label>
+                <div class="searchable-dropdown">
+                    <div class="searchable-dropdown-trigger" id="channelFilterTrigger" onclick="toggleDropdown('channelFilter')">
+                        <span class="searchable-dropdown-placeholder" id="channelFilterPlaceholder">All Channels</span>
+                        <span class="searchable-dropdown-value" id="channelFilterValue" style="display: none;"></span>
+                        <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div class="searchable-dropdown-menu" id="channelFilterDropdown" style="display: none;">
+                        <input type="text" class="searchable-dropdown-search" id="channelFilterSearch" placeholder="Search channels..." oninput="filterDropdownOptions('channelFilter')" onclick="event.stopPropagation()">
+                        <div class="searchable-dropdown-options" id="channelFilterOptions">
+                            <!-- Options will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="channelFilter" value="">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Team Supervisor</label>
+                <div class="searchable-dropdown">
+                    <div class="searchable-dropdown-trigger" id="supervisorFilterTrigger" onclick="toggleDropdown('supervisorFilter')">
+                        <span class="searchable-dropdown-placeholder" id="supervisorFilterPlaceholder">All Supervisors</span>
+                        <span class="searchable-dropdown-value" id="supervisorFilterValue" style="display: none;"></span>
+                        <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div class="searchable-dropdown-menu" id="supervisorFilterDropdown" style="display: none;">
+                        <input type="text" class="searchable-dropdown-search" id="supervisorFilterSearch" placeholder="Search supervisors..." oninput="filterDropdownOptions('supervisorFilter')" onclick="event.stopPropagation()">
+                        <div class="searchable-dropdown-options" id="supervisorFilterOptions">
+                            <!-- Options will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="supervisorFilter" value="">
+            </div>
+            <div class="filter-group" style="display: flex; flex-direction: row; gap: 0.5rem; align-items: flex-end;">
+                <button class="action-btn" id="loadBtn" onclick="loadReport()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 1rem; height: 1rem;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Load Report
+                </button>
+                <button class="action-btn secondary" id="exportBtn" onclick="exportToCSV()" disabled>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 1rem; height: 1rem;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export CSV
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Loading audit metrics...</p>
+        </div>
+
+        <div id="errorMessage" class="error-state" style="display: none;"></div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <p>No data available for the selected date range.</p>
+        </div>
+
+        <div id="reportContainer" style="display: none;">
+            <div class="table-container">
+                <table class="metrics-table">
+                    <thead>
+                        <tr>
+                            <th>Agent Name</th>
+                            <th>Country</th>
+                            <th>Channel</th>
+                            <th>Team Supervisor</th>
+                            <th>Audit Count</th>
+                            <th>Passing Count</th>
+                            <th>Not Passing Count</th>
+                            <th>Pass/Fail Ratio</th>
+                            <th>Avg Score Ranking</th>
+                            <th>Total Error Count</th>
+                            <th>Total Critical Fail & Error Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportBody">
+                        <!-- Data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+let currentReportData = [];
+let allReportData = []; // Store all data before filtering
+let usersMap = {}; // Map of email to user data for country lookup
+
+// Initialize default dates (December 12-31, 2025)
+function initializeDates() {
+    const startDateEl = document.getElementById('startDate');
+    const endDateEl = document.getElementById('endDate');
+    
+    if (startDateEl && endDateEl) {
+        // Set default dates: December 12-31, 2025
+        startDateEl.value = '2025-12-12';
+        endDateEl.value = '2025-12-31';
+    }
+}
+
+// Load report data
+async function loadReport() {
+    const startDateEl = document.getElementById('startDate');
+    const endDateEl = document.getElementById('endDate');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const reportContainer = document.getElementById('reportContainer');
+    const emptyState = document.getElementById('emptyState');
+    const errorMessage = document.getElementById('errorMessage');
+    const exportBtn = document.getElementById('exportBtn');
+    const loadBtn = document.getElementById('loadBtn');
+    
+    const startDate = startDateEl?.value;
+    const endDate = endDateEl?.value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        alert('Start date must be before or equal to end date');
+        return;
+    }
+    
+    // Show loading state
+    loadingIndicator.style.display = 'flex';
+    reportContainer.style.display = 'none';
+    emptyState.style.display = 'none';
+    errorMessage.style.display = 'none';
+    exportBtn.disabled = true;
+    loadBtn.disabled = true;
+    
+    try {
+        // Call the database function
+        const { data, error } = await window.supabaseClient.rpc('get_audit_metrics_report', {
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        if (error) {
+            throw error;
+        }
+        
+        // Load users data to get country information
+        const { data: users, error: usersError } = await window.supabaseClient
+            .from('users')
+            .select('email, name, country, channel, team_supervisor');
+        
+        if (!usersError && users) {
+            // Create a map for quick lookup
+            usersMap = {};
+            users.forEach(user => {
+                if (user.email) {
+                    usersMap[user.email.toLowerCase()] = user;
+                }
+            });
+        }
+        
+        // Enrich report data with country
+        const enrichedData = (data || []).map(row => {
+            // Try to find country from users table by matching agent name
+            let country = null;
+            if (row.agent_name) {
+                // Try exact name match first
+                let user = Object.values(usersMap).find(u => 
+                    u.name && u.name.toLowerCase().trim() === row.agent_name.toLowerCase().trim()
+                );
+                
+                // If no exact match, try partial match
+                if (!user) {
+                    user = Object.values(usersMap).find(u => 
+                        u.name && row.agent_name.toLowerCase().includes(u.name.toLowerCase().trim()) ||
+                        u.name && u.name.toLowerCase().includes(row.agent_name.toLowerCase().trim())
+                    );
+                }
+                
+                // Also try matching by channel if available
+                if (!user && row.channel) {
+                    user = Object.values(usersMap).find(u => 
+                        u.name && u.name.toLowerCase().trim() === row.agent_name.toLowerCase().trim() &&
+                        u.channel && u.channel.toLowerCase() === row.channel.toLowerCase()
+                    );
+                }
+                
+                if (user && user.country) {
+                    country = user.country;
+                }
+            }
+            
+            return {
+                ...row,
+                country: country || '-'
+            };
+        });
+        
+        allReportData = enrichedData;
+        applyFilters();
+        
+        // Populate filter dropdowns
+        populateFilterDropdowns();
+        
+        // Hide loading
+        loadingIndicator.style.display = 'none';
+        loadBtn.disabled = false;
+        
+        if (allReportData.length === 0) {
+            emptyState.style.display = 'block';
+            exportBtn.disabled = true;
+        } else {
+            reportContainer.style.display = 'block';
+            exportBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error loading report:', error);
+        loadingIndicator.style.display = 'none';
+        loadBtn.disabled = false;
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = `Error loading report: ${error.message || 'Unknown error'}`;
+        exportBtn.disabled = true;
+    }
+}
+
+// Apply filters to report data
+function applyFilters() {
+    const countryFilter = document.getElementById('countryFilter')?.value || '';
+    const channelFilter = document.getElementById('channelFilter')?.value || '';
+    const supervisorFilter = document.getElementById('supervisorFilter')?.value || '';
+    
+    let filteredData = [...allReportData];
+    
+    // Apply country filter
+    if (countryFilter) {
+        filteredData = filteredData.filter(row => {
+            const rowCountry = (row.country || '-').toLowerCase();
+            return rowCountry === countryFilter.toLowerCase();
+        });
+    }
+    
+    // Apply channel filter
+    if (channelFilter) {
+        filteredData = filteredData.filter(row => {
+            const rowChannel = (row.channel || '-').toLowerCase();
+            return rowChannel === channelFilter.toLowerCase();
+        });
+    }
+    
+    // Apply supervisor filter
+    if (supervisorFilter) {
+        filteredData = filteredData.filter(row => {
+            const rowSupervisor = (row.team_supervisor || '-').toLowerCase();
+            return rowSupervisor === supervisorFilter.toLowerCase();
+        });
+    }
+    
+    currentReportData = filteredData;
+    renderReport(currentReportData);
+    
+    // Update export button state
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.disabled = currentReportData.length === 0;
+    }
+}
+
+// Populate filter dropdowns with unique values
+function populateFilterDropdowns() {
+    // Get unique countries
+    const countries = [...new Set(allReportData.map(row => row.country || '-').filter(c => c))].sort();
+    populateDropdown('countryFilter', countries);
+    
+    // Get unique channels
+    const channels = [...new Set(allReportData.map(row => row.channel || '-').filter(c => c))].sort();
+    populateDropdown('channelFilter', channels);
+    
+    // Get unique supervisors
+    const supervisors = [...new Set(allReportData.map(row => row.team_supervisor || '-').filter(s => s && s !== 'No Supervisor'))].sort();
+    populateDropdown('supervisorFilter', supervisors);
+}
+
+// Populate a dropdown with options
+function populateDropdown(filterId, options) {
+    const optionsContainer = document.getElementById(`${filterId}Options`);
+    if (!optionsContainer) return;
+    
+    optionsContainer.innerHTML = '';
+    
+    // Get filter label
+    let filterLabel = filterId.replace('Filter', '');
+    if (filterId === 'countryFilter') filterLabel = 'Countries';
+    else if (filterId === 'channelFilter') filterLabel = 'Channels';
+    else if (filterId === 'supervisorFilter') filterLabel = 'Supervisors';
+    
+    // Add "All" option
+    const allOption = document.createElement('div');
+    allOption.className = 'searchable-dropdown-option selected';
+    allOption.textContent = `All ${filterLabel}`;
+    allOption.onclick = () => selectDropdownOption(filterId, '');
+    optionsContainer.appendChild(allOption);
+    
+    // Add other options
+    options.forEach(option => {
+        if (option && option !== '-') {
+            const optionEl = document.createElement('div');
+            optionEl.className = 'searchable-dropdown-option';
+            optionEl.textContent = option;
+            optionEl.onclick = () => selectDropdownOption(filterId, option);
+            optionsContainer.appendChild(optionEl);
+        }
+    });
+}
+
+// Select an option in dropdown
+function selectDropdownOption(filterId, value) {
+    const hiddenInput = document.getElementById(filterId);
+    const placeholder = document.getElementById(`${filterId}Placeholder`);
+    const valueDisplay = document.getElementById(`${filterId}Value`);
+    const trigger = document.getElementById(`${filterId}Trigger`);
+    const dropdown = document.getElementById(`${filterId}Dropdown`);
+    
+    if (hiddenInput) {
+        hiddenInput.value = value;
+    }
+    
+    // Update display
+    if (value) {
+        if (placeholder) placeholder.style.display = 'none';
+        if (valueDisplay) {
+            valueDisplay.style.display = 'inline';
+            valueDisplay.textContent = value;
+        }
+    } else {
+        if (placeholder) placeholder.style.display = 'inline';
+        if (valueDisplay) valueDisplay.style.display = 'none';
+    }
+    
+    // Update selected state
+    const options = dropdown?.querySelectorAll('.searchable-dropdown-option');
+    if (options) {
+        options.forEach(opt => {
+            opt.classList.remove('selected');
+            if (value && opt.textContent.trim() === value.trim()) {
+                opt.classList.add('selected');
+            } else if (!value && opt.textContent.includes('All')) {
+                opt.classList.add('selected');
+            }
+        });
+    }
+    
+    // Close dropdown
+    if (dropdown) dropdown.style.display = 'none';
+    if (trigger) trigger.classList.remove('active');
+    
+    // Apply filters
+    applyFilters();
+}
+
+// Toggle dropdown
+function toggleDropdown(filterId) {
+    const dropdown = document.getElementById(`${filterId}Dropdown`);
+    const trigger = document.getElementById(`${filterId}Trigger`);
+    
+    if (!dropdown || !trigger) return;
+    
+    // Close all other dropdowns
+    document.querySelectorAll('.searchable-dropdown-menu').forEach(dd => {
+        if (dd !== dropdown) {
+            dd.style.display = 'none';
+            const otherTrigger = dd.previousElementSibling;
+            if (otherTrigger) otherTrigger.classList.remove('active');
+        }
+    });
+    
+    // Toggle current dropdown
+    const isOpen = dropdown.style.display !== 'none';
+    dropdown.style.display = isOpen ? 'none' : 'flex';
+    trigger.classList.toggle('active', !isOpen);
+    
+    // Focus search input when opening
+    if (!isOpen) {
+        const searchInput = document.getElementById(`${filterId}Search`);
+        if (searchInput) {
+            setTimeout(() => searchInput.focus(), 100);
+        }
+    }
+}
+
+// Filter dropdown options based on search
+function filterDropdownOptions(filterId) {
+    const searchInput = document.getElementById(`${filterId}Search`);
+    const options = document.querySelectorAll(`#${filterId}Options .searchable-dropdown-option`);
+    const searchTerm = (searchInput?.value || '').toLowerCase();
+    
+    options.forEach(option => {
+        const text = option.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            option.classList.remove('hidden');
+        } else {
+            option.classList.add('hidden');
+        }
+    });
+}
+
+// Render report data in table
+function renderReport(data) {
+    const reportBody = document.getElementById('reportBody');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (!reportBody) return;
+    
+    reportBody.innerHTML = '';
+    
+    if (data.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        
+        // Agent Name
+        const agentCell = document.createElement('td');
+        agentCell.textContent = row.agent_name || '-';
+        tr.appendChild(agentCell);
+        
+        // Country
+        const countryCell = document.createElement('td');
+        countryCell.textContent = row.country || '-';
+        tr.appendChild(countryCell);
+        
+        // Channel
+        const channelCell = document.createElement('td');
+        channelCell.textContent = row.channel || '-';
+        tr.appendChild(channelCell);
+        
+        // Team Supervisor
+        const supervisorCell = document.createElement('td');
+        supervisorCell.textContent = row.team_supervisor || '-';
+        tr.appendChild(supervisorCell);
+        
+        // Audit Count
+        const auditCountCell = document.createElement('td');
+        auditCountCell.textContent = row.audit_count || 0;
+        auditCountCell.style.textAlign = 'center';
+        tr.appendChild(auditCountCell);
+        
+        // Passing Count
+        const passingCountCell = document.createElement('td');
+        passingCountCell.textContent = row.passing_count || 0;
+        passingCountCell.style.textAlign = 'center';
+        tr.appendChild(passingCountCell);
+        
+        // Not Passing Count
+        const notPassingCountCell = document.createElement('td');
+        notPassingCountCell.textContent = row.not_passing_count || 0;
+        notPassingCountCell.style.textAlign = 'center';
+        tr.appendChild(notPassingCountCell);
+        
+        // Pass/Fail Ratio
+        const ratioCell = document.createElement('td');
+        ratioCell.textContent = row.pass_fail_ratio || '0:0';
+        ratioCell.style.textAlign = 'center';
+        tr.appendChild(ratioCell);
+        
+        // Avg Score Ranking
+        const avgScoreCell = document.createElement('td');
+        avgScoreCell.textContent = row.avg_score_ranking != null ? parseFloat(row.avg_score_ranking).toFixed(2) : '0.00';
+        avgScoreCell.style.textAlign = 'center';
+        tr.appendChild(avgScoreCell);
+        
+        // Total Error Count
+        const errorCountCell = document.createElement('td');
+        errorCountCell.textContent = row.total_error_count || 0;
+        errorCountCell.style.textAlign = 'center';
+        tr.appendChild(errorCountCell);
+        
+        // Total Critical Fail & Error Count
+        const criticalCountCell = document.createElement('td');
+        criticalCountCell.textContent = row.total_critical_fail_and_error_count || 0;
+        criticalCountCell.style.textAlign = 'center';
+        tr.appendChild(criticalCountCell);
+        
+        reportBody.appendChild(tr);
+    });
+}
+
+// Export to CSV
+function exportToCSV() {
+    try {
+        if (!currentReportData || currentReportData.length === 0) {
+            alert('No data available to export.');
+            return;
+        }
+        
+        // Get date range for filename
+        const startDate = document.getElementById('startDate')?.value || 'unknown';
+        const endDate = document.getElementById('endDate')?.value || 'unknown';
+        
+        // Format data for CSV
+        const csvData = currentReportData.map(row => ({
+            'Agent Name': row.agent_name || '',
+            'Country': row.country || '-',
+            'Channel': row.channel || '',
+            'Team Supervisor': row.team_supervisor || '',
+            'Audit Count': row.audit_count || 0,
+            'Passing Count': row.passing_count || 0,
+            'Not Passing Count': row.not_passing_count || 0,
+            'Pass/Fail Ratio': row.pass_fail_ratio || '0:0',
+            'Avg Score Ranking': row.avg_score_ranking != null ? parseFloat(row.avg_score_ranking).toFixed(2) : '0.00',
+            'Total Error Count': row.total_error_count || 0,
+            'Total Critical Fail & Error Count': row.total_critical_fail_and_error_count || 0
+        }));
+        
+        // Convert to CSV
+        const headers = Object.keys(csvData[0]);
+        const csvRows = [
+            headers.join(','),
+            ...csvData.map(row => 
+                headers.map(header => {
+                    const value = row[header] || '';
+                    return `"${String(value).replace(/"/g, '""')}"`;
+                }).join(',')
+            )
+        ];
+        
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `audit-metrics-report-${startDate}-to-${endDate}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+        alert('Error exporting data. Please try again.');
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.searchable-dropdown')) {
+        document.querySelectorAll('.searchable-dropdown-menu').forEach(dd => {
+            dd.style.display = 'none';
+        });
+        document.querySelectorAll('.searchable-dropdown-trigger').forEach(trigger => {
+            trigger.classList.remove('active');
+        });
+    }
+});
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for Supabase to be ready
+    let retries = 0;
+    const maxRetries = 50;
+    
+    const checkSupabase = setInterval(async () => {
+        if (window.supabaseClient) {
+            clearInterval(checkSupabase);
+            // Initialize default dates
+            initializeDates();
+            // Optionally auto-load with default dates
+            // loadReport();
+        } else if (retries >= maxRetries) {
+            clearInterval(checkSupabase);
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Error: Supabase client not initialized';
+            }
+        }
+        retries++;
+    }, 100);
+});
+</script>
+</body>
+</html>
