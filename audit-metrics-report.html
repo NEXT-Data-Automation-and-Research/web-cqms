@@ -415,6 +415,25 @@
                 </div>
                 <input type="hidden" id="supervisorFilter" value="">
             </div>
+            <div class="filter-group">
+                <label class="filter-label">Agent Name</label>
+                <div class="searchable-dropdown">
+                    <div class="searchable-dropdown-trigger" id="agentFilterTrigger" onclick="toggleDropdown('agentFilter')">
+                        <span class="searchable-dropdown-placeholder" id="agentFilterPlaceholder">All Agents</span>
+                        <span class="searchable-dropdown-value" id="agentFilterValue" style="display: none;"></span>
+                        <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div class="searchable-dropdown-menu" id="agentFilterDropdown" style="display: none;">
+                        <input type="text" class="searchable-dropdown-search" id="agentFilterSearch" placeholder="Search agents..." oninput="filterDropdownOptions('agentFilter')" onclick="event.stopPropagation()">
+                        <div class="searchable-dropdown-options" id="agentFilterOptions">
+                            <!-- Options will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="agentFilter" value="">
+            </div>
             <div class="filter-group" style="display: flex; flex-direction: row; gap: 0.5rem; align-items: flex-end;">
                 <button class="action-btn" id="loadBtn" onclick="loadReport()">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 1rem; height: 1rem;">
@@ -479,7 +498,16 @@ function initializeDates() {
     // Users must select dates before loading the report
 }
 
-// Load report data
+// Normalize passing status (same as audit-reports.html)
+function normalizePassingStatus(status) {
+    if (!status) return status;
+    // Convert old values to new ones for consistency
+    if (status === 'Passing' || status === 'Pass') return 'Passed';
+    if (status === 'Not Passing') return 'Not Passed';
+    return status; // Return as-is if already normalized or unknown
+}
+
+// Load report data using the same logic as audit-reports.html
 async function loadReport() {
     const startDateEl = document.getElementById('startDate');
     const endDateEl = document.getElementById('endDate');
@@ -523,17 +551,11 @@ async function loadReport() {
     loadBtn.disabled = true;
     
     try {
-        // Call the database function
-        const { data, error } = await window.supabaseClient.rpc('get_audit_metrics_report', {
-            start_date: startDate,
-            end_date: endDate
-        });
+        // Convert date strings to Date objects for filtering (matching audit-reports.html)
+        const startDateObj = getDhakaStartOfDay(parseDhakaDate(startDate));
+        const endDateObj = getDhakaEndOfDay(parseDhakaDate(endDate));
         
-        if (error) {
-            throw error;
-        }
-        
-        // Load users data to get country information
+        // Load users data first to get country, channel, and supervisor info
         const { data: users, error: usersError } = await window.supabaseClient
             .from('users')
             .select('email, name, country, channel, team_supervisor');
@@ -548,44 +570,256 @@ async function loadReport() {
             });
         }
         
-        // Enrich report data with country
-        const enrichedData = (data || []).map(row => {
-            // Try to find country from users table by matching agent name
-            let country = null;
-            if (row.agent_name) {
-                // Try exact name match first
-                let user = Object.values(usersMap).find(u => 
-                    u.name && u.name.toLowerCase().trim() === row.agent_name.toLowerCase().trim()
-                );
+        // Load all audits from all scorecard tables (same as audit-reports.html)
+        let allAudits = [];
+        let tablesToQuery = [];
+        
+        // Get all active scorecard tables
+        try {
+            const { data: allTables, error: tablesError } = await window.supabaseClient.rpc('get_audit_tables');
+            
+            if (tablesError) {
+                console.warn('Could not fetch table list via RPC, falling back to scorecard-based loading:', tablesError);
+                // Fallback: use scorecards table
+                const { data: scorecards } = await window.supabaseClient
+                    .from('scorecards')
+                    .select('id, name, table_name, scoring_type')
+                    .eq('is_active', true);
                 
-                // If no exact match, try partial match
-                if (!user) {
-                    user = Object.values(usersMap).find(u => 
-                        u.name && row.agent_name.toLowerCase().includes(u.name.toLowerCase().trim()) ||
-                        u.name && u.name.toLowerCase().includes(row.agent_name.toLowerCase().trim())
-                    );
+                if (scorecards && scorecards.length > 0) {
+                    tablesToQuery = scorecards
+                        .filter(s => s.table_name !== 'ai_analysis_results')
+                        .map(s => ({
+                            table_name: s.table_name,
+                            scorecard_id: s.id,
+                            scorecard_name: s.name,
+                            scoring_type: s.scoring_type
+                        }));
+                }
+            } else {
+                // Match tables with scorecards
+                const { data: scorecards } = await window.supabaseClient
+                    .from('scorecards')
+                    .select('id, name, table_name, scoring_type')
+                    .eq('is_active', true);
+                
+                if (allTables && allTables.length > 0) {
+                    tablesToQuery = allTables
+                        .filter(t => t.table_name !== 'ai_analysis_results')
+                        .map(t => {
+                            const matchingScorecard = (scorecards || []).find(s => s.table_name === t.table_name);
+                            return {
+                                table_name: t.table_name,
+                                scorecard_id: matchingScorecard?.id || null,
+                                scorecard_name: matchingScorecard?.name || `Deleted Scorecard (${t.table_name})`,
+                                scoring_type: matchingScorecard?.scoring_type || 'unknown'
+                            };
+                        });
+                } else if (scorecards && scorecards.length > 0) {
+                    tablesToQuery = scorecards
+                        .filter(s => s.table_name !== 'ai_analysis_results')
+                        .map(s => ({
+                            table_name: s.table_name,
+                            scorecard_id: s.id,
+                            scorecard_name: s.name,
+                            scoring_type: s.scoring_type
+                        }));
+                }
+            }
+        } catch (rpcError) {
+            console.warn('RPC call failed, using scorecard-based loading:', rpcError);
+            const { data: scorecards } = await window.supabaseClient
+                .from('scorecards')
+                .select('id, name, table_name, scoring_type')
+                .eq('is_active', true);
+            
+            if (scorecards && scorecards.length > 0) {
+                tablesToQuery = scorecards
+                    .filter(s => s.table_name !== 'ai_analysis_results')
+                    .map(s => ({
+                        table_name: s.table_name,
+                        scorecard_id: s.id,
+                        scorecard_name: s.name,
+                        scoring_type: s.scoring_type
+                    }));
+            }
+        }
+        
+        // Load audits from all tables (same as audit-reports.html)
+        for (const tableInfo of tablesToQuery) {
+            try {
+                let query = window.supabaseClient
+                    .from(tableInfo.table_name)
+                    .select('*')
+                    .order('submitted_at', { ascending: false });
+                
+                let data, error;
+                const result = await query;
+                data = result.data;
+                error = result.error;
+                
+                if (error) {
+                    console.warn(`Error loading from ${tableInfo.table_name}:`, error);
+                    continue;
                 }
                 
-                // Also try matching by channel if available
-                if (!user && row.channel) {
-                    user = Object.values(usersMap).find(u => 
-                        u.name && u.name.toLowerCase().trim() === row.agent_name.toLowerCase().trim() &&
-                        u.channel && u.channel.toLowerCase() === row.channel.toLowerCase()
-                    );
+                if (data && data.length > 0) {
+                    // Filter out incomplete audits (same as audit-reports.html)
+                    let filteredData = data.filter(audit => {
+                        const auditStatus = audit.audit_status;
+                        // Only include completed audits or audits without audit_status (legacy completed audits)
+                        const isComplete = !auditStatus || auditStatus === 'completed';
+                        return isComplete;
+                    });
+                    
+                    // Add scorecard info to each audit
+                    const auditsWithScorecard = filteredData.map(audit => ({
+                        ...audit,
+                        _scorecard_id: tableInfo.scorecard_id,
+                        _scorecard_name: tableInfo.scorecard_name,
+                        _scorecard_table: tableInfo.table_name,
+                        _scoring_type: tableInfo.scoring_type
+                    }));
+                    
+                    allAudits = allAudits.concat(auditsWithScorecard);
+                }
+            } catch (err) {
+                console.warn(`Exception loading from ${tableInfo.table_name}:`, err);
+                continue;
+            }
+        }
+        
+        // Filter by date range (same logic as audit-reports.html)
+        const dateFilteredAudits = allAudits.filter(audit => {
+            const submittedDate = audit.submitted_at || audit.submittedAt;
+            if (!submittedDate) return false;
+            
+            const submitted = toDhakaTime(submittedDate);
+            if (isNaN(submitted.getTime())) return false; // Invalid date
+            
+            return submitted >= startDateObj && submitted <= endDateObj;
+        });
+        
+        // Group by agent (using employee_email as key, matching audit-reports.html behavior)
+        const agentMap = {};
+        const agentAuditIds = {}; // Track unique audit IDs per agent to prevent double-counting
+        
+        dateFilteredAudits.forEach(audit => {
+            // Get employee email - handle both raw and processed audit structures
+            const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
+            
+            // Initialize agent map if needed
+            if (!agentMap[agentEmail]) {
+                agentMap[agentEmail] = {
+                    email: agentEmail,
+                    audits: [],
+                    scores: []
+                };
+                agentAuditIds[agentEmail] = new Set();
+            }
+            
+            // Use Set to ensure we never count the same audit twice (matching audit-reports.html)
+            const auditKey = `${audit.id}_${audit._scorecard_id || audit.scorecard_id || 'unknown'}`;
+            if (!agentAuditIds[agentEmail].has(auditKey)) {
+                agentAuditIds[agentEmail].add(auditKey);
+                agentMap[agentEmail].audits.push(audit);
+                
+                // Collect scores
+                const score = audit.average_score || audit.averageScore;
+                if (score != null && score !== '') {
+                    agentMap[agentEmail].scores.push(parseFloat(score) || 0);
+                }
+            }
+        });
+        
+        // Calculate metrics for each agent (same as audit-reports.html)
+        const reportData = Object.values(agentMap).map(agent => {
+            const audits = agent.audits;
+            const totalAudits = audits.length;
+            
+            // Calculate passing/not passing counts using normalizePassingStatus
+            let passingCount = 0;
+            let notPassingCount = 0;
+            let totalErrorCount = 0;
+            let totalCriticalFailAndErrorCount = 0;
+            
+            audits.forEach(audit => {
+                const passingStatus = audit.passing_status || audit.passingStatus || '';
+                const normalizedStatus = normalizePassingStatus(passingStatus);
+                
+                if (normalizedStatus === 'Passed') {
+                    passingCount++;
+                } else {
+                    notPassingCount++;
                 }
                 
-                if (user && user.country) {
-                    country = user.country;
-                }
+                // Total error count
+                totalErrorCount += parseInt(audit.total_errors_count || audit.totalErrorsCount || 0);
+                
+                // Critical fail and error count
+                const criticalErrors = parseInt(audit.critical_errors || audit.criticalErrors || 0);
+                const criticalFailError = parseInt(audit.critical_fail_error || audit.criticalFailError || 0);
+                totalCriticalFailAndErrorCount += criticalErrors + criticalFailError;
+            });
+            
+            // Calculate average score (same as audit-reports.html)
+            const avgScore = agent.scores.length > 0
+                ? agent.scores.reduce((sum, s) => sum + s, 0) / agent.scores.length
+                : 0;
+            
+            // Get user info for this agent
+            const user = usersMap[agent.email];
+            const firstAudit = audits[0] || {};
+            const agentName = user?.name || firstAudit.employee_name || agent.email.split('@')[0] || 'Unknown';
+            const channel = user?.channel || firstAudit.channel || '-';
+            const country = user?.country || '-';
+            
+            // Get supervisor info
+            let supervisorName = 'No Supervisor';
+            if (user?.team_supervisor) {
+                const supervisor = usersMap[user.team_supervisor.toLowerCase()];
+                supervisorName = supervisor?.name || user.team_supervisor;
+            }
+            
+            // Calculate pass/fail ratio
+            let passFailRatio = '0:0';
+            if (notPassingCount === 0 && passingCount > 0) {
+                passFailRatio = `${passingCount}:0`;
+            } else if (passingCount === 0 && notPassingCount > 0) {
+                passFailRatio = `0:${notPassingCount}`;
+            } else if (passingCount > 0 && notPassingCount > 0) {
+                const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+                const divisor = gcd(passingCount, notPassingCount);
+                passFailRatio = `${passingCount / divisor}:${notPassingCount / divisor}`;
             }
             
             return {
-                ...row,
-                country: country || '-'
+                agent_name: agentName,
+                channel: channel,
+                team_supervisor: supervisorName,
+                country: country,
+                audit_count: totalAudits,
+                passing_count: passingCount,
+                not_passing_count: notPassingCount,
+                pass_fail_ratio: passFailRatio,
+                avg_score_ranking: parseFloat(avgScore.toFixed(2)),
+                total_error_count: totalErrorCount,
+                total_critical_fail_and_error_count: totalCriticalFailAndErrorCount
             };
         });
         
-        allReportData = enrichedData;
+        // Sort by supervisor, channel, agent name (matching SQL function output)
+        reportData.sort((a, b) => {
+            if (a.team_supervisor !== b.team_supervisor) {
+                return a.team_supervisor.localeCompare(b.team_supervisor);
+            }
+            if (a.channel !== b.channel) {
+                return a.channel.localeCompare(b.channel);
+            }
+            return a.agent_name.localeCompare(b.agent_name);
+        });
+        
+        allReportData = reportData;
         applyFilters();
         
         // Populate filter dropdowns
@@ -602,6 +836,9 @@ async function loadReport() {
             reportContainer.style.display = 'block';
             exportBtn.disabled = false;
         }
+        
+        console.log(`Loaded ${dateFilteredAudits.length} audits from ${tablesToQuery.length} tables`);
+        console.log(`Grouped into ${reportData.length} agents`);
     } catch (error) {
         console.error('Error loading report:', error);
         loadingIndicator.style.display = 'none';
@@ -617,6 +854,7 @@ function applyFilters() {
     const countryFilter = document.getElementById('countryFilter')?.value || '';
     const channelFilter = document.getElementById('channelFilter')?.value || '';
     const supervisorFilter = document.getElementById('supervisorFilter')?.value || '';
+    const agentFilter = document.getElementById('agentFilter')?.value || '';
     
     let filteredData = [...allReportData];
     
@@ -644,6 +882,14 @@ function applyFilters() {
         });
     }
     
+    // Apply agent name filter
+    if (agentFilter) {
+        filteredData = filteredData.filter(row => {
+            const rowAgentName = (row.agent_name || '').toLowerCase().trim();
+            return rowAgentName === agentFilter.toLowerCase().trim();
+        });
+    }
+    
     currentReportData = filteredData;
     renderReport(currentReportData);
     
@@ -652,21 +898,40 @@ function applyFilters() {
     if (exportBtn) {
         exportBtn.disabled = currentReportData.length === 0;
     }
+    
+    // Debug: Log filtered results for specific agent
+    if (agentFilter) {
+        console.log(`Filtered results for agent "${agentFilter}":`, currentReportData);
+        if (currentReportData.length > 0) {
+            const agentData = currentReportData[0];
+            console.log('Agent metrics:', {
+                agent_name: agentData.agent_name,
+                audit_count: agentData.audit_count,
+                passing_count: agentData.passing_count,
+                not_passing_count: agentData.not_passing_count,
+                pass_fail_ratio: agentData.pass_fail_ratio
+            });
+        }
+    }
 }
 
 // Populate filter dropdowns with unique values
 function populateFilterDropdowns() {
     // Get unique countries
-    const countries = [...new Set(allReportData.map(row => row.country || '-').filter(c => c))].sort();
+    const countries = [...new Set(allReportData.map(row => row.country || '-').filter(c => c && c !== '-'))].sort();
     populateDropdown('countryFilter', countries);
     
     // Get unique channels
-    const channels = [...new Set(allReportData.map(row => row.channel || '-').filter(c => c))].sort();
+    const channels = [...new Set(allReportData.map(row => row.channel || '-').filter(c => c && c !== '-'))].sort();
     populateDropdown('channelFilter', channels);
     
     // Get unique supervisors
-    const supervisors = [...new Set(allReportData.map(row => row.team_supervisor || '-').filter(s => s && s !== 'No Supervisor'))].sort();
+    const supervisors = [...new Set(allReportData.map(row => row.team_supervisor || '-').filter(s => s && s !== '-' && s !== 'No Supervisor'))].sort();
     populateDropdown('supervisorFilter', supervisors);
+    
+    // Get unique agent names
+    const agents = [...new Set(allReportData.map(row => row.agent_name || '').filter(a => a && a.trim()))].sort();
+    populateDropdown('agentFilter', agents);
 }
 
 // Populate a dropdown with options
@@ -681,6 +946,7 @@ function populateDropdown(filterId, options) {
     if (filterId === 'countryFilter') filterLabel = 'Countries';
     else if (filterId === 'channelFilter') filterLabel = 'Channels';
     else if (filterId === 'supervisorFilter') filterLabel = 'Supervisors';
+    else if (filterId === 'agentFilter') filterLabel = 'Agents';
     
     // Add "All" option
     const allOption = document.createElement('div');
