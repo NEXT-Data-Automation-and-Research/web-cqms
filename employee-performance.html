@@ -1161,28 +1161,56 @@
                             <button class="view-toggle-btn active" id="detailedViewBtn" onclick="switchView('detailed', this, 0)">Detailed View</button>
                             <button class="view-toggle-btn" id="summaryViewBtn" onclick="switchView('summary', this, 1)">Summary</button>
                         </div>
-                        <div style="position: relative;">
-                            <button class="channel-filter-icon-btn" id="channelFilterIconBtn" onclick="toggleChannelFilter()" title="Filter by Channel">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                                </svg>
-                            </button>
-                            <div class="multi-select-container" id="channelFilterContainer" style="width: auto; min-width: 10rem; position: absolute; left: 0; top: 100%; margin-top: 0.5rem; z-index: 1000; display: none;">
-                                <div class="multi-select-trigger" id="channelFilterTrigger" onclick="toggleMultiSelect('channelFilter')">
-                                    <span class="multi-select-placeholder" id="channelFilterPlaceholder">Select channels...</span>
-                                    <span class="multi-select-count" id="channelFilterCount" style="display: none;"></span>
-                                    <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <div style="position: relative;">
+                                <button class="channel-filter-icon-btn" id="channelFilterIconBtn" onclick="toggleChannelFilter()" title="Filter by Channel">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                                     </svg>
-                                </div>
-                                <div class="multi-select-dropdown" id="channelFilterDropdown" style="display: none;">
-                                    <input type="text" class="multi-select-search" id="channelFilterSearch" placeholder="Search channels..." oninput="filterMultiSelectOptions('channelFilter')" onclick="event.stopPropagation()">
-                                    <div class="multi-select-options" id="channelFilterOptions">
-                                        <!-- Options will be populated dynamically -->
+                                </button>
+                                <div class="multi-select-container" id="channelFilterContainer" style="width: auto; min-width: 10rem; position: absolute; left: 0; top: 100%; margin-top: 0.5rem; z-index: 1000; display: none;">
+                                    <div class="multi-select-trigger" id="channelFilterTrigger" onclick="toggleMultiSelect('channelFilter')">
+                                        <span class="multi-select-placeholder" id="channelFilterPlaceholder">Select channels...</span>
+                                        <span class="multi-select-count" id="channelFilterCount" style="display: none;"></span>
+                                        <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
                                     </div>
-                                    <div class="multi-select-actions">
-                                        <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('channelFilter')">Select All</button>
-                                        <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('channelFilter')">Clear</button>
+                                    <div class="multi-select-dropdown" id="channelFilterDropdown" style="display: none;">
+                                        <input type="text" class="multi-select-search" id="channelFilterSearch" placeholder="Search channels..." oninput="filterMultiSelectOptions('channelFilter')" onclick="event.stopPropagation()">
+                                        <div class="multi-select-options" id="channelFilterOptions">
+                                            <!-- Options will be populated dynamically -->
+                                        </div>
+                                        <div class="multi-select-actions">
+                                            <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('channelFilter')">Select All</button>
+                                            <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('channelFilter')">Clear</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="position: relative;">
+                                <button class="channel-filter-icon-btn" id="agentFilterIconBtn" onclick="toggleAgentFilter()" title="Filter by Agent">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </button>
+                                <div class="multi-select-container" id="agentFilterContainer" style="width: auto; min-width: 12rem; position: absolute; left: 0; top: 100%; margin-top: 0.5rem; z-index: 1000; display: none;">
+                                    <div class="multi-select-trigger" id="agentFilterTrigger" onclick="toggleMultiSelect('agentFilter')">
+                                        <span class="multi-select-placeholder" id="agentFilterPlaceholder">Select agents...</span>
+                                        <span class="multi-select-count" id="agentFilterCount" style="display: none;"></span>
+                                        <svg style="width: 0.5625rem; height: 0.5625rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="multi-select-dropdown" id="agentFilterDropdown" style="display: none;">
+                                        <input type="text" class="multi-select-search" id="agentFilterSearch" placeholder="Search agents..." oninput="filterMultiSelectOptions('agentFilter')" onclick="event.stopPropagation()">
+                                        <div class="multi-select-options" id="agentFilterOptions">
+                                            <!-- Options will be populated dynamically -->
+                                        </div>
+                                        <div class="multi-select-actions">
+                                            <button type="button" class="multi-select-action-btn" onclick="selectAllMultiSelect('agentFilter')">Select All</button>
+                                            <button type="button" class="multi-select-action-btn" onclick="clearMultiSelect('agentFilter')">Clear</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1205,6 +1233,7 @@
                 </div>
             </div>
             <input type="hidden" id="channelFilter" value="">
+            <input type="hidden" id="agentFilter" value="">
             <!-- Summary Statistics -->
             <div id="passingRateSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; background-color: var(--gray-50); border-radius: 0.375rem;">
                 <div style="text-align: center;">
@@ -1580,6 +1609,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Populate channel filter options after data is loaded
     populateChannelFilterOptions();
+    populateAgentFilterOptions();
     
     // Initialize view toggle slider position
     initializeViewToggleSlider();
@@ -3900,24 +3930,24 @@ function updateChannelPassingRateComparison() {
     // Get filtered audits by submission date
     let filteredAudits = getFilteredAuditsBySubmissionDate();
     
-    // Apply channel filter if channels are selected
-    if (selectedChannels.length > 0) {
-        filteredAudits = filteredAudits.filter(audit => {
-            const channel = audit.channel || audit.channel_name || 'Unknown';
-            return selectedChannels.includes(channel);
-        });
-    }
-    
     // Group by channel, then by individual (for detailed view) or just by channel (for summary view)
     const channelMap = {};
     const auditIds = {}; // Track unique audit IDs to prevent double-counting
+    const agentChannels = {}; // Track which channels each agent appears in
     
+    // First pass: collect all data and track which channels each agent appears in
     filteredAudits.forEach(audit => {
         // Get channel from audit or user data
         const channel = audit.channel || audit.channel_name || 'Unknown';
         
         // Get employee email
         const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
+        
+        // Track which channels this agent appears in
+        if (!agentChannels[agentEmail]) {
+            agentChannels[agentEmail] = new Set();
+        }
+        agentChannels[agentEmail].add(channel);
         
         // Initialize channel if needed
         if (!channelMap[channel]) {
@@ -3932,7 +3962,9 @@ function updateChannelPassingRateComparison() {
                 passed: 0,
                 failed: 0
             };
-            auditIds[agentEmail] = new Set();
+            if (!auditIds[agentEmail]) {
+                auditIds[agentEmail] = new Set();
+            }
         }
         
         // Use Set to ensure we never count the same audit twice
@@ -3955,6 +3987,86 @@ function updateChannelPassingRateComparison() {
             }
         }
     });
+    
+    // Identify agents in both "FN Chat CFD" and "FN Chat Futures"
+    const CFD_CHANNEL = 'FN Chat CFD';
+    const FUTURES_CHANNEL = 'FN Chat Futures';
+    const MERGED_CHANNEL = 'CFD + Futures';
+    
+    const agentsInBothChannels = new Set();
+    Object.keys(agentChannels).forEach(agentEmail => {
+        const channels = agentChannels[agentEmail];
+        if (channels.has(CFD_CHANNEL) && channels.has(FUTURES_CHANNEL)) {
+            agentsInBothChannels.add(agentEmail);
+        }
+    });
+    
+    // Create merged "CFD + Futures" channel for agents in both channels
+    // Keep agents in their individual channels AND create merged entries
+    if (agentsInBothChannels.size > 0) {
+        if (!channelMap[MERGED_CHANNEL]) {
+            channelMap[MERGED_CHANNEL] = {};
+        }
+        
+        agentsInBothChannels.forEach(agentEmail => {
+            // Merge metrics from both channels
+            const cfdData = channelMap[CFD_CHANNEL]?.[agentEmail] || { total: 0, passed: 0, failed: 0 };
+            const futuresData = channelMap[FUTURES_CHANNEL]?.[agentEmail] || { total: 0, passed: 0, failed: 0 };
+            
+            channelMap[MERGED_CHANNEL][agentEmail] = {
+                email: agentEmail,
+                total: cfdData.total + futuresData.total,
+                passed: cfdData.passed + futuresData.passed,
+                failed: cfdData.failed + futuresData.failed
+            };
+            
+            // Keep agents in individual channels - they should appear in all three views
+            // (CFD, Futures, and CFD + Futures)
+        });
+    }
+    
+    // Apply channel filter if channels are selected
+    if (selectedChannels.length > 0) {
+        // Handle special case: if "CFD + Futures" is selected, include both CFD and Futures channels
+        const hasMergedChannel = selectedChannels.includes(MERGED_CHANNEL);
+        const hasCFD = selectedChannels.includes(CFD_CHANNEL);
+        const hasFutures = selectedChannels.includes(FUTURES_CHANNEL);
+        
+        // Filter channels based on selection
+        Object.keys(channelMap).forEach(channel => {
+            let shouldInclude = false;
+            
+            if (channel === MERGED_CHANNEL) {
+                shouldInclude = hasMergedChannel;
+            } else if (channel === CFD_CHANNEL) {
+                shouldInclude = hasCFD;
+            } else if (channel === FUTURES_CHANNEL) {
+                shouldInclude = hasFutures;
+            } else {
+                shouldInclude = selectedChannels.includes(channel);
+            }
+            
+            if (!shouldInclude) {
+                delete channelMap[channel];
+            }
+        });
+    }
+    
+    // Apply agent filter if agents are selected
+    if (selectedAgents.length > 0) {
+        Object.keys(channelMap).forEach(channel => {
+            const agents = channelMap[channel];
+            Object.keys(agents).forEach(agentEmail => {
+                if (!selectedAgents.includes(agentEmail)) {
+                    delete agents[agentEmail];
+                }
+            });
+            // Remove channel if no agents left
+            if (Object.keys(agents).length === 0) {
+                delete channelMap[channel];
+            }
+        });
+    }
     
     // Convert to array format for display
     let channelData;
@@ -4258,6 +4370,7 @@ function changeChannelPassingRatePageSize() {
 // Multi-Select Dropdown Functions
 // ============================================================================
 let selectedChannels = [];
+let selectedAgents = [];
 let currentView = 'detailed'; // 'detailed' or 'summary'
 
 window.toggleMultiSelect = function(filterId) {
@@ -4299,7 +4412,11 @@ window.updateMultiSelect = function(filterId) {
     if (selected.length === 0) {
         if (placeholder) {
             placeholder.style.display = 'inline';
-            placeholder.textContent = 'Select channels...';
+            if (filterId === 'channelFilter') {
+                placeholder.textContent = 'Select channels...';
+            } else if (filterId === 'agentFilter') {
+                placeholder.textContent = 'Select agents...';
+            }
         }
         if (count) count.style.display = 'none';
     } else {
@@ -4310,9 +4427,12 @@ window.updateMultiSelect = function(filterId) {
         }
     }
     
-    // Store selected channels
+    // Store selected channels or agents
     if (filterId === 'channelFilter') {
         selectedChannels = selected;
+        updateChannelPassingRateComparison();
+    } else if (filterId === 'agentFilter') {
+        selectedAgents = selected;
         updateChannelPassingRateComparison();
     }
 };
@@ -4353,9 +4473,12 @@ window.clearMultiSelect = function(filterId) {
 document.addEventListener('click', function(e) {
     const channelFilterContainer = document.getElementById('channelFilterContainer');
     const channelFilterIconBtn = document.getElementById('channelFilterIconBtn');
+    const agentFilterContainer = document.getElementById('agentFilterContainer');
+    const agentFilterIconBtn = document.getElementById('agentFilterIconBtn');
     
-    // Don't close if clicking on the filter icon button
-    if (e.target.closest('#channelFilterIconBtn') || e.target.closest('#channelFilterContainer')) {
+    // Don't close if clicking on the filter icon buttons or containers
+    if (e.target.closest('#channelFilterIconBtn') || e.target.closest('#channelFilterContainer') ||
+        e.target.closest('#agentFilterIconBtn') || e.target.closest('#agentFilterContainer')) {
         return;
     }
     
@@ -4364,6 +4487,14 @@ document.addEventListener('click', function(e) {
         channelFilterContainer.style.display = 'none';
         if (channelFilterIconBtn) {
             channelFilterIconBtn.classList.remove('active');
+        }
+    }
+    
+    // Close agent filter container if clicking outside
+    if (agentFilterContainer && !e.target.closest('#agentFilterContainer')) {
+        agentFilterContainer.style.display = 'none';
+        if (agentFilterIconBtn) {
+            agentFilterIconBtn.classList.remove('active');
         }
     }
     
@@ -4387,10 +4518,41 @@ function toggleChannelFilter() {
         container.style.display = isVisible ? 'none' : 'block';
         iconBtn.classList.toggle('active', !isVisible);
         
+        // Close agent filter if open
+        const agentContainer = document.getElementById('agentFilterContainer');
+        const agentIconBtn = document.getElementById('agentFilterIconBtn');
+        if (agentContainer) agentContainer.style.display = 'none';
+        if (agentIconBtn) agentIconBtn.classList.remove('active');
+        
         // If showing, also open the dropdown
         if (!isVisible) {
             setTimeout(() => {
                 toggleMultiSelect('channelFilter');
+            }, 100);
+        }
+    }
+}
+
+// Toggle agent filter dropdown
+function toggleAgentFilter() {
+    const container = document.getElementById('agentFilterContainer');
+    const iconBtn = document.getElementById('agentFilterIconBtn');
+    
+    if (container && iconBtn) {
+        const isVisible = container.style.display !== 'none';
+        container.style.display = isVisible ? 'none' : 'block';
+        iconBtn.classList.toggle('active', !isVisible);
+        
+        // Close channel filter if open
+        const channelContainer = document.getElementById('channelFilterContainer');
+        const channelIconBtn = document.getElementById('channelFilterIconBtn');
+        if (channelContainer) channelContainer.style.display = 'none';
+        if (channelIconBtn) channelIconBtn.classList.remove('active');
+        
+        // If showing, also open the dropdown
+        if (!isVisible) {
+            setTimeout(() => {
+                toggleMultiSelect('agentFilter');
             }, 100);
         }
     }
@@ -4487,13 +4649,40 @@ function switchView(view, buttonElement, index) {
 function populateChannelFilterOptions() {
     const filteredAudits = getFilteredAuditsBySubmissionDate();
     const channels = new Set();
+    const agentChannels = {}; // Track which channels each agent appears in
     
+    // Collect channels and track agent-channel relationships
     filteredAudits.forEach(audit => {
         const channel = audit.channel || audit.channel_name || 'Unknown';
         if (channel) {
             channels.add(channel);
+            
+            // Track which channels each agent appears in
+            const agentEmail = (audit.employee_email || audit.employeeEmail || 'Unknown').toLowerCase().trim();
+            if (!agentChannels[agentEmail]) {
+                agentChannels[agentEmail] = new Set();
+            }
+            agentChannels[agentEmail].add(channel);
         }
     });
+    
+    // Check if any agents appear in both "FN Chat CFD" and "FN Chat Futures"
+    const CFD_CHANNEL = 'FN Chat CFD';
+    const FUTURES_CHANNEL = 'FN Chat Futures';
+    const MERGED_CHANNEL = 'CFD + Futures';
+    
+    let hasMergedChannel = false;
+    Object.keys(agentChannels).forEach(agentEmail => {
+        const channels = agentChannels[agentEmail];
+        if (channels.has(CFD_CHANNEL) && channels.has(FUTURES_CHANNEL)) {
+            hasMergedChannel = true;
+        }
+    });
+    
+    // Add merged channel option if there are agents in both channels
+    if (hasMergedChannel) {
+        channels.add(MERGED_CHANNEL);
+    }
     
     const channelOptions = document.getElementById('channelFilterOptions');
     if (channelOptions) {
@@ -4502,6 +4691,40 @@ function populateChannelFilterOptions() {
             <div class="multi-select-option" data-value="${escapeHtml(channel)}">
                 <input type="checkbox" id="channel_${escapeHtml(channel)}" value="${escapeHtml(channel)}" onchange="updateMultiSelect('channelFilter')">
                 <label for="channel_${escapeHtml(channel)}">${escapeHtml(channel)}</label>
+            </div>
+        `).join('');
+    }
+}
+
+// Populate agent filter options
+function populateAgentFilterOptions() {
+    const filteredAudits = getFilteredAuditsBySubmissionDate();
+    const agentMap = new Map(); // Use Map to store email -> name mapping
+    
+    filteredAudits.forEach(audit => {
+        const agentEmail = (audit.employee_email || audit.employeeEmail || '').toLowerCase().trim();
+        if (!agentEmail || agentEmail === 'unknown') return;
+        
+        // Get user info for display name
+        const user = allUsers.find(u => u.email && u.email.toLowerCase() === agentEmail);
+        const displayName = user?.name || formatAgentName(agentEmail);
+        
+        // Store email as key, displayName as value
+        if (!agentMap.has(agentEmail)) {
+            agentMap.set(agentEmail, displayName);
+        }
+    });
+    
+    const agentOptions = document.getElementById('agentFilterOptions');
+    if (agentOptions) {
+        // Sort by display name
+        const sortedAgents = Array.from(agentMap.entries())
+            .sort((a, b) => a[1].localeCompare(b[1]));
+        
+        agentOptions.innerHTML = sortedAgents.map(([email, displayName]) => `
+            <div class="multi-select-option" data-value="${escapeHtml(email)}">
+                <input type="checkbox" id="agent_${escapeHtml(email)}" value="${escapeHtml(email)}" onchange="updateMultiSelect('agentFilter')">
+                <label for="agent_${escapeHtml(email)}">${escapeHtml(displayName)}</label>
             </div>
         `).join('');
     }
