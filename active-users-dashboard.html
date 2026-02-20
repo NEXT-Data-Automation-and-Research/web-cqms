@@ -701,20 +701,41 @@
 
             if (usersError) throw usersError;
 
-            // Get activity data from various tables
-            const [assignments, audits, reversals, calibrations, aiAudits] = await Promise.all([
+            // Get activity data from various tables (include auditor activity and reversal approval)
+            const [assignments, assignmentsCompleted, audits, auditsAsAuditor, reversals, reversalWorkflow, reversalFinalDecision, calibrations, aiAudits] = await Promise.all([
                 window.supabaseClient
                     .from('audit_assignments')
                     .select('employee_email, created_at')
                     .gte('created_at', cutoffDate.toISOString()),
                 window.supabaseClient
+                    .from('audit_assignments')
+                    .select('auditor_email, completed_at')
+                    .not('completed_at', 'is', null)
+                    .gte('completed_at', cutoffDate.toISOString()),
+                window.supabaseClient
                     .from('fnchat_cfd_v4_0_v2')
                     .select('employee_email, submitted_at, acknowledgement_status_updated_at, audit_rated_at')
+                    .gte('submitted_at', cutoffDate.toISOString()),
+                window.supabaseClient
+                    .from('fnchat_cfd_v4_0_v2')
+                    .select('auditor_email, submitted_at')
+                    .not('auditor_email', 'is', null)
                     .gte('submitted_at', cutoffDate.toISOString()),
                 window.supabaseClient
                     .from('reversal_requests')
                     .select('requested_by_email, requested_at')
                     .gte('requested_at', cutoffDate.toISOString()),
+                window.supabaseClient
+                    .from('reversal_workflow_states')
+                    .select('entered_by_email, entered_at')
+                    .in('state', ['team_lead_approved', 'team_lead_rejected'])
+                    .gte('entered_at', cutoffDate.toISOString()),
+                window.supabaseClient
+                    .from('reversal_requests')
+                    .select('final_decision_by_email, final_decision_at')
+                    .not('final_decision_at', 'is', null)
+                    .not('final_decision_by_email', 'ilike', '%@system%')
+                    .gte('final_decision_at', cutoffDate.toISOString()),
                 window.supabaseClient
                     .from('calibration_results')
                     .select('participant_email, submitted_at')
@@ -739,9 +760,11 @@
                     login_count: user.login_count,
                     audit_assignment_count: 0,
                     audit_submission_count: 0,
+                    audit_completed_as_auditor_count: 0,
                     acknowledgement_count: 0,
                     rating_count: 0,
                     reversal_count: 0,
+                    reversal_approval_count: 0,
                     calibration_count: 0,
                     ai_audit_count: 0,
                     most_recent_activity: user.last_login ? new Date(user.last_login) : new Date(0)
@@ -755,6 +778,16 @@
                     const date = new Date(a.created_at);
                     if (date > userActivity[a.employee_email].most_recent_activity) {
                         userActivity[a.employee_email].most_recent_activity = date;
+                    }
+                }
+            });
+
+            assignmentsCompleted.data?.forEach(a => {
+                if (userActivity[a.auditor_email]) {
+                    userActivity[a.auditor_email].audit_completed_as_auditor_count++;
+                    const date = new Date(a.completed_at);
+                    if (date > userActivity[a.auditor_email].most_recent_activity) {
+                        userActivity[a.auditor_email].most_recent_activity = date;
                     }
                 }
             });
@@ -775,12 +808,42 @@
                 }
             });
 
+            auditsAsAuditor.data?.forEach(a => {
+                if (userActivity[a.auditor_email]) {
+                    userActivity[a.auditor_email].audit_submission_count++;
+                    const date = new Date(a.submitted_at);
+                    if (date > userActivity[a.auditor_email].most_recent_activity) {
+                        userActivity[a.auditor_email].most_recent_activity = date;
+                    }
+                }
+            });
+
             reversals.data?.forEach(r => {
                 if (userActivity[r.requested_by_email]) {
                     userActivity[r.requested_by_email].reversal_count++;
                     const date = new Date(r.requested_at);
                     if (date > userActivity[r.requested_by_email].most_recent_activity) {
                         userActivity[r.requested_by_email].most_recent_activity = date;
+                    }
+                }
+            });
+
+            reversalWorkflow.data?.forEach(w => {
+                if (userActivity[w.entered_by_email]) {
+                    userActivity[w.entered_by_email].reversal_approval_count++;
+                    const date = new Date(w.entered_at);
+                    if (date > userActivity[w.entered_by_email].most_recent_activity) {
+                        userActivity[w.entered_by_email].most_recent_activity = date;
+                    }
+                }
+            });
+
+            reversalFinalDecision.data?.forEach(r => {
+                if (userActivity[r.final_decision_by_email]) {
+                    userActivity[r.final_decision_by_email].reversal_approval_count++;
+                    const date = new Date(r.final_decision_at);
+                    if (date > userActivity[r.final_decision_by_email].most_recent_activity) {
+                        userActivity[r.final_decision_by_email].most_recent_activity = date;
                     }
                 }
             });
@@ -805,11 +868,11 @@
                 }
             });
 
-            // Convert to array and calculate totals - include ALL users
+            // Convert to array and calculate totals - include ALL users (incl. auditor and reversal-approval activity)
             return Object.values(userActivity).map(user => {
-                const total = user.audit_assignment_count + user.audit_submission_count + 
-                             user.acknowledgement_count + user.rating_count + 
-                             user.reversal_count + user.calibration_count + user.ai_audit_count;
+                const total = user.audit_assignment_count + user.audit_submission_count +
+                             user.audit_completed_as_auditor_count + user.acknowledgement_count + user.rating_count +
+                             user.reversal_count + user.reversal_approval_count + user.calibration_count + user.ai_audit_count;
                 
                 // Determine activity status
                 const daysSinceActivity = user.most_recent_activity.getTime() > 0 
@@ -1331,16 +1394,28 @@
             }
 
             try {
-                // Get all activities on the selected date from various tables
-                const [assignments, audits, reversals, calibrations, aiAudits, acknowledgements, ratings] = await Promise.all([
+                // Get all activities on the selected date (incl. auditor submit/complete and reversal approval)
+                const [assignments, assignmentsCompleted, audits, auditsAsAuditor, reversals, reversalWorkflow, reversalFinalDecision, calibrations, aiAudits, acknowledgements, ratings] = await Promise.all([
                     window.supabaseClient
                         .from('audit_assignments')
                         .select('employee_email, created_at')
                         .gte('created_at', startOfDay.toISOString())
                         .lte('created_at', endOfDay.toISOString()),
                     window.supabaseClient
+                        .from('audit_assignments')
+                        .select('auditor_email, completed_at')
+                        .not('completed_at', 'is', null)
+                        .gte('completed_at', startOfDay.toISOString())
+                        .lte('completed_at', endOfDay.toISOString()),
+                    window.supabaseClient
                         .from('fnchat_cfd_v4_0_v2')
                         .select('employee_email, submitted_at')
+                        .gte('submitted_at', startOfDay.toISOString())
+                        .lte('submitted_at', endOfDay.toISOString()),
+                    window.supabaseClient
+                        .from('fnchat_cfd_v4_0_v2')
+                        .select('auditor_email, submitted_at')
+                        .not('auditor_email', 'is', null)
                         .gte('submitted_at', startOfDay.toISOString())
                         .lte('submitted_at', endOfDay.toISOString()),
                     window.supabaseClient
@@ -1348,6 +1423,19 @@
                         .select('requested_by_email, requested_at')
                         .gte('requested_at', startOfDay.toISOString())
                         .lte('requested_at', endOfDay.toISOString()),
+                    window.supabaseClient
+                        .from('reversal_workflow_states')
+                        .select('entered_by_email, entered_at')
+                        .in('state', ['team_lead_approved', 'team_lead_rejected'])
+                        .gte('entered_at', startOfDay.toISOString())
+                        .lte('entered_at', endOfDay.toISOString()),
+                    window.supabaseClient
+                        .from('reversal_requests')
+                        .select('final_decision_by_email, final_decision_at')
+                        .not('final_decision_at', 'is', null)
+                        .not('final_decision_by_email', 'ilike', '%@system%')
+                        .gte('final_decision_at', startOfDay.toISOString())
+                        .lte('final_decision_at', endOfDay.toISOString()),
                     window.supabaseClient
                         .from('calibration_results')
                         .select('participant_email, submitted_at')
@@ -1376,15 +1464,18 @@
                 const userActivities = {};
                 const activityCounts = {
                     assignments: 0,
+                    auditCompleted: 0,
                     submissions: 0,
+                    submissionsAsAuditor: 0,
                     reversals: 0,
+                    reversalApprovals: 0,
                     calibrations: 0,
                     aiAudits: 0,
                     acknowledgements: 0,
                     ratings: 0
                 };
 
-                // Process assignments
+                // Process assignments (employee assigned)
                 assignments.data?.forEach(a => {
                     if (!userActivities[a.employee_email]) {
                         userActivities[a.employee_email] = { activities: [] };
@@ -1393,7 +1484,16 @@
                     activityCounts.assignments++;
                 });
 
-                // Process audit submissions
+                // Process audit completed (as auditor)
+                assignmentsCompleted.data?.forEach(a => {
+                    if (!userActivities[a.auditor_email]) {
+                        userActivities[a.auditor_email] = { activities: [] };
+                    }
+                    userActivities[a.auditor_email].activities.push('Audit Completed (as Auditor)');
+                    activityCounts.auditCompleted++;
+                });
+
+                // Process audit submissions (agent)
                 audits.data?.forEach(a => {
                     if (!userActivities[a.employee_email]) {
                         userActivities[a.employee_email] = { activities: [] };
@@ -1402,13 +1502,40 @@
                     activityCounts.submissions++;
                 });
 
-                // Process reversals
+                // Process audit submissions (as auditor)
+                auditsAsAuditor.data?.forEach(a => {
+                    if (!userActivities[a.auditor_email]) {
+                        userActivities[a.auditor_email] = { activities: [] };
+                    }
+                    userActivities[a.auditor_email].activities.push('Audit Submission (as Auditor)');
+                    activityCounts.submissionsAsAuditor++;
+                });
+
+                // Process reversals (requested by)
                 reversals.data?.forEach(r => {
                     if (!userActivities[r.requested_by_email]) {
                         userActivities[r.requested_by_email] = { activities: [] };
                     }
                     userActivities[r.requested_by_email].activities.push('Reversal Request');
                     activityCounts.reversals++;
+                });
+
+                // Process reversal approval (workflow)
+                reversalWorkflow.data?.forEach(w => {
+                    if (!userActivities[w.entered_by_email]) {
+                        userActivities[w.entered_by_email] = { activities: [] };
+                    }
+                    userActivities[w.entered_by_email].activities.push('Reversal Approval/Rejection');
+                    activityCounts.reversalApprovals++;
+                });
+
+                // Process reversal final decision
+                reversalFinalDecision.data?.forEach(r => {
+                    if (!userActivities[r.final_decision_by_email]) {
+                        userActivities[r.final_decision_by_email] = { activities: [] };
+                    }
+                    userActivities[r.final_decision_by_email].activities.push('Reversal Final Decision');
+                    activityCounts.reversalApprovals++;
                 });
 
                 // Process calibrations
