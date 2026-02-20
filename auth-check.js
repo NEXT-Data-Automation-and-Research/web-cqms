@@ -7,7 +7,7 @@
 
 // Legacy CQMS: show warning and redirect all visitors to the new version
 (function () {
-  var REDIRECT_URL = "https://cqms-v2.vercel.app/settings/scorecards";
+  var REDIRECT_URL = "https://cqms-v2.vercel.app/";
   var DELAY_MS = 2500;
   function showWarningAndRedirect() {
     var root = document.body || document.documentElement;
